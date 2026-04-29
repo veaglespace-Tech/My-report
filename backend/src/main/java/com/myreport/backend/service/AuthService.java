@@ -1,0 +1,219 @@
+package com.myreport.backend.service;
+
+import com.myreport.backend.dto.auth.LoginRequest;
+import com.myreport.backend.dto.auth.OtpVerificationRequest;
+import com.myreport.backend.dto.auth.SignupRequest;
+import com.myreport.backend.entity.Notification;
+import com.myreport.backend.entity.Plan;
+import com.myreport.backend.entity.Store;
+import com.myreport.backend.entity.UserAccount;
+import com.myreport.backend.entity.enums.NotificationType;
+import com.myreport.backend.entity.enums.PlanStatus;
+import com.myreport.backend.entity.enums.Role;
+import com.myreport.backend.entity.enums.StoreStatus;
+import com.myreport.backend.entity.enums.UserStatus;
+import com.myreport.backend.exception.ApiException;
+import com.myreport.backend.repository.NotificationRepository;
+import com.myreport.backend.repository.PlanRepository;
+import com.myreport.backend.repository.StoreRepository;
+import com.myreport.backend.repository.UserAccountRepository;
+import com.myreport.backend.security.JwtService;
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private static final String DEMO_OTP = "654321";
+
+    private final UserAccountRepository userAccountRepository;
+    private final StoreRepository storeRepository;
+    private final PlanRepository planRepository;
+    private final NotificationRepository notificationRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+
+    @Value("${app.super-admin.email}")
+    private String superAdminEmail;
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> login(LoginRequest request) {
+        UserAccount user = userAccountRepository.findByEmailIgnoreCase(request.email())
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
+
+        if (user.getRole() != request.role()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Selected role does not match this account");
+        }
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+        }
+
+        if (user.getRole() == Role.ADMIN && !user.isEmailVerified()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Verify your email with OTP before logging in");
+        }
+
+        if (user.getRole() == Role.ADMIN && user.getStatus() == UserStatus.PENDING_APPROVAL) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Your account is pending SuperAdmin approval");
+        }
+
+        if (user.getStatus() == UserStatus.BLOCKED) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Your account is currently blocked");
+        }
+
+        String token = jwtService.generateToken(user, Boolean.TRUE.equals(request.rememberMe()));
+        return buildAuthPayload(user, token);
+    }
+
+    @Transactional
+    public Map<String, Object> signupAdmin(SignupRequest request) {
+        if (userAccountRepository.findByEmailIgnoreCase(request.email()).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "An account already exists for this email");
+        }
+
+        if (!request.password().equals(request.confirmPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Password and confirm password must match");
+        }
+
+        Plan defaultPlan = planRepository.findFirstByStatusOrderByMonthlyPriceAsc(PlanStatus.ACTIVE)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "No active plan is configured yet"));
+
+        UserAccount admin = UserAccount.builder()
+                .fullName(request.fullName())
+                .email(request.email().toLowerCase())
+                .mobileNumber(request.mobileNumber())
+                .password(passwordEncoder.encode(request.password()))
+                .role(Role.ADMIN)
+                .status(UserStatus.PENDING_APPROVAL)
+                .emailVerified(DEMO_OTP.equals(request.otp()))
+                .city(request.city())
+                .address(request.address())
+                .storeName(request.storeName())
+                .avatarUrl(createAvatarUrl(request.fullName()))
+                .build();
+        userAccountRepository.save(admin);
+
+        Store store = Store.builder()
+                .name(request.storeName())
+                .city(request.city())
+                .address(request.address())
+                .status(StoreStatus.PENDING)
+                .plan(defaultPlan)
+                .planExpiresAt(LocalDate.now().plusDays(30))
+                .owner(admin)
+                .build();
+        storeRepository.save(store);
+
+        createSuperAdminNotifications(
+                "New signup request",
+                request.fullName() + " registered " + request.storeName() + " and is waiting for approval",
+                NotificationType.SIGNUP_APPROVAL
+        );
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("email", admin.getEmail());
+        data.put("status", admin.getStatus());
+        data.put("emailVerified", admin.isEmailVerified());
+        data.put("pendingApproval", true);
+        data.put("demoOtp", DEMO_OTP);
+        data.put("message",
+                admin.isEmailVerified()
+                        ? "Signup completed. Your account is now waiting for SuperAdmin approval."
+                        : "Signup saved. Verify the demo OTP to finish email verification.");
+        return data;
+    }
+
+    @Transactional
+    public Map<String, Object> verifyOtp(OtpVerificationRequest request) {
+        UserAccount user = userAccountRepository.findByEmailIgnoreCase(request.email())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Account not found"));
+
+        if (!DEMO_OTP.equals(request.otp())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid OTP. Use the demo OTP from the signup flow");
+        }
+
+        user.setEmailVerified(true);
+        userAccountRepository.save(user);
+
+        return Map.of(
+                "email", user.getEmail(),
+                "verified", true,
+                "message", "OTP verified successfully. Your account now awaits approval."
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> me(String email) {
+        UserAccount user = getRequiredUser(email);
+        return buildAuthPayload(user, null);
+    }
+
+    private Map<String, Object> buildAuthPayload(UserAccount user, String token) {
+        Store store = storeRepository.findByOwnerId(user.getId()).orElse(null);
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("id", user.getId());
+        profile.put("fullName", user.getFullName());
+        profile.put("email", user.getEmail());
+        profile.put("mobileNumber", user.getMobileNumber());
+        profile.put("role", user.getRole());
+        profile.put("status", user.getStatus());
+        profile.put("city", user.getCity());
+        profile.put("address", user.getAddress());
+        profile.put("storeName", user.getStoreName());
+        profile.put("avatarUrl", user.getAvatarUrl());
+        profile.put("preferences", Map.of(
+                "lowStockAlerts", user.isLowStockAlerts(),
+                "planExpiryAlerts", user.isPlanExpiryAlerts(),
+                "paymentAlerts", user.isPaymentAlerts(),
+                "darkMode", user.isDarkMode()
+        ));
+
+        if (store != null) {
+            Map<String, Object> storeData = new LinkedHashMap<>();
+            storeData.put("id", store.getId());
+            storeData.put("name", store.getName());
+            storeData.put("status", store.getStatus());
+            storeData.put("city", store.getCity());
+            storeData.put("planExpiresAt", store.getPlanExpiresAt());
+            storeData.put("planName", store.getPlan() != null ? store.getPlan().getName() : null);
+            profile.put("store", storeData);
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("token", token);
+        response.put("role", user.getRole().name());
+        response.put("redirectTo", user.getRole() == Role.SUPER_ADMIN ? "/superadmin/dashboard" : "/admin/dashboard");
+        response.put("profile", profile);
+        return response;
+    }
+
+    private UserAccount getRequiredUser(String email) {
+        return userAccountRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    private void createSuperAdminNotifications(String title, String message, NotificationType type) {
+        List<UserAccount> superAdmins = userAccountRepository.findByRole(Role.SUPER_ADMIN);
+        for (UserAccount superAdmin : superAdmins) {
+            notificationRepository.save(Notification.builder()
+                    .title(title)
+                    .message(message)
+                    .type(type)
+                    .user(superAdmin)
+                    .build());
+        }
+    }
+
+    private String createAvatarUrl(String fullName) {
+        return "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=" + fullName.replace(" ", "+");
+    }
+}
