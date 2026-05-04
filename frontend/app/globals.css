@@ -83,6 +83,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -158,6 +159,7 @@ textarea {
 .dashboard-shell {
   min-height: 100vh;
   background: var(--dashboard-landscape);
+  overflow-x: clip;
 }
 
 .theme-input {
@@ -272,7 +274,8 @@ textarea {
 }
 
 .content-max {
-  width: min(1400px, calc(100vw - 32px));
+  width: 100%;
+  max-width: 1400px;
 }
 
 html[data-theme="light"] .text-white\/35 {
@@ -358,6 +361,6 @@ html[data-theme="light"] .text-emerald-200 {
 
 @media (max-width: 768px) {
   .content-max {
-    width: calc(100vw - 20px);
+    max-width: 100%;
   }
 }

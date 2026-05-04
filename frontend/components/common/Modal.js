@@ -8,7 +8,7 @@ export function Modal({ open, title, description, onClose, children }) {
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-8 backdrop-blur-xl"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-xl sm:px-6 sm:py-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -18,7 +18,7 @@ export function Modal({ open, title, description, onClose, children }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ duration: 0.24 }}
-            className="glass-panel frost-line w-full max-w-2xl rounded-[32px] p-6"
+            className="glass-panel frost-line mx-auto w-full max-w-2xl overflow-hidden rounded-[32px] p-5 sm:p-6"
           >
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
@@ -33,7 +33,9 @@ export function Modal({ open, title, description, onClose, children }) {
                 <X size={18} />
               </button>
             </div>
-            {children}
+            <div className="max-h-[calc(100vh-12rem)] overflow-y-auto pr-1">
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       ) : null}

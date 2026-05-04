@@ -1,4 +1,5 @@
 import { AppProviders } from "@/components/providers/AppProviders";
+import { RootChrome } from "@/components/layout/RootChrome";
 import "./globals.css";
 
 export const metadata = {
@@ -10,7 +11,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <RootChrome>{children}</RootChrome>
+        </AppProviders>
       </body>
     </html>
   );

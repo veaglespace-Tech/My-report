@@ -1,100 +1,71 @@
 import { axiosInstance } from "@/services/axiosInstance";
-import { mockAdminData } from "@/lib/mockData";
-
-async function fetchWithFallback(request, fallback) {
-  try {
-    const response = await request();
-    return response.data.data;
-  } catch (error) {
-    return fallback;
-  }
-}
 
 export const adminService = {
-  getDashboard: () => fetchWithFallback(() => axiosInstance.get("/admin/dashboard"), mockAdminData.dashboard),
-  getCustomers: () => fetchWithFallback(() => axiosInstance.get("/admin/customers"), mockAdminData.customers),
-  getProducts: () => fetchWithFallback(() => axiosInstance.get("/admin/products"), mockAdminData.products),
-  getInvoices: () => fetchWithFallback(() => axiosInstance.get("/admin/invoices"), mockAdminData.invoices),
-  getPlan: () => fetchWithFallback(() => axiosInstance.get("/admin/my-plan"), mockAdminData.plan),
-  getReports: (startDate, endDate) =>
-    fetchWithFallback(
-      () =>
-        axiosInstance.get("/admin/reports", {
-          params: { startDate, endDate },
-        }),
-      mockAdminData.reports
-    ),
-  getNotifications: () => fetchWithFallback(() => axiosInstance.get("/admin/notifications"), { items: mockAdminData.dashboard.notifications }),
-  getSettings: () => fetchWithFallback(() => axiosInstance.get("/admin/settings"), mockAdminData.settings),
+  getDashboard: async () => {
+    const response = await axiosInstance.get("/admin/dashboard");
+    return response.data.data;
+  },
+  getCustomers: async () => {
+    const response = await axiosInstance.get("/admin/customers");
+    return response.data.data;
+  },
+  getProducts: async () => {
+    const response = await axiosInstance.get("/admin/products");
+    return response.data.data;
+  },
+  getInvoices: async () => {
+    const response = await axiosInstance.get("/admin/invoices");
+    return response.data.data;
+  },
+  getPlan: async () => {
+    const response = await axiosInstance.get("/admin/my-plan");
+    return response.data.data;
+  },
+  getReports: async (startDate, endDate) => {
+    const response = await axiosInstance.get("/admin/reports", {
+      params: { startDate, endDate },
+    });
+    return response.data.data;
+  },
+  getNotifications: async () => {
+    const response = await axiosInstance.get("/admin/notifications");
+    return response.data.data;
+  },
+  getSettings: async () => {
+    const response = await axiosInstance.get("/admin/settings");
+    return response.data.data;
+  },
   createCustomer: async (payload) => {
-    try {
-      const response = await axiosInstance.post("/admin/customers", payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id: Date.now(), totalSpent: 0, purchaseCount: 0 };
-    }
+    const response = await axiosInstance.post("/admin/customers", payload);
+    return response.data.data;
   },
   updateCustomer: async (id, payload) => {
-    try {
-      const response = await axiosInstance.put(`/admin/customers/${id}`, payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id };
-    }
+    const response = await axiosInstance.put(`/admin/customers/${id}`, payload);
+    return response.data.data;
   },
   toggleCustomerBlock: async (id) => {
-    try {
-      const response = await axiosInstance.patch(`/admin/customers/${id}/block`);
-      return response.data.data;
-    } catch (error) {
-      return { id };
-    }
+    const response = await axiosInstance.patch(`/admin/customers/${id}/block`);
+    return response.data.data;
   },
   deleteCustomer: async (id) => {
-    try {
-      await axiosInstance.delete(`/admin/customers/${id}`);
-      return true;
-    } catch (error) {
-      return true;
-    }
+    await axiosInstance.delete(`/admin/customers/${id}`);
+    return true;
   },
   createProduct: async (payload) => {
-    try {
-      const response = await axiosInstance.post("/admin/products", payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id: Date.now(), stockHealth: 100 };
-    }
+    const response = await axiosInstance.post("/admin/products", payload);
+    return response.data.data;
   },
   updateProduct: async (id, payload) => {
-    try {
-      const response = await axiosInstance.put(`/admin/products/${id}`, payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id };
-    }
+    const response = await axiosInstance.put(`/admin/products/${id}`, payload);
+    return response.data.data;
   },
   deleteProduct: async (id) => {
-    try {
-      await axiosInstance.delete(`/admin/products/${id}`);
-      return true;
-    } catch (error) {
-      return true;
-    }
+    await axiosInstance.delete(`/admin/products/${id}`);
+    return true;
   },
   createInvoice: async (payload) => {
-    try {
-      const response = await axiosInstance.post("/admin/billing", payload);
-      return response.data.data;
-    } catch (error) {
-      return {
-        invoiceNumber: `INV-${Date.now()}`,
-        subtotal: 0,
-        taxAmount: 0,
-        discountAmount: payload.discountAmount || 0,
-        totalAmount: 0,
-      };
-    }
+    const response = await axiosInstance.post("/admin/billing", payload);
+    return response.data.data;
   },
   updateProfile: async (payload) => {
     try {

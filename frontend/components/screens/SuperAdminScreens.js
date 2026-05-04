@@ -35,10 +35,19 @@ function useAsyncLoader(loader, initialState) {
 
     async function run() {
       setLoading(true);
-      const response = await loader();
-      if (active) {
-        setData(response);
-        setLoading(false);
+      try {
+        const response = await loader();
+        if (active) {
+          setData(response);
+        }
+      } catch (error) {
+        if (active) {
+          toast.error(error?.message || "Failed to load data from server.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -51,7 +60,7 @@ function useAsyncLoader(loader, initialState) {
   return { data, setData, loading };
 }
 
-function ControlButton({ children, variant = "default", ...props }) {
+function ControlButton({ children, variant = "default", className = "", ...props }) {
   const base =
     variant === "primary"
       ? "theme-primary-button"
@@ -60,7 +69,7 @@ function ControlButton({ children, variant = "default", ...props }) {
   return (
     <button
       type="button"
-      className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${base}`}
+      className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${base} ${className}`}
       {...props}
     >
       {children}
@@ -107,7 +116,7 @@ function SelectField({ label, name, value, onChange, options }) {
 
 function ChartCard({ title, description, children }) {
   return (
-    <GlassPanel className="p-6">
+    <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <div className="mb-6">
         <h3 className="text-lg font-semibold">{title}</h3>
         <p className="mt-1 text-sm text-white/55">{description}</p>
@@ -119,7 +128,7 @@ function ChartCard({ title, description, children }) {
 
 function ActivityList({ title, items, render }) {
   return (
-    <GlassPanel className="p-6">
+    <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <h3 className="text-lg font-semibold">{title}</h3>
       <div className="mt-5 grid gap-3">
         {items?.length ? (
@@ -152,22 +161,22 @@ export function SuperAdminDashboardScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="Overview"
         title="Platform Pulse"
         description="Track platform growth, approval health, and renewal risk from one premium command layer."
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {data.metrics.map((item, index) => (
           <MetricCard key={item.label} item={item} index={index} />
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid max-w-full gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <ChartCard title="Revenue Graph" description="Monthly platform revenue across all stores.">
-          <div className="h-80">
+          <div className="h-72 w-full max-w-full sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.revenueSeries}>
                 <defs>
@@ -189,7 +198,7 @@ export function SuperAdminDashboardScreen() {
         </ChartCard>
 
         <ChartCard title="Growth Chart" description="Admin and store additions month over month.">
-          <div className="h-80">
+          <div className="h-72 w-full max-w-full sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.growthSeries}>
                 <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
@@ -204,7 +213,7 @@ export function SuperAdminDashboardScreen() {
         </ChartCard>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         <ActivityList
           title="Recent Activities"
           items={data.recentActivities}
@@ -363,7 +372,7 @@ export function SuperAdminAdminsScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="User management"
         title="Admins"
@@ -379,7 +388,7 @@ export function SuperAdminAdminsScreen() {
       />
 
       <GlassPanel className="p-5">
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+        <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
           <Search size={16} className="text-white/45" />
           <input
             value={query}
@@ -431,7 +440,7 @@ export function SuperAdminAdminsScreen() {
         description="Provision a store owner with plan assignment, contact details, and secure access."
       >
         <form className="grid gap-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Full Name" name="fullName" value={form.fullName} onChange={handleFormChange} required />
             <FormField label="Email" name="email" type="email" value={form.email} onChange={handleFormChange} required />
             <FormField label="Mobile Number" name="mobileNumber" value={form.mobileNumber} onChange={handleFormChange} required />
@@ -447,7 +456,7 @@ export function SuperAdminAdminsScreen() {
               options={plansData.items.map((plan) => ({ label: plan.name, value: String(plan.id) }))}
             />
           </div>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <ControlButton onClick={() => setModalOpen(false)}>Cancel</ControlButton>
             <ControlButton type="submit" variant="primary">{editingItem ? "Save Changes" : "Create Admin"}</ControlButton>
           </div>
@@ -466,7 +475,7 @@ export function SuperAdminStoresScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="Network"
         title="Stores"
@@ -581,7 +590,7 @@ export function SuperAdminPlansScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="Subscription engine"
         title="Plans"
@@ -596,7 +605,7 @@ export function SuperAdminPlansScreen() {
         }
       />
 
-      <div className="grid gap-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {data.items.map((plan) => (
           <motion.div key={plan.id} whileHover={{ y: -4 }} className="h-full">
             <GlassPanel className="flex h-full flex-col p-6">
@@ -641,7 +650,7 @@ export function SuperAdminPlansScreen() {
         description="Shape pricing, capacity, and value positioning for your subscription catalog."
       >
         <form className="grid gap-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Plan Name" name="name" value={form.name} onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))} required />
             <SelectField
               label="Status"
@@ -677,7 +686,7 @@ export function SuperAdminPlansScreen() {
               className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 outline-none transition focus:border-cyan-300/40"
             />
           </label>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <ControlButton onClick={() => setModalOpen(false)}>Cancel</ControlButton>
             <ControlButton type="submit" variant="primary">{editingItem ? "Save Plan" : "Create Plan"}</ControlButton>
           </div>
@@ -696,7 +705,7 @@ export function SuperAdminInvoicesScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading eyebrow="Finance" title="Invoices" description="Review transaction volume across the platform in a single premium ledger." />
       <DataTable
         columns={[
@@ -722,7 +731,7 @@ export function SuperAdminReportsScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="Analytics"
         title="Reports"
@@ -739,15 +748,15 @@ export function SuperAdminReportsScreen() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard item={{ label: "Revenue", value: formatCurrency(data.summary.revenue || 0), helper: "All-store billing", accent: "cyan" }} />
         <MetricCard item={{ label: "Stores", value: String(data.summary.stores || 0), helper: "Connected workspaces", accent: "emerald" }} />
         <MetricCard item={{ label: "Admins", value: String(data.summary.admins || 0), helper: "Managed operators", accent: "violet" }} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid max-w-full gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <ChartCard title="Monthly Revenue" description="Performance trend over recent months.">
-          <div className="h-80">
+          <div className="h-72 w-full max-w-full sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.monthly}>
                 <defs>
@@ -793,8 +802,8 @@ export function SuperAdminSettingsScreen() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-      <GlassPanel className="p-6">
+    <div className="grid max-w-full gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+      <GlassPanel className="p-5 sm:p-6">
         <div className="text-xs uppercase tracking-[0.24em] text-cyan-200/75">Profile</div>
         <h2 className="mt-3 text-2xl font-semibold">{data.profile.fullName || "SuperAdmin"}</h2>
         <div className="mt-5 grid gap-3 text-sm text-white/62">
@@ -803,7 +812,7 @@ export function SuperAdminSettingsScreen() {
           <div>Role: SUPER_ADMIN</div>
         </div>
       </GlassPanel>
-      <GlassPanel className="p-6">
+      <GlassPanel className="p-5 sm:p-6">
         <SectionHeading
           eyebrow="Workspace notes"
           title="Platform settings"
@@ -812,7 +821,7 @@ export function SuperAdminSettingsScreen() {
         <div className="mt-6">
           <ThemeToggle />
         </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[
             "Audit-ready activity trails",
             "Global notification preferences",

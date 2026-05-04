@@ -45,10 +45,19 @@ function useAsyncLoader(loader, initialState) {
 
     async function run() {
       setLoading(true);
-      const response = await loader();
-      if (active) {
-        setData(response);
-        setLoading(false);
+      try {
+        const response = await loader();
+        if (active) {
+          setData(response);
+        }
+      } catch (error) {
+        if (active) {
+          toast.error(error?.message || "Failed to load data from server.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -61,7 +70,7 @@ function useAsyncLoader(loader, initialState) {
   return { data, setData, loading };
 }
 
-function ControlButton({ children, variant = "default", ...props }) {
+function ControlButton({ children, variant = "default", className = "", ...props }) {
   const base =
     variant === "primary"
       ? "theme-primary-button"
@@ -70,7 +79,7 @@ function ControlButton({ children, variant = "default", ...props }) {
   return (
     <button
       type="button"
-      className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${base}`}
+      className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${base} ${className}`}
       {...props}
     >
       {children}
@@ -117,7 +126,7 @@ function SelectField({ label, name, value, onChange, options }) {
 
 function ChartCard({ title, description, children }) {
   return (
-    <GlassPanel className="p-6">
+    <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <div className="mb-6">
         <h3 className="text-lg font-semibold">{title}</h3>
         <p className="mt-1 text-sm text-white/55">{description}</p>
@@ -143,16 +152,16 @@ export function AdminDashboardScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading eyebrow="Store performance" title={data.store.name || "Admin Dashboard"} description="Stay on top of daily cashflow, fast movers, inventory risk, and plan usage." />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {data.metrics.map((item, index) => (
           <MetricCard key={item.label} item={item} index={index} />
         ))}
       </div>
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid max-w-full gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <ChartCard title="Revenue Graph" description="Recent revenue performance for your store.">
-          <div className="h-80">
+          <div className="h-72 w-full max-w-full sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.revenueSeries}>
                 <defs>
@@ -171,7 +180,7 @@ export function AdminDashboardScreen() {
           </div>
         </ChartCard>
         <ChartCard title="Top Sales" description="Best-performing products this cycle.">
-          <div className="h-80">
+          <div className="h-72 w-full max-w-full sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.topSales}>
                 <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
@@ -184,8 +193,8 @@ export function AdminDashboardScreen() {
           </div>
         </ChartCard>
       </div>
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <GlassPanel className="p-6">
+      <div className="grid max-w-full gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <GlassPanel className="p-5 sm:p-6">
           <h3 className="text-lg font-semibold">Notifications</h3>
           <div className="mt-5 grid gap-3">
             {data.notifications.map((item) => (
@@ -197,9 +206,9 @@ export function AdminDashboardScreen() {
             ))}
           </div>
         </GlassPanel>
-        <GlassPanel className="p-6">
+        <GlassPanel className="p-5 sm:p-6">
           <h3 className="text-lg font-semibold">Workspace Highlights</h3>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.highlights.map((highlight) => (
               <div key={highlight} className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72">
                 {highlight}
@@ -231,6 +240,11 @@ export function AdminCustomersScreen() {
     blocked: false,
   });
 
+  const reloadCustomers = async () => {
+    const response = await adminService.getCustomers();
+    setData(response);
+  };
+
   const filteredItems = data.items.filter((item) =>
     [item.fullName, item.email, item.mobileNumber].join(" ").toLowerCase().includes(query.toLowerCase())
   );
@@ -255,32 +269,33 @@ export function AdminCustomersScreen() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const payload = editingItem ? await adminService.updateCustomer(editingItem.id, form) : await adminService.createCustomer(form);
-    setData((previous) => ({
-      ...previous,
-      items: editingItem
-        ? previous.items.map((item) => (item.id === editingItem.id ? { ...item, ...payload } : item))
-        : [{ ...payload, id: payload.id || Date.now(), totalSpent: 0, purchaseCount: 0 }, ...previous.items],
-    }));
-    toast.success(editingItem ? "Customer updated" : "Customer created");
-    setModalOpen(false);
+    try {
+      await (editingItem ? adminService.updateCustomer(editingItem.id, form) : adminService.createCustomer(form));
+      await reloadCustomers();
+      toast.success(editingItem ? "Customer updated" : "Customer created");
+      setModalOpen(false);
+    } catch (error) {
+      toast.error(error?.message || "Failed to save customer.");
+    }
   };
 
   const handleToggleBlock = async (customerId) => {
-    await adminService.toggleCustomerBlock(customerId);
-    setData((previous) => ({
-      ...previous,
-      items: previous.items.map((item) => (item.id === customerId ? { ...item, blocked: !item.blocked } : item)),
-    }));
+    try {
+      await adminService.toggleCustomerBlock(customerId);
+      await reloadCustomers();
+    } catch (error) {
+      toast.error(error?.message || "Failed to update customer status.");
+    }
   };
 
   const handleDelete = async (customerId) => {
-    await adminService.deleteCustomer(customerId);
-    setData((previous) => ({
-      ...previous,
-      items: previous.items.filter((item) => item.id !== customerId),
-    }));
-    toast.success("Customer deleted");
+    try {
+      await adminService.deleteCustomer(customerId);
+      await reloadCustomers();
+      toast.success("Customer deleted");
+    } catch (error) {
+      toast.error(error?.message || "Failed to delete customer.");
+    }
   };
 
   if (loading) {
@@ -288,7 +303,7 @@ export function AdminCustomersScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="CRM"
         title="Customers"
@@ -301,7 +316,7 @@ export function AdminCustomersScreen() {
       />
 
       <GlassPanel className="p-5">
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+        <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
           <Search size={16} className="text-white/45" />
           <input
             value={query}
@@ -344,7 +359,7 @@ export function AdminCustomersScreen() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingItem ? "Edit Customer" : "Add Customer"}>
         <form className="grid gap-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Full Name" name="fullName" value={form.fullName} onChange={(event) => setForm((previous) => ({ ...previous, fullName: event.target.value }))} required />
             <FormField label="Email" name="email" type="email" value={form.email} onChange={(event) => setForm((previous) => ({ ...previous, email: event.target.value }))} />
             <FormField label="Mobile Number" name="mobileNumber" value={form.mobileNumber} onChange={(event) => setForm((previous) => ({ ...previous, mobileNumber: event.target.value }))} required />
@@ -354,7 +369,7 @@ export function AdminCustomersScreen() {
             <input type="checkbox" checked={form.blocked} onChange={(event) => setForm((previous) => ({ ...previous, blocked: event.target.checked }))} />
             Mark customer as blocked
           </label>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <ControlButton onClick={() => setModalOpen(false)}>Cancel</ControlButton>
             <ControlButton type="submit" variant="primary">{editingItem ? "Save Customer" : "Create Customer"}</ControlButton>
           </div>
@@ -378,6 +393,11 @@ export function AdminProductsScreen() {
     unit: "PIECE",
     active: true,
   });
+
+  const reloadProducts = async () => {
+    const response = await adminService.getProducts();
+    setData(response);
+  };
 
   const openCreate = () => {
     setEditingItem(null);
@@ -416,25 +436,24 @@ export function AdminProductsScreen() {
       reorderThreshold: Number(form.reorderThreshold),
     };
 
-    const saved = editingItem ? await adminService.updateProduct(editingItem.id, payload) : await adminService.createProduct(payload);
-
-    setData((previous) => ({
-      ...previous,
-      items: editingItem
-        ? previous.items.map((item) => (item.id === editingItem.id ? { ...item, ...saved } : item))
-        : [{ ...saved, id: saved.id || Date.now(), lowStock: Number(payload.quantity) <= Number(payload.reorderThreshold) }, ...previous.items],
-    }));
-    toast.success(editingItem ? "Product updated" : "Product created");
-    setModalOpen(false);
+    try {
+      await (editingItem ? adminService.updateProduct(editingItem.id, payload) : adminService.createProduct(payload));
+      await reloadProducts();
+      toast.success(editingItem ? "Product updated" : "Product created");
+      setModalOpen(false);
+    } catch (error) {
+      toast.error(error?.message || "Failed to save product.");
+    }
   };
 
   const handleDelete = async (productId) => {
-    await adminService.deleteProduct(productId);
-    setData((previous) => ({
-      ...previous,
-      items: previous.items.filter((item) => item.id !== productId),
-    }));
-    toast.success("Product deleted");
+    try {
+      await adminService.deleteProduct(productId);
+      await reloadProducts();
+      toast.success("Product deleted");
+    } catch (error) {
+      toast.error(error?.message || "Failed to delete product.");
+    }
   };
 
   if (loading) {
@@ -442,7 +461,7 @@ export function AdminProductsScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="Inventory"
         title="Products"
@@ -468,8 +487,10 @@ export function AdminProductsScreen() {
           {
             key: "actions",
             label: "Actions",
+            headerClassName: "text-right",
+            cellClassName: "text-right",
             render: (_, row) => (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                 <button type="button" onClick={() => openEdit(row)} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75">
                   Edit
                 </button>
@@ -485,7 +506,7 @@ export function AdminProductsScreen() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingItem ? "Edit Product" : "Add Product"}>
         <form className="grid gap-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Product Name" name="name" value={form.name} onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))} required />
             <FormField label="SKU" name="sku" value={form.sku} onChange={(event) => setForm((previous) => ({ ...previous, sku: event.target.value }))} required />
             <FormField label="Price" name="price" type="number" value={form.price} onChange={(event) => setForm((previous) => ({ ...previous, price: event.target.value }))} required />
@@ -503,7 +524,7 @@ export function AdminProductsScreen() {
             <input type="checkbox" checked={form.active} onChange={(event) => setForm((previous) => ({ ...previous, active: event.target.checked }))} />
             Product is active
           </label>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <ControlButton onClick={() => setModalOpen(false)}>Cancel</ControlButton>
             <ControlButton type="submit" variant="primary">{editingItem ? "Save Product" : "Create Product"}</ControlButton>
           </div>
@@ -521,7 +542,7 @@ export function AdminBillingScreen() {
   const [rows, setRows] = useState([{ id: 1, productId: "", quantity: 1 }]);
   const [customerName, setCustomerName] = useState("");
   const [gstPercentage, setGstPercentage] = useState(18);
-  const [discountAmount, setDiscountAmount] = useState(250);
+  const [discountAmount, setDiscountAmount] = useState(0);
   const [notes, setNotes] = useState("Thank you for choosing MyReport POS.");
   const [invoiceResult, setInvoiceResult] = useState(null);
   const [nextRowId, setNextRowId] = useState(2);
@@ -565,9 +586,13 @@ export function AdminBillingScreen() {
       })),
     };
 
-    const response = await adminService.createInvoice(payload);
-    setInvoiceResult({ ...response, totalAmount: response.totalAmount || totalAmount });
-    toast.success("Invoice generated successfully");
+    try {
+      const response = await adminService.createInvoice(payload);
+      setInvoiceResult({ ...response, totalAmount: response.totalAmount || totalAmount });
+      toast.success("Invoice generated successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to generate invoice.");
+    }
   };
 
   if (loading) {
@@ -575,8 +600,8 @@ export function AdminBillingScreen() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-      <GlassPanel className="p-6">
+    <div className="grid max-w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <GlassPanel className="p-5 sm:p-6">
         <SectionHeading eyebrow="POS" title="Billing Workspace" description="Create a customer bill with GST, discounts, print flow, and invoice generation." />
         <div className="mt-6 grid gap-4">
           <SelectField
@@ -591,7 +616,7 @@ export function AdminBillingScreen() {
           />
 
           {rows.map((row, index) => (
-            <div key={row.id} className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 md:grid-cols-[1.4fr_0.6fr_auto]">
+            <div key={row.id} className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 lg:grid-cols-[1.4fr_0.6fr_auto]">
               <SelectField
                 label={`Product ${index + 1}`}
                 name="productId"
@@ -634,6 +659,7 @@ export function AdminBillingScreen() {
 
           <div>
             <ControlButton
+              className="w-full sm:w-auto"
               onClick={() => {
                 setRows((previous) => [...previous, { id: nextRowId, productId: "", quantity: 1 }]);
                 setNextRowId((previous) => previous + 1);
@@ -643,29 +669,29 @@ export function AdminBillingScreen() {
             </ControlButton>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FormField label="GST %" name="gstPercentage" type="number" value={gstPercentage} onChange={(event) => setGstPercentage(event.target.value)} />
             <FormField label="Discount" name="discountAmount" type="number" value={discountAmount} onChange={(event) => setDiscountAmount(event.target.value)} />
             <FormField label="Notes" name="notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <ControlButton variant="primary" onClick={handleGenerate}>
+            <ControlButton variant="primary" className="w-full sm:w-auto" onClick={handleGenerate}>
               <span className="inline-flex items-center gap-2"><ShoppingCart size={16} /> Generate Bill</span>
             </ControlButton>
-            <ControlButton onClick={printPage}>
+            <ControlButton className="w-full sm:w-auto" onClick={printPage}>
               <span className="inline-flex items-center gap-2"><Printer size={16} /> Print Bill</span>
             </ControlButton>
           </div>
         </div>
       </GlassPanel>
 
-      <GlassPanel className="p-6">
+      <GlassPanel className="p-5 sm:p-6">
         <SectionHeading eyebrow="Invoice preview" title={invoiceResult?.invoiceNumber || "Live bill summary"} description="Preview totals before printing or exporting." />
         <div className="mt-6 grid gap-4">
           {lineItems.length ? (
             lineItems.map((item) => (
-              <div key={`${item.productName}-${item.id}`} className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm">
+              <div key={`${item.productName}-${item.id}`} className="flex flex-col gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="font-semibold">{item.productName}</div>
                   <div className="text-white/55">{item.quantity} x {formatCurrency(item.rate)}</div>
@@ -708,7 +734,7 @@ export function AdminInvoicesScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading eyebrow="Ledger" title="Invoices" description="Browse generated bills, GST summaries, and payment completion history." />
       <DataTable
         columns={[
@@ -754,27 +780,27 @@ export function AdminPlanScreen() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-      <GlassPanel className="p-6">
+    <div className="grid max-w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <GlassPanel className="p-5 sm:p-6">
         <div className="text-xs uppercase tracking-[0.24em] text-cyan-200/75">Current subscription</div>
         <h2 className="mt-3 text-3xl font-semibold">{data.plan.name}</h2>
         <p className="mt-3 max-w-xl text-sm leading-6 text-white/58">{data.plan.description}</p>
         <div className="mt-6 text-4xl font-semibold">{formatCurrency(data.plan.monthlyPrice)}<span className="text-base text-white/45"> / month</span></div>
         <div className="mt-2 text-sm text-white/55">Renews on {formatDate(data.plan.expiresAt)}</div>
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72">Products limit: {data.plan.maxProducts}</div>
           <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72">Customers limit: {data.plan.maxCustomers}</div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72 md:col-span-2">{data.plan.features}</div>
+          <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72 sm:col-span-2">{data.plan.features}</div>
         </div>
       </GlassPanel>
 
-      <GlassPanel className="p-6">
+      <GlassPanel className="p-5 sm:p-6">
         <SectionHeading eyebrow="Razorpay" title="Renew or upgrade" description="The backend creates a live order when keys are configured, and falls back to demo mode otherwise." />
         <div className="mt-6 grid gap-4">
           <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72">
             Days left on current plan: <span className="font-semibold text-white">{data.plan.daysLeft}</span>
           </div>
-          <ControlButton variant="primary" onClick={handleUpgrade}>
+          <ControlButton variant="primary" className="w-full sm:w-auto" onClick={handleUpgrade}>
             Renew with Razorpay
           </ControlButton>
           {orderState ? (
@@ -804,7 +830,7 @@ export function AdminReportsScreen() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid max-w-full gap-6">
       <SectionHeading
         eyebrow="Insights"
         title="Reports"
@@ -820,16 +846,16 @@ export function AdminReportsScreen() {
       />
 
       <GlassPanel className="p-5">
-        <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
           <FormField label="Start Date" name="startDate" type="date" value={filters.startDate} onChange={(event) => setFilters((previous) => ({ ...previous, startDate: event.target.value }))} />
           <FormField label="End Date" name="endDate" type="date" value={filters.endDate} onChange={(event) => setFilters((previous) => ({ ...previous, endDate: event.target.value }))} />
           <div className="self-end">
-            <ControlButton variant="primary" onClick={() => setAppliedFilters(filters)}>Apply Filters</ControlButton>
+            <ControlButton variant="primary" className="w-full lg:w-auto" onClick={() => setAppliedFilters(filters)}>Apply Filters</ControlButton>
           </div>
         </div>
       </GlassPanel>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard item={{ label: "Revenue", value: formatCurrency(data.summary.revenue || 0), helper: "Selected range", accent: "cyan" }} />
         <MetricCard item={{ label: "Invoices", value: String(data.summary.invoices || 0), helper: "Generated bills", accent: "emerald" }} />
         <MetricCard item={{ label: "Customers", value: String(data.summary.customers || 0), helper: "Customer base", accent: "violet" }} />
@@ -837,7 +863,7 @@ export function AdminReportsScreen() {
       </div>
 
       <ChartCard title="Revenue Trend" description="Weekly, monthly, and yearly views can all be driven from this reporting layer.">
-        <div className="h-80">
+        <div className="h-72 w-full max-w-full sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data.series}>
               <defs>
@@ -912,11 +938,11 @@ export function AdminSettingsScreen() {
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-      <GlassPanel className="p-6">
+    <div className="grid max-w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <GlassPanel className="p-5 sm:p-6">
         <SectionHeading eyebrow="Profile" title="Workspace settings" description="Keep your store profile, password, theme, and notification controls in sync." />
         <form className="mt-6 grid gap-4" onSubmit={handleProfileSave}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Full Name" name="fullName" value={data.profile.fullName || ""} onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, fullName: event.target.value } }))} required />
               <div className="grid gap-2 text-sm">
                 <span className="font-medium text-white/72">Email</span>
@@ -932,14 +958,14 @@ export function AdminSettingsScreen() {
             <FormField label="City" name="city" value={data.profile.city || ""} onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, city: event.target.value } }))} required />
             <FormField label="Address" name="address" value={data.profile.address || ""} onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, address: event.target.value } }))} required />
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-start sm:justify-end">
             <ControlButton type="submit" variant="primary">Save Profile</ControlButton>
           </div>
         </form>
       </GlassPanel>
 
       <div className="grid gap-6">
-        <GlassPanel className="p-6">
+        <GlassPanel className="p-5 sm:p-6">
           <h3 className="text-lg font-semibold">Theme Mode</h3>
           <p className="mt-2 text-sm text-[var(--muted)]">
             Switch between light mode and night mode while keeping the same premium landscape feel.
@@ -949,7 +975,7 @@ export function AdminSettingsScreen() {
           </div>
         </GlassPanel>
 
-        <GlassPanel className="p-6">
+        <GlassPanel className="p-5 sm:p-6">
           <h3 className="text-lg font-semibold">Notification Preferences</h3>
           <div className="mt-5 grid gap-3">
             {Object.entries(data.preferences)
@@ -968,13 +994,13 @@ export function AdminSettingsScreen() {
           </div>
         </GlassPanel>
 
-        <GlassPanel className="p-6">
+        <GlassPanel className="p-5 sm:p-6">
           <h3 className="text-lg font-semibold">Change Password</h3>
           <form className="mt-5 grid gap-4" onSubmit={handlePasswordSave}>
             <FormField label="Current Password" name="currentPassword" type="password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm((previous) => ({ ...previous, currentPassword: event.target.value }))} required />
             <FormField label="New Password" name="newPassword" type="password" value={passwordForm.newPassword} onChange={(event) => setPasswordForm((previous) => ({ ...previous, newPassword: event.target.value }))} required />
             <FormField label="Confirm Password" name="confirmPassword" type="password" value={passwordForm.confirmPassword} onChange={(event) => setPasswordForm((previous) => ({ ...previous, confirmPassword: event.target.value }))} required />
-            <div className="flex justify-end">
+            <div className="flex justify-start sm:justify-end">
               <ControlButton type="submit" variant="primary">Update Password</ControlButton>
             </div>
           </form>

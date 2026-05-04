@@ -18,5 +18,17 @@ axiosInstance.interceptors.request.use((config) => {
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error?.response?.data?.message ? new Error(error.response.data.message) : error)
+  (error) => {
+    const apiMessage = error?.response?.data?.message;
+    const validationErrors = error?.response?.data?.data;
+
+    if (validationErrors && typeof validationErrors === "object" && !Array.isArray(validationErrors)) {
+      const details = Object.entries(validationErrors)
+        .map(([field, message]) => `${field}: ${message}`)
+        .join(", ");
+      return Promise.reject(new Error(details || apiMessage || "Request failed"));
+    }
+
+    return Promise.reject(apiMessage ? new Error(apiMessage) : error);
+  }
 );

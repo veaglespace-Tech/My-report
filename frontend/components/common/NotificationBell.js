@@ -48,7 +48,7 @@ export function NotificationBell({ loader }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="glass-panel frost-line absolute right-0 z-40 mt-3 w-[320px] rounded-[28px] p-4"
+            className="glass-panel frost-line absolute right-0 z-40 mt-3 w-[min(20rem,calc(100vw-2rem))] max-w-full rounded-[28px] p-4"
           >
             <div className="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-white/55">Notifications</div>
             <div className="grid max-h-80 gap-3 overflow-y-auto scrollbar-thin">
