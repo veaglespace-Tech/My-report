@@ -49,13 +49,16 @@ public class PaymentService {
                 .build();
         paymentOrderRepository.save(order);
 
-        if (razorpayKeyId == null || razorpayKeyId.isBlank() || razorpayKeySecret == null || razorpayKeySecret.isBlank()) {
+        if (razorpayKeyId == null || razorpayKeyId.isBlank() || razorpayKeySecret == null
+                || razorpayKeySecret.isBlank()) {
             return mockOrder(request, orderReference);
         }
 
         RestClient client = RestClient.builder()
                 .baseUrl("https://api.razorpay.com/v1")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((razorpayKeyId + ":" + razorpayKeySecret).getBytes()))
+                .defaultHeader(HttpHeaders.AUTHORIZATION,
+                        "Basic " + Base64.getEncoder()
+                                .encodeToString((razorpayKeyId + ":" + razorpayKeySecret).getBytes()))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
 
@@ -63,8 +66,7 @@ public class PaymentService {
                 "amount", request.amount().multiply(BigDecimal.valueOf(100)).intValue(),
                 "currency", "INR",
                 "receipt", orderReference,
-                "notes", Map.of("plan", request.planName(), "adminEmail", email)
-        );
+                "notes", Map.of("plan", request.planName(), "adminEmail", email));
 
         try {
             Map<?, ?> response = client.post()

@@ -40,7 +40,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/admin/signup", "/api/auth/admin/verify-otp")
+                        .requestMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/api/health", "/favicon.ico")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register", "/api/auth/admin/signup", "/api/auth/admin/verify-otp")
                         .permitAll()
                         .requestMatchers("/api/super-admin/**")
                         .hasRole("SUPER_ADMIN")

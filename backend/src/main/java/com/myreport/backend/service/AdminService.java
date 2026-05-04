@@ -204,10 +204,23 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Map<String, Object> getInvoices(String email) {
         UserAccount admin = getAdmin(email);
-        List<Map<String, Object>> items = invoiceRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId()).stream()
-                .map(this::mapInvoice)
-                .toList();
-        return Map.of("items", items);
+        List<Invoice> invoices = invoiceRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId());
+        List<Map<String, Object>> items = invoices.stream().map(this::mapInvoice).toList();
+
+        BigDecimal todaysSales = invoices.stream()
+                .filter(invoice -> invoice.getCreatedAt().toLocalDate().isEqual(LocalDate.now()))
+                .map(Invoice::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return Map.of(
+                "items", items,
+                "summary", Map.of(
+                        "todaysSales", todaysSales,
+                        "todaysInvoices", invoices.stream()
+                                .filter(invoice -> invoice.getCreatedAt().toLocalDate().isEqual(LocalDate.now()))
+                                .count()
+                )
+        );
     }
 
     @Transactional
@@ -221,6 +234,10 @@ public class AdminService {
         BigDecimal gstPercentage = request.gstPercentage() == null ? BigDecimal.ZERO : request.gstPercentage();
         BigDecimal taxAmount = subtotal.multiply(gstPercentage).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         BigDecimal discountAmount = request.discountAmount() == null ? BigDecimal.ZERO : request.discountAmount();
+        BigDecimal grossAmount = subtotal.add(taxAmount);
+        if (discountAmount.compareTo(grossAmount) > 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Discount amount cannot be greater than subtotal plus tax");
+        }
         BigDecimal totalAmount = subtotal.add(taxAmount).subtract(discountAmount);
 
         Invoice invoice = Invoice.builder()

@@ -24,7 +24,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -44,6 +46,7 @@ public class AdminController {
 
     @PostMapping("/customers")
     public ApiResponse<Map<String, Object>> createCustomer(Principal principal, @Valid @RequestBody CustomerRequest request) {
+        log.info("Received request to create customer: {}", request);
         return new ApiResponse<>(true, "Customer created", adminService.createCustomer(principal.getName(), request));
     }
 
@@ -91,6 +94,7 @@ public class AdminController {
 
     @PostMapping("/billing")
     public ApiResponse<Map<String, Object>> createInvoice(Principal principal, @Valid @RequestBody BillingRequest request) {
+        log.info("Received request to create invoice: {}", request);
         return new ApiResponse<>(true, "Invoice generated", adminService.createInvoice(principal.getName(), request));
     }
 

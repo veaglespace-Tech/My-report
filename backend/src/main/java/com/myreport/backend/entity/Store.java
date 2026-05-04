@@ -41,6 +41,14 @@ public class Store extends AuditableEntity {
     @Column(nullable = false)
     private String city;
 
+    private String state;
+
+    private String country;
+
+    private String businessEmail;
+
+    private String phone;
+
     @Column(nullable = false, length = 600)
     private String address;
 

@@ -2,6 +2,8 @@ package com.myreport.backend.service;
 
 import com.myreport.backend.dto.auth.LoginRequest;
 import com.myreport.backend.dto.auth.OtpVerificationRequest;
+import com.myreport.backend.dto.auth.RegisterRequest;
+import com.myreport.backend.dto.auth.RegistrationPlanDuration;
 import com.myreport.backend.dto.auth.SignupRequest;
 import com.myreport.backend.entity.Notification;
 import com.myreport.backend.entity.Plan;
@@ -72,6 +74,54 @@ public class AuthService {
 
         String token = jwtService.generateToken(user, Boolean.TRUE.equals(request.rememberMe()));
         return buildAuthPayload(user, token);
+    }
+
+    @Transactional
+    public Map<String, Object> register(RegisterRequest request) {
+        if (userAccountRepository.findByEmailIgnoreCase(request.admin().email()).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "An account already exists for this admin email");
+        }
+
+        if (!request.admin().password().equals(request.admin().confirmPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Password and confirm password must match");
+        }
+
+        Plan assignedPlan = planRepository.findFirstByStatusOrderByMonthlyPriceAsc(PlanStatus.ACTIVE)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "No active plan is configured yet"));
+
+        UserAccount admin = UserAccount.builder()
+                .fullName(request.admin().fullName())
+                .email(request.admin().email().toLowerCase())
+                .mobileNumber(request.admin().mobile())
+                .password(passwordEncoder.encode(request.admin().password()))
+                .gender(request.admin().gender())
+                .role(Role.ADMIN)
+                .status(UserStatus.ACTIVE)
+                .emailVerified(true)
+                .city(request.organization().city())
+                .address(request.organization().address())
+                .storeName(request.organization().organizationName())
+                .avatarUrl(createAvatarUrl(request.admin().fullName()))
+                .build();
+        userAccountRepository.save(admin);
+
+        Store store = Store.builder()
+                .name(request.organization().organizationName())
+                .city(request.organization().city())
+                .state(request.organization().state())
+                .country(request.organization().country())
+                .businessEmail(request.organization().businessEmail().toLowerCase())
+                .phone(request.organization().phone())
+                .address(request.organization().address())
+                .status(StoreStatus.ACTIVE)
+                .plan(assignedPlan)
+                .planExpiresAt(resolvePlanExpiry(request.plan()))
+                .owner(admin)
+                .build();
+        storeRepository.save(store);
+
+        String token = jwtService.generateToken(admin, true);
+        return buildAuthPayload(admin, token);
     }
 
     @Transactional
@@ -215,5 +265,14 @@ public class AuthService {
 
     private String createAvatarUrl(String fullName) {
         return "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=" + fullName.replace(" ", "+");
+    }
+
+    private LocalDate resolvePlanExpiry(RegistrationPlanDuration plan) {
+        return switch (plan) {
+            case TRIAL -> LocalDate.now().plusDays(7);
+            case THREE_MONTHS -> LocalDate.now().plusMonths(3);
+            case SIX_MONTHS -> LocalDate.now().plusMonths(6);
+            case TWELVE_MONTHS -> LocalDate.now().plusMonths(12);
+        };
     }
 }

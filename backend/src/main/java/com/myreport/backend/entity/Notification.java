@@ -41,7 +41,7 @@ public class Notification extends AuditableEntity {
     private NotificationType type;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     private boolean read = false;
 
     @ManyToOne(fetch = FetchType.LAZY)

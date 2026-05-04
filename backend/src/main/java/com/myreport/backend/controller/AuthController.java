@@ -2,6 +2,7 @@ package com.myreport.backend.controller;
 
 import com.myreport.backend.dto.auth.LoginRequest;
 import com.myreport.backend.dto.auth.OtpVerificationRequest;
+import com.myreport.backend.dto.auth.RegisterRequest;
 import com.myreport.backend.dto.auth.SignupRequest;
 import com.myreport.backend.dto.common.ApiResponse;
 import com.myreport.backend.service.AuthService;
@@ -25,6 +26,11 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
         return new ApiResponse<>(true, "Login successful", authService.login(request));
+    }
+
+    @PostMapping("/register")
+    public ApiResponse<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
+        return new ApiResponse<>(true, "Registration successful", authService.register(request));
     }
 
     @PostMapping("/admin/signup")
