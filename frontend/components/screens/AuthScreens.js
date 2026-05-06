@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Building2, Globe, LockKeyhole, Mail, MapPin, Phone, ShieldCheck, Sparkles, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -10,7 +11,6 @@ import { useDispatch } from "react-redux";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { GlassPanel } from "@/components/common/GlassPanel";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { clearSession, persistSession } from "@/lib/session";
 import { persistThemeMode } from "@/lib/theme";
 import { login, register } from "@/services/authService";
@@ -27,54 +27,72 @@ function AuthBackdrop() {
   );
 }
 
-function AuthShell({ headline, title, description, children, footer }) {
+function AuthShell({ headline, title, description, children, footer, hidePromo = false, containerClassName = "" }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 px-4 py-10">
       <AuthBackdrop />
-      <div className="content-max relative z-10 grid gap-6 lg:grid-cols-[1.15fr_0.95fr]">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.45 }}
-          className="glass-panel frost-line flex flex-col justify-between rounded-[36px] p-8 md:p-10"
-        >
-          <div>
-            <div className="theme-soft-panel inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--primary)]">
-              <Sparkles size={14} />
-              {headline}
-            </div>
-            <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
-              Premium operations intelligence for high-growth retail teams.
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-7 text-[var(--muted)]">
-              Run approvals, inventory, billing, reporting, and renewals from a polished SaaS control tower built for real scale.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {[
-              { label: "Platform ready", value: "JWT + RBAC" },
-              { label: "Premium UX", value: "Animated glass UI" },
-              { label: "Revenue visibility", value: "Charts + export" },
-            ].map((item) => (
-              <div key={item.label} className="theme-soft-panel rounded-[28px] p-5">
-                <div className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">{item.label}</div>
-                <div className="mt-3 text-lg font-semibold">{item.value}</div>
+      <div
+        className={[
+          hidePromo
+            ? ["relative z-10 w-full max-w-2xl", containerClassName].filter(Boolean).join(" ")
+            : "content-max relative z-10 grid gap-6 lg:grid-cols-[1.15fr_0.95fr]",
+        ].join(" ")}
+      >
+        {hidePromo ? null : (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45 }}
+            className="glass-panel frost-line flex flex-col justify-between rounded-[36px] p-8 md:p-10"
+          >
+            <div>
+              <div className="theme-soft-panel inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--primary)]">
+                <Sparkles size={14} />
+                {headline}
               </div>
-            ))}
-          </div>
-        </motion.div>
+              <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
+                Premium operations intelligence for high-growth retail teams.
+              </h1>
+              <p className="mt-5 max-w-lg text-base leading-7 text-[var(--muted)]">
+                Run approvals, inventory, billing, reporting, and renewals from a polished SaaS control tower built for real scale.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {[
+                { label: "Platform ready", value: "JWT + RBAC" },
+                { label: "Premium UX", value: "Animated glass UI" },
+                { label: "Revenue visibility", value: "Charts + export" },
+              ].map((item) => (
+                <div key={item.label} className="theme-soft-panel rounded-[28px] p-5">
+                  <div className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">{item.label}</div>
+                  <div className="mt-3 text-lg font-semibold">{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <GlassPanel className="p-8 md:p-10">
+          {hidePromo ? (
+            <div className="rounded-2xl bg-white p-8 shadow-lg md:p-10">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div className="text-xs uppercase tracking-[0.28em] text-[var(--primary)]">{title}</div>
+              </div>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">{description}</h2>
+              <div className="mt-8">{children}</div>
+              {footer ? <div className="mt-8 border-t border-black/10 pt-6 text-slate-600">{footer}</div> : null}
+            </div>
+          ) : (
+            <GlassPanel className="p-8 md:p-10">
             <div className="mb-6 flex items-center justify-between gap-4">
               <div className="text-xs uppercase tracking-[0.28em] text-[var(--primary)]">{title}</div>
-              <ThemeToggle compact />
             </div>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">{description}</h2>
             <div className="mt-8">{children}</div>
             {footer ? <div className="mt-8 border-t border-white/8 pt-6">{footer}</div> : null}
           </GlassPanel>
+          )}
         </motion.div>
       </div>
     </div>
@@ -159,9 +177,10 @@ export function LoginScreen({ role }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState(false);
   const [form, setForm] = useState({
-    email: role === "SUPER_ADMIN" ? "ankitapatil00001@gmail.com" : "admin@myreport.com",
-    password: role === "SUPER_ADMIN" ? "Ankita@12345" : "Admin@12345",
+    email: "",
+    password: "",
     rememberMe: role === "SUPER_ADMIN",
   });
 
@@ -183,14 +202,38 @@ export function LoginScreen({ role }) {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
+    setTouched(true);
     setForm((previous) => ({
       ...previous,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+  const errors = useMemo(() => {
+    const nextErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!form.email.trim()) {
+      nextErrors.email = "Email is required.";
+    } else if (!emailRegex.test(form.email.trim())) {
+      nextErrors.email = "Enter a valid email address.";
+    }
+
+    if (!form.password) {
+      nextErrors.password = "Password is required.";
+    }
+
+    return nextErrors;
+  }, [form.email, form.password]);
+
+  const isValid = Object.keys(errors).length === 0;
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setTouched(true);
+    if (!isValid) {
+      return;
+    }
     setLoading(true);
 
     startTransition(async () => {
@@ -222,10 +265,12 @@ export function LoginScreen({ role }) {
     <AuthShell
       headline={copy.headline}
       title={role === "SUPER_ADMIN" ? "Super Admin Login" : "Admin Login"}
-      description={copy.description}
+      description={role === "ADMIN" ? "Login to manage your store" : copy.description}
+      hidePromo={role === "ADMIN"}
+      containerClassName={role === "ADMIN" ? "max-w-md" : ""}
       footer={
-        <div className="flex items-center justify-between text-sm text-white/55">
-          <Link href="/" className="transition hover:text-white">
+        <div className={role === "ADMIN" ? "flex items-center justify-between text-sm text-slate-600" : "flex items-center justify-between text-sm text-white/55"}>
+          <Link href="/" className={role === "ADMIN" ? "transition hover:text-slate-900" : "transition hover:text-white"}>
             Back to role selection
           </Link>
           {role === "ADMIN" ? (
@@ -246,15 +291,17 @@ export function LoginScreen({ role }) {
           required
           placeholder="name@company.com"
         />
+        {touched && errors.email ? <div className="text-sm text-red-500">{errors.email}</div> : null}
         <PasswordField
           label="Password"
           name="password"
           value={form.password}
           onChange={handleChange}
           required
-          placeholder="Enter secure password"
+          placeholder="Enter password"
           helper={role === "SUPER_ADMIN" ? "Fixed credentials seeded in the backend configuration." : undefined}
         />
+        {touched && errors.password ? <div className="text-sm text-red-500">{errors.password}</div> : null}
 
         <div className="flex items-center justify-between text-sm">
           {role === "SUPER_ADMIN" ? (
@@ -278,7 +325,7 @@ export function LoginScreen({ role }) {
         <motion.button
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
-          disabled={loading}
+          disabled={loading || !isValid}
           type="submit"
           className="theme-primary-button rounded-2xl px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -291,16 +338,47 @@ export function LoginScreen({ role }) {
 
 export function AdminSignupScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [form, setForm] = useState({
+  const [attemptedNext, setAttemptedNext] = useState(false);
+
+  // Allow selecting a plan from `/pricing` and jumping directly to plan selection.
+  // Supported inputs:
+  // - Query string: `/register?plan=6_MONTHS&step=3`
+  // - Local storage: `myreport:selectedPlan`
+  const preselectPlan = useMemo(() => {
+    const planParam = searchParams?.get("plan");
+    if (planParam) return planParam;
+    try {
+      return localStorage.getItem("myreport:selectedPlan");
+    } catch {
+      return null;
+    }
+  }, [searchParams]);
+
+  const preselectStep = useMemo(() => {
+    const step = Number(searchParams?.get("step") || "");
+    return Number.isFinite(step) ? step : null;
+  }, [searchParams]);
+
+  const [currentStep, setCurrentStep] = useState(() => {
+    if (preselectStep && preselectStep >= 1 && preselectStep <= 4) {
+      return preselectStep;
+    }
+    if (preselectPlan) {
+      return 3;
+    }
+    return 1;
+  });
+
+  const [form, setForm] = useState(() => ({
     organization: {
       organizationName: "",
       businessEmail: "",
       city: "",
       state: "",
-      country: "India",
+      country: "",
       address: "",
       phone: "",
     },
@@ -312,8 +390,8 @@ export function AdminSignupScreen() {
       mobile: "",
       gender: "MALE",
     },
-    plan: "3_MONTHS",
-  });
+    plan: preselectPlan || "3_MONTHS",
+  }));
 
   const planCards = [
     {
@@ -352,6 +430,41 @@ export function AdminSignupScreen() {
 
   const selectedPlan = planCards.find((item) => item.value === form.plan) ?? planCards[1];
 
+  const getStepErrors = useMemo(() => {
+    const errors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (currentStep === 1) {
+      if (!form.organization.organizationName.trim()) {
+        errors.organizationName = "Organization name is required.";
+      }
+      if (!form.organization.businessEmail.trim()) {
+        errors.businessEmail = "Business email is required.";
+      } else if (!emailRegex.test(form.organization.businessEmail.trim())) {
+        errors.businessEmail = "Enter a valid email address.";
+      }
+      if (!form.organization.phone.trim()) {
+        errors.phone = "Phone number is required.";
+      } else if (!phoneRegex.test(form.organization.phone.trim())) {
+        errors.phone = "Phone number must be exactly 10 digits.";
+      }
+    }
+
+    if (currentStep === 2) {
+      if (form.admin.email.trim() && !emailRegex.test(form.admin.email.trim())) {
+        errors.adminEmail = "Enter a valid email address.";
+      }
+      if (form.admin.mobile.trim() && !phoneRegex.test(form.admin.mobile.trim())) {
+        errors.adminMobile = "Mobile must be exactly 10 digits.";
+      }
+    }
+
+    return errors;
+  }, [currentStep, form]);
+
+  const isCurrentStepValid = Object.keys(getStepErrors).length === 0;
+
   const updateSection = (section, field, value) => {
     setForm((previous) => ({
       ...previous,
@@ -363,6 +476,11 @@ export function AdminSignupScreen() {
   };
 
   const validateCurrentStep = () => {
+    setAttemptedNext(true);
+    if (!isCurrentStepValid) {
+      return false;
+    }
+
     if (currentStep === 1) {
       const requiredFields = [
         ["organizationName", "Organization name"],
@@ -417,10 +535,12 @@ export function AdminSignupScreen() {
     if (!validateCurrentStep()) {
       return;
     }
+    setAttemptedNext(false);
     setCurrentStep((previous) => Math.min(4, previous + 1));
   };
 
   const goBack = () => {
+    setAttemptedNext(false);
     setCurrentStep((previous) => Math.max(1, previous - 1));
   };
 
@@ -446,13 +566,19 @@ export function AdminSignupScreen() {
   };
 
   const stepPill = `Step ${currentStep} of 4`;
-  const renderField = (label, icon, input) => (
+  const renderField = (label, icon, input, error) => (
     <label className="grid gap-2 text-sm">
       <span className="font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">{label}</span>
-      <div className="theme-input flex items-center gap-3 rounded-[28px] px-4 py-3">
+      <div
+        className={[
+          "theme-input flex items-center gap-3 rounded-[28px] px-4 py-3",
+          error ? "ring-1 ring-red-500/60" : "",
+        ].join(" ")}
+      >
         <span className="text-[var(--muted)]">{icon}</span>
         {input}
       </div>
+      {error ? <div className="text-sm text-red-500">{error}</div> : null}
     </label>
   );
 
@@ -461,9 +587,10 @@ export function AdminSignupScreen() {
       headline="SaaS onboarding"
       title="Register your organization"
       description="A four-step setup flow for your store, admin, plan, and activation."
+      hidePromo
       footer={
-        <div className="flex items-center justify-between text-sm text-white/55">
-          <Link href="/admin/login" className="transition hover:text-white">
+        <div className="flex items-center justify-between text-sm text-slate-600">
+          <Link href="/admin/login" className="transition hover:text-slate-900">
             Already have an account? Login
           </Link>
           <Link href="/" className="font-semibold text-[var(--primary)] transition hover:opacity-80">
@@ -501,9 +628,10 @@ export function AdminSignupScreen() {
                 <input
                   value={form.organization.organizationName}
                   onChange={(event) => updateSection("organization", "organizationName", event.target.value)}
-                  placeholder="Acme Corp"
+                  placeholder="Enter organization name"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.organizationName : null
               )}
               {renderField(
                 "Business Email",
@@ -512,9 +640,10 @@ export function AdminSignupScreen() {
                   type="email"
                   value={form.organization.businessEmail}
                   onChange={(event) => updateSection("organization", "businessEmail", event.target.value)}
-                  placeholder="contact@acme.com"
+                  placeholder="name@company.com"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.businessEmail : null
               )}
               {renderField(
                 "City",
@@ -522,7 +651,7 @@ export function AdminSignupScreen() {
                 <input
                   value={form.organization.city}
                   onChange={(event) => updateSection("organization", "city", event.target.value)}
-                  placeholder="Mumbai"
+                  placeholder="City"
                   className="w-full bg-transparent text-sm outline-none"
                 />
               )}
@@ -532,7 +661,7 @@ export function AdminSignupScreen() {
                 <input
                   value={form.organization.state}
                   onChange={(event) => updateSection("organization", "state", event.target.value)}
-                  placeholder="Maharashtra"
+                  placeholder="State"
                   className="w-full bg-transparent text-sm outline-none"
                 />
               )}
@@ -542,7 +671,7 @@ export function AdminSignupScreen() {
                 <input
                   value={form.organization.country}
                   onChange={(event) => updateSection("organization", "country", event.target.value)}
-                  placeholder="India"
+                  placeholder="Country"
                   className="w-full bg-transparent text-sm outline-none"
                 />
               )}
@@ -551,10 +680,13 @@ export function AdminSignupScreen() {
                 <Phone size={18} />,
                 <input
                   value={form.organization.phone}
-                  onChange={(event) => updateSection("organization", "phone", event.target.value)}
-                  placeholder="9876543210"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  onChange={(event) => updateSection("organization", "phone", event.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="10-digit phone number"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.phone : null
               )}
             </div>
             {renderField(
@@ -563,7 +695,7 @@ export function AdminSignupScreen() {
               <input
                 value={form.organization.address}
                 onChange={(event) => updateSection("organization", "address", event.target.value)}
-                placeholder="Street, Area, Landmark"
+                placeholder="Street, area, landmark"
                 className="w-full bg-transparent text-sm outline-none"
               />
             )}
@@ -583,7 +715,7 @@ export function AdminSignupScreen() {
                 <input
                   value={form.admin.fullName}
                   onChange={(event) => updateSection("admin", "fullName", event.target.value)}
-                  placeholder="John Doe"
+                  placeholder="Full name"
                   className="w-full bg-transparent text-sm outline-none"
                 />
               )}
@@ -594,19 +726,23 @@ export function AdminSignupScreen() {
                   type="email"
                   value={form.admin.email}
                   onChange={(event) => updateSection("admin", "email", event.target.value)}
-                  placeholder="admin@company.com"
+                  placeholder="name@company.com"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.adminEmail : null
               )}
               {renderField(
                 "Mobile",
                 <Phone size={18} />,
                 <input
                   value={form.admin.mobile}
-                  onChange={(event) => updateSection("admin", "mobile", event.target.value)}
-                  placeholder="9876543210"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  onChange={(event) => updateSection("admin", "mobile", event.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="10-digit mobile number"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.adminMobile : null
               )}
               {renderField(
                 "Gender",
@@ -767,7 +903,8 @@ export function AdminSignupScreen() {
                 whileTap={{ scale: 0.99 }}
                 type="button"
                 onClick={goNext}
-                className="theme-primary-button rounded-2xl px-6 py-3 text-sm font-bold"
+                disabled={loading || !isCurrentStepValid}
+                className="theme-primary-button rounded-2xl px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Next
               </motion.button>

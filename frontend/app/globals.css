@@ -98,6 +98,61 @@ body::before {
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 82%);
 }
 
+.hero-3d-stage {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.hero-3d-card {
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 30px 70px rgba(3, 10, 25, 0.55));
+}
+
+@keyframes hero-float {
+  0% {
+    transform: translate3d(0, 0, 0) rotateZ(var(--rz, 0deg)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) rotateZ(var(--rz, 0deg)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotateZ(var(--rz, 0deg)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  }
+}
+
+.hero-float {
+  animation: hero-float var(--dur, 7s) ease-in-out infinite;
+}
+
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  filter: saturate(1.05) contrast(1.02);
+  mix-blend-mode: soft-light;
+  mask-image:
+    radial-gradient(circle at 50% 42%, rgba(0,0,0,0.95), transparent 66%),
+    linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,0.25) 46%, transparent);
+}
+
+.hero-photo-base {
+  opacity: 0.12;
+  filter: saturate(0.95) contrast(1.05);
+  mask-image:
+    radial-gradient(circle at 50% 46%, rgba(0,0,0,0.9), transparent 72%),
+    linear-gradient(180deg, rgba(0,0,0,0.8), rgba(0,0,0,0.15) 55%, transparent);
+}
+
+.hero-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.06);
+  filter: blur(3px);
+}
+
 a {
   color: inherit;
   text-decoration: none;

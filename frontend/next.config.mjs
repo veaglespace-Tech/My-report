@@ -7,6 +7,15 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: ".next-build",
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
+  },
   experimental: {
     // Keep builds compatible with locked-down environments that restrict process spawning.
     cpus: 1,

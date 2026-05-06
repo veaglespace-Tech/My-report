@@ -1,0 +1,43 @@
+<svg width="560" height="420" viewBox="0 0 560 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="70" y1="30" x2="510" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1228"/>
+      <stop offset="0.5" stop-color="#0A1024"/>
+      <stop offset="1" stop-color="#050815"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="110" y1="80" x2="500" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C8CFF" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#4FD1C5" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFB86B" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="shoe" x1="160" y1="170" x2="430" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF1FF" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#B7BFFF" stop-opacity="0.72"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="560" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.07 0 0 0 0 0.18 0 0 0 0.9 0" result="colored"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="colored"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="36" y="28" width="488" height="364" rx="36" fill="url(#bg)"/>
+    <rect x="36" y="28" width="488" height="364" rx="36" fill="url(#glow)" opacity="0.55"/>
+    <rect x="36" y="28" width="488" height="364" rx="36" stroke="rgba(255,255,255,0.14)"/>
+
+    <circle cx="180" cy="140" r="92" fill="#7C8CFF" opacity="0.2"/>
+    <circle cx="418" cy="120" r="112" fill="#4FD1C5" opacity="0.12"/>
+    <circle cx="350" cy="330" r="140" fill="#FFB86B" opacity="0.1"/>
+
+    <!-- simple "sneaker" silhouette -->
+    <path d="M156 276c38-34 64-44 96-44 20 0 50 6 82 18 22 8 42 12 62 12h32c18 0 32 14 32 32v20c0 12-10 22-22 22H192c-28 0-50-8-68-22-11-8-16-23-10-38l10-26Z" fill="url(#shoe)" opacity="0.92"/>
+    <path d="M214 258h170" stroke="rgba(8,18,33,0.28)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M236 244c12-10 24-14 36-14" stroke="rgba(8,18,33,0.22)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M270 244c12-10 24-14 36-14" stroke="rgba(8,18,33,0.22)" stroke-width="8" stroke-linecap="round"/>
+
+    <rect x="74" y="60" width="120" height="40" rx="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)"/>
+    <text x="96" y="86" fill="rgba(243,246,251,0.9)" font-family="Segoe UI, Arial" font-size="16" font-weight="700" letter-spacing="2">SHOES</text>
+  </g>
+</svg>
+

@@ -1,0 +1,41 @@
+<svg width="560" height="420" viewBox="0 0 560 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="70" y1="30" x2="510" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1426"/>
+      <stop offset="0.45" stop-color="#091226"/>
+      <stop offset="1" stop-color="#050A14"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="120" y1="70" x2="480" y2="350" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4FD1C5" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#7C8CFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFB86B" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="150" y1="120" x2="410" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CFFBFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#9EA8FF" stop-opacity="0.7"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="560" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.07 0 0 0 0 0.18 0 0 0 0.9 0" result="colored"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="colored"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="36" y="28" width="488" height="364" rx="36" fill="url(#bg)"/>
+    <rect x="36" y="28" width="488" height="364" rx="36" fill="url(#glow)" opacity="0.55"/>
+    <rect x="36" y="28" width="488" height="364" rx="36" stroke="rgba(255,255,255,0.14)"/>
+
+    <circle cx="160" cy="120" r="92" fill="#4FD1C5" opacity="0.18"/>
+    <circle cx="420" cy="140" r="110" fill="#7C8CFF" opacity="0.18"/>
+    <circle cx="330" cy="320" r="130" fill="#FFB86B" opacity="0.12"/>
+
+    <!-- simple "t-shirt" silhouette -->
+    <path d="M220 132c22-18 46-26 60-26s38 8 60 26l42 26c7 5 9 15 4 22l-18 28c-6 10-19 12-28 5l-16-12v126c0 12-10 22-22 22H242c-12 0-22-10-22-22V201l-16 12c-9 7-22 5-28-5l-18-28c-5-7-3-17 4-22l42-26Z" fill="url(#shirt)" opacity="0.92"/>
+    <path d="M236 160c18-16 32-22 44-22s26 6 44 22" stroke="rgba(8,18,33,0.35)" stroke-width="10" stroke-linecap="round"/>
+
+    <rect x="74" y="60" width="150" height="40" rx="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)"/>
+    <text x="96" y="86" fill="rgba(243,246,251,0.9)" font-family="Segoe UI, Arial" font-size="16" font-weight="700" letter-spacing="2">CLOTHING</text>
+  </g>
+</svg>
+

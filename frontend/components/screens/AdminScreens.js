@@ -22,19 +22,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/common/DataTable";
+import { DownloadToolbar } from "@/components/common/DownloadToolbar";
 import { GlassPanel } from "@/components/common/GlassPanel";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Modal } from "@/components/common/Modal";
 import { SectionHeading } from "@/components/common/SectionHeading";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { downloadCsv, formatCurrency, formatDate, printPage } from "@/lib/format";
-import { persistThemeMode } from "@/lib/theme";
+import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
 import { adminService } from "@/services/adminService";
 import { createRazorpayOrder } from "@/services/paymentService";
 import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
-import { setThemeMode } from "@/redux/slices/uiSlice";
 
 function useAsyncLoader(loader, initialState) {
   const [data, setData] = useState(initialState);
@@ -153,7 +152,7 @@ export function AdminDashboardScreen() {
 
   return (
     <div className="grid max-w-full gap-6">
-      <SectionHeading eyebrow="Store performance" title={data.store.name || "Admin Dashboard"} description="Stay on top of daily cashflow, fast movers, inventory risk, and plan usage." />
+      <SectionHeading eyebrow="Store performance" title="MyReport" description="Stay on top of daily cashflow, fast movers, inventory risk, and plan usage." />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {data.metrics.map((item, index) => (
           <MetricCard key={item.label} item={item} index={index} />
@@ -230,6 +229,7 @@ export function AdminCustomersScreen() {
   const loader = useMemo(() => adminService.getCustomers, []);
   const { data, setData, loading } = useAsyncLoader(loader, { items: [] });
   const [query, setQuery] = useState("");
+  const [exporting, setExporting] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
@@ -248,6 +248,58 @@ export function AdminCustomersScreen() {
   const filteredItems = data.items.filter((item) =>
     [item.fullName, item.email, item.mobileNumber].join(" ").toLowerCase().includes(query.toLowerCase())
   );
+
+  const exportCustomersPdf = async () => {
+    setExporting("pdf");
+    try {
+      await exportTablePdf({
+        fileName: "customers-report.pdf",
+        reportTitle: "Customers Report",
+        rows: filteredItems,
+        columns: [
+          { key: "fullName", label: "Customer Name" },
+          { key: "email", label: "Email" },
+          { key: "mobileNumber", label: "Mobile" },
+          { key: "category", label: "Category", value: () => "" },
+          { key: "price", label: "Price", value: () => "" },
+          { key: "quantity", label: "Quantity", value: () => "" },
+          { key: "status", label: "Status", value: (row) => (row.blocked ? "BLOCKED" : "ACTIVE") },
+          { key: "createdAt", label: "Created Date", type: "date" },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export PDF");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportCustomersExcel = async () => {
+    setExporting("excel");
+    try {
+      await exportTableExcel({
+        fileName: "customers-report.xlsx",
+        sheetName: "Customers",
+        rows: filteredItems,
+        columns: [
+          { key: "fullName", label: "Customer Name" },
+          { key: "email", label: "Email" },
+          { key: "mobileNumber", label: "Mobile" },
+          { key: "category", label: "Category", value: () => "" },
+          { key: "price", label: "Price", value: () => "" },
+          { key: "quantity", label: "Quantity", value: () => "" },
+          { key: "status", label: "Status", value: (row) => (row.blocked ? "BLOCKED" : "ACTIVE") },
+          { key: "createdAt", label: "Created Date", type: "date" },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export Excel");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const openCreate = () => {
     setEditingItem(null);
@@ -309,9 +361,18 @@ export function AdminCustomersScreen() {
         title="Customers"
         description="Manage profiles, purchase activity, and customer access in one clean table."
         action={
-          <ControlButton variant="primary" onClick={openCreate}>
-            <span className="inline-flex items-center gap-2"><Plus size={16} /> Add Customer</span>
-          </ControlButton>
+          <>
+            <DownloadToolbar
+              onRefresh={reloadCustomers}
+              onExportPdf={exportCustomersPdf}
+              onExportExcel={exportCustomersExcel}
+              exporting={exporting}
+              className="w-full lg:w-auto"
+            />
+            <ControlButton variant="primary" onClick={openCreate}>
+              <span className="inline-flex items-center gap-2"><Plus size={16} /> Add Customer</span>
+            </ControlButton>
+          </>
         }
       />
 
@@ -382,6 +443,8 @@ export function AdminCustomersScreen() {
 export function AdminProductsScreen() {
   const loader = useMemo(() => adminService.getProducts, []);
   const { data, setData, loading } = useAsyncLoader(loader, { items: [] });
+  const [query, setQuery] = useState("");
+  const [exporting, setExporting] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
@@ -397,6 +460,62 @@ export function AdminProductsScreen() {
   const reloadProducts = async () => {
     const response = await adminService.getProducts();
     setData(response);
+  };
+
+  const filteredItems = data.items.filter((item) =>
+    [item.name, item.sku, item.category].filter(Boolean).join(" ").toLowerCase().includes(query.toLowerCase())
+  );
+
+  const exportProductsPdf = async () => {
+    setExporting("pdf");
+    try {
+      await exportTablePdf({
+        fileName: "products-report.pdf",
+        reportTitle: "Products Report",
+        rows: filteredItems,
+        columns: [
+          { key: "name", label: "Product Name" },
+          { key: "email", label: "Email", value: () => "" },
+          { key: "mobile", label: "Mobile", value: () => "" },
+          { key: "category", label: "Category", value: (row) => row.category || row.unit || "" },
+          { key: "price", label: "Price", value: (row) => row.price },
+          { key: "quantity", label: "Quantity", value: (row) => row.quantity },
+          { key: "status", label: "Status", value: (row) => (row.active ? (row.lowStock ? "LOW" : "ACTIVE") : "BLOCKED") },
+          { key: "createdAt", label: "Created Date", type: "date" },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export PDF");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportProductsExcel = async () => {
+    setExporting("excel");
+    try {
+      await exportTableExcel({
+        fileName: "products-report.xlsx",
+        sheetName: "Products",
+        rows: filteredItems,
+        columns: [
+          { key: "name", label: "Product Name" },
+          { key: "email", label: "Email", value: () => "" },
+          { key: "mobile", label: "Mobile", value: () => "" },
+          { key: "category", label: "Category", value: (row) => row.category || row.unit || "" },
+          { key: "price", label: "Price", value: (row) => row.price },
+          { key: "quantity", label: "Quantity", value: (row) => row.quantity },
+          { key: "status", label: "Status", value: (row) => (row.active ? (row.lowStock ? "LOW" : "ACTIVE") : "BLOCKED") },
+          { key: "createdAt", label: "Created Date", type: "date" },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export Excel");
+    } finally {
+      setExporting(null);
+    }
   };
 
   const openCreate = () => {
@@ -467,11 +586,32 @@ export function AdminProductsScreen() {
         title="Products"
         description="Maintain pricing, stock units, quantity health, and replenishment thresholds."
         action={
-          <ControlButton variant="primary" onClick={openCreate}>
-            <span className="inline-flex items-center gap-2"><Plus size={16} /> Add Product</span>
-          </ControlButton>
+          <>
+            <DownloadToolbar
+              onRefresh={reloadProducts}
+              onExportPdf={exportProductsPdf}
+              onExportExcel={exportProductsExcel}
+              exporting={exporting}
+              className="w-full lg:w-auto"
+            />
+            <ControlButton variant="primary" onClick={openCreate}>
+              <span className="inline-flex items-center gap-2"><Plus size={16} /> Add Product</span>
+            </ControlButton>
+          </>
         }
       />
+
+      <GlassPanel className="p-5">
+        <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+          <Search size={16} className="text-white/45" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search products..."
+            className="w-full bg-transparent text-sm outline-none placeholder:text-white/35"
+          />
+        </div>
+      </GlassPanel>
       <DataTable
         columns={[
           { key: "name", label: "Product" },
@@ -501,7 +641,7 @@ export function AdminProductsScreen() {
             ),
           },
         ]}
-        rows={data.items}
+        rows={filteredItems}
       />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingItem ? "Edit Product" : "Add Product"}>
@@ -537,8 +677,8 @@ export function AdminProductsScreen() {
 export function AdminBillingScreen() {
   const customersLoader = useMemo(() => adminService.getCustomers, []);
   const productsLoader = useMemo(() => adminService.getProducts, []);
-  const { data: customersData, loading: customersLoading } = useAsyncLoader(customersLoader, { items: [] });
-  const { data: productsData, loading: productsLoading } = useAsyncLoader(productsLoader, { items: [] });
+  const { data: customersData, setData: setCustomersData, loading: customersLoading } = useAsyncLoader(customersLoader, { items: [] });
+  const { data: productsData, setData: setProductsData, loading: productsLoading } = useAsyncLoader(productsLoader, { items: [] });
   const [rows, setRows] = useState([{ id: 1, productId: "", quantity: 1 }]);
   const [customerName, setCustomerName] = useState("");
   const [gstPercentage, setGstPercentage] = useState(18);
@@ -546,6 +686,7 @@ export function AdminBillingScreen() {
   const [notes, setNotes] = useState("Thank you for choosing MyReport POS.");
   const [invoiceResult, setInvoiceResult] = useState(null);
   const [nextRowId, setNextRowId] = useState(2);
+  const [exporting, setExporting] = useState(null);
 
   const loading = customersLoading || productsLoading;
 
@@ -567,6 +708,75 @@ export function AdminBillingScreen() {
   const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
   const taxAmount = (subtotal * Number(gstPercentage || 0)) / 100;
   const totalAmount = subtotal + taxAmount - Number(discountAmount || 0);
+
+  const refreshWorkspace = async () => {
+    setExporting("refresh");
+    try {
+      const [customersResponse, productsResponse] = await Promise.all([
+        adminService.getCustomers(),
+        adminService.getProducts(),
+      ]);
+      setCustomersData(customersResponse);
+      setProductsData(productsResponse);
+      toast.success("Workspace refreshed");
+    } catch (error) {
+      toast.error(error?.message || "Failed to refresh workspace.");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportBillPdf = async () => {
+    setExporting("pdf");
+    try {
+      await exportTablePdf({
+        fileName: "billing-report.pdf",
+        reportTitle: "Billing Report",
+        rows: lineItems,
+        columns: [
+          { key: "productName", label: "Product" },
+          { key: "email", label: "Email", value: () => "" },
+          { key: "mobile", label: "Mobile", value: () => "" },
+          { key: "category", label: "Category", value: () => "" },
+          { key: "rate", label: "Price", value: (row) => row.rate },
+          { key: "quantity", label: "Quantity", value: (row) => row.quantity },
+          { key: "status", label: "Status", value: () => invoiceResult?.status || "DRAFT" },
+          { key: "createdAt", label: "Created Date", type: "date", value: () => new Date().toISOString() },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export PDF");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportBillExcel = async () => {
+    setExporting("excel");
+    try {
+      await exportTableExcel({
+        fileName: "billing-report.xlsx",
+        sheetName: "Billing",
+        rows: lineItems,
+        columns: [
+          { key: "productName", label: "Product" },
+          { key: "email", label: "Email", value: () => "" },
+          { key: "mobile", label: "Mobile", value: () => "" },
+          { key: "category", label: "Category", value: () => "" },
+          { key: "rate", label: "Price", value: (row) => row.rate },
+          { key: "quantity", label: "Quantity", value: (row) => row.quantity },
+          { key: "status", label: "Status", value: () => invoiceResult?.status || "DRAFT" },
+          { key: "createdAt", label: "Created Date", type: "date", value: () => new Date().toISOString() },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export Excel");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!customerName || !lineItems.length) {
@@ -602,7 +812,21 @@ export function AdminBillingScreen() {
   return (
     <div className="grid max-w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
       <GlassPanel className="p-5 sm:p-6">
-        <SectionHeading eyebrow="POS" title="Billing Workspace" description="Create a customer bill with GST, discounts, print flow, and invoice generation." />
+        <SectionHeading
+          eyebrow="POS"
+          title="Billing Workspace"
+          description="Create a customer bill with GST, discounts, print flow, and invoice generation."
+          action={
+            <DownloadToolbar
+              onRefresh={refreshWorkspace}
+              onExportPdf={exportBillPdf}
+              onExportExcel={exportBillExcel}
+              exporting={exporting}
+              downloadDisabled={!lineItems.length}
+              className="w-full lg:w-auto"
+            />
+          }
+        />
         <div className="mt-6 grid gap-4">
           <SelectField
             label="Customer"
@@ -727,7 +951,67 @@ export function AdminBillingScreen() {
 
 export function AdminInvoicesScreen() {
   const loader = useMemo(() => adminService.getInvoices, []);
-  const { data, loading } = useAsyncLoader(loader, { items: [] });
+  const { data, setData, loading } = useAsyncLoader(loader, { items: [] });
+  const [exporting, setExporting] = useState(null);
+
+  const reloadInvoices = async () => {
+    const response = await adminService.getInvoices();
+    setData(response);
+  };
+
+  const exportInvoicesPdf = async () => {
+    setExporting("pdf");
+    try {
+      await exportTablePdf({
+        fileName: "invoices-report.pdf",
+        reportTitle: "Invoices Report",
+        rows: data.items,
+        columns: [
+          { key: "invoiceNumber", label: "Invoice" },
+          { key: "customerName", label: "Customer" },
+          { key: "email", label: "Email", value: () => "" },
+          { key: "mobile", label: "Mobile", value: () => "" },
+          { key: "category", label: "Category", value: () => "" },
+          { key: "subtotal", label: "Subtotal", value: (row) => row.subtotal },
+          { key: "totalAmount", label: "Total", value: (row) => row.totalAmount },
+          { key: "status", label: "Status", value: (row) => row.status },
+          { key: "createdAt", label: "Created Date", type: "date" },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export PDF");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportInvoicesExcel = async () => {
+    setExporting("excel");
+    try {
+      await exportTableExcel({
+        fileName: "invoices-report.xlsx",
+        sheetName: "Invoices",
+        rows: data.items,
+        columns: [
+          { key: "invoiceNumber", label: "Invoice" },
+          { key: "customerName", label: "Customer" },
+          { key: "email", label: "Email", value: () => "" },
+          { key: "mobile", label: "Mobile", value: () => "" },
+          { key: "category", label: "Category", value: () => "" },
+          { key: "subtotal", label: "Subtotal", value: (row) => row.subtotal },
+          { key: "totalAmount", label: "Total", value: (row) => row.totalAmount },
+          { key: "status", label: "Status", value: (row) => row.status },
+          { key: "createdAt", label: "Created Date", type: "date" },
+        ],
+      });
+      toast.success("Export completed successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export Excel");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   if (loading) {
     return <LoadingSkeleton rows={3} />;
@@ -735,7 +1019,20 @@ export function AdminInvoicesScreen() {
 
   return (
     <div className="grid max-w-full gap-6">
-      <SectionHeading eyebrow="Ledger" title="Invoices" description="Browse generated bills, GST summaries, and payment completion history." />
+      <SectionHeading
+        eyebrow="Ledger"
+        title="Invoices"
+        description="Browse generated bills, GST summaries, and payment completion history."
+        action={
+          <DownloadToolbar
+            onRefresh={reloadInvoices}
+            onExportPdf={exportInvoicesPdf}
+            onExportExcel={exportInvoicesExcel}
+            exporting={exporting}
+            className="w-full lg:w-auto"
+          />
+        }
+      />
       <DataTable
         columns={[
           { key: "invoiceNumber", label: "Invoice" },
@@ -918,11 +1215,6 @@ export function AdminSettingsScreen() {
     const response = await adminService.updatePreferences(nextPreferences);
     setData(response);
     dispatch(syncProfile({ preferences: response.preferences }));
-    if (key === "darkMode") {
-      const nextTheme = response.preferences.darkMode ? "dark" : "light";
-      dispatch(setThemeMode(nextTheme));
-      persistThemeMode(nextTheme);
-    }
     toast.success("Preferences updated");
   };
 
@@ -940,7 +1232,7 @@ export function AdminSettingsScreen() {
   return (
     <div className="grid max-w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <GlassPanel className="p-5 sm:p-6">
-        <SectionHeading eyebrow="Profile" title="Workspace settings" description="Keep your store profile, password, theme, and notification controls in sync." />
+        <SectionHeading eyebrow="Profile" title="Workspace settings" description="Keep your store profile, password, and notification controls in sync." />
         <form className="mt-6 grid gap-4" onSubmit={handleProfileSave}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Full Name" name="fullName" value={data.profile.fullName || ""} onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, fullName: event.target.value } }))} required />
@@ -965,16 +1257,6 @@ export function AdminSettingsScreen() {
       </GlassPanel>
 
       <div className="grid gap-6">
-        <GlassPanel className="p-5 sm:p-6">
-          <h3 className="text-lg font-semibold">Theme Mode</h3>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Switch between light mode and night mode while keeping the same premium landscape feel.
-          </p>
-          <div className="mt-5">
-            <ThemeToggle />
-          </div>
-        </GlassPanel>
-
         <GlassPanel className="p-5 sm:p-6">
           <h3 className="text-lg font-semibold">Notification Preferences</h3>
           <div className="mt-5 grid gap-3">

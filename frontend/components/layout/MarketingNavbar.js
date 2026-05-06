@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { BarChart3, Menu, X } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
+import { LogoMark } from "@/components/common/LogoMark";
+import { setThemeMode } from "@/redux/slices/uiSlice";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
@@ -21,21 +24,22 @@ function isActivePath(pathname, href) {
 export function MarketingNavbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const dispatch = useDispatch();
+  const themeMode = useSelector((state) => state.ui.themeMode);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const activeIndex = useMemo(() => NAV_LINKS.findIndex((link) => isActivePath(pathname, link.href)), [pathname]);
+  const isLight = themeMode === "light";
+  const themeLabel = isLight ? "Dark" : "Light";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/8 bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-white/20 bg-white/70 shadow-sm backdrop-blur-md transition">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="group inline-flex items-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300/18 to-indigo-300/14 ring-1 ring-white/10 transition group-hover:brightness-110">
-            <BarChart3 className="h-5 w-5 text-cyan-200" />
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600/12 to-purple-600/10 ring-1 ring-black/10 transition group-hover:brightness-110">
+            <LogoMark className="h-5 w-5" />
           </span>
-          <span className="text-base font-semibold tracking-tight">
-            <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">My</span>
-            <span className="bg-gradient-to-r from-cyan-200 to-indigo-200 bg-clip-text text-transparent">report</span>
-          </span>
+          <span className="text-base font-semibold tracking-tight text-gray-900">Myreport</span>
         </Link>
 
         <nav className="hidden items-center gap-2 md:flex">
@@ -47,8 +51,8 @@ export function MarketingNavbar() {
                 href={link.href}
                 className={[
                   "relative rounded-full px-4 py-2 text-sm font-medium transition",
-                  "hover:bg-white/6 hover:text-white",
-                  active ? "bg-white/10 text-white shadow-sm ring-1 ring-white/10" : "text-white/70",
+                  "hover:bg-black/5 hover:text-gray-900",
+                  active ? "bg-black/5 text-gray-900 shadow-sm ring-1 ring-black/10" : "text-gray-800/80",
                 ].join(" ")}
               >
                 {link.label}
@@ -60,15 +64,25 @@ export function MarketingNavbar() {
         <div className="hidden items-center gap-2 md:flex">
           <button
             type="button"
+            onClick={() => dispatch(setThemeMode(isLight ? "dark" : "light"))}
+            className="theme-action-button inline-flex h-11 w-11 items-center justify-center rounded-2xl transition hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0"
+            aria-label={`Switch to ${themeLabel.toLowerCase()} mode`}
+          >
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-black/5 text-gray-900">
+              {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </span>
+          </button>
+          <button
+            type="button"
             onClick={() => router.push("/login")}
-            className="rounded-full px-3 py-2 text-sm font-semibold text-white/75 transition hover:bg-white/6 hover:text-white"
+            className="rounded-full px-3 py-2 text-sm font-semibold text-gray-800/80 transition hover:bg-black/5 hover:text-gray-900"
           >
             Login
           </button>
           <button
             type="button"
             onClick={() => router.push("/register")}
-            className="theme-primary-button frost-line rounded-full px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0"
+            className="theme-primary-button frost-line rounded-full px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/20 active:translate-y-0"
           >
             Get Started
           </button>
@@ -86,9 +100,9 @@ export function MarketingNavbar() {
       </div>
 
       {mobileOpen ? (
-        <div className="border-t border-white/8 bg-[color-mix(in_srgb,var(--panel)_88%,transparent)] backdrop-blur-xl md:hidden">
+        <div className="border-t border-white/20 bg-white/70 shadow-sm backdrop-blur-md md:hidden">
           <div className="mx-auto grid max-w-6xl gap-2 px-4 py-4 sm:px-6">
-            <div className="grid gap-1 rounded-3xl border border-white/8 bg-white/5 p-2">
+            <div className="grid gap-1 rounded-3xl border border-black/10 bg-white/30 p-2">
               {NAV_LINKS.map((link) => {
                 const active = isActivePath(pathname, link.href);
                 return (
@@ -98,7 +112,7 @@ export function MarketingNavbar() {
                     onClick={() => setMobileOpen(false)}
                     className={[
                       "rounded-2xl px-4 py-3 text-sm font-semibold transition",
-                      active ? "bg-white/10 text-white ring-1 ring-white/10" : "text-white/75 hover:bg-white/6 hover:text-white",
+                      active ? "bg-black/5 text-gray-900 ring-1 ring-black/10" : "text-gray-800/80 hover:bg-black/5 hover:text-gray-900",
                     ].join(" ")}
                   >
                     {link.label}
@@ -107,14 +121,24 @@ export function MarketingNavbar() {
               })}
             </div>
 
-            <div className="grid gap-2 rounded-3xl border border-white/8 bg-white/5 p-2">
+            <div className="grid gap-2 rounded-3xl border border-black/10 bg-white/30 p-2">
+              <button
+                type="button"
+                onClick={() => dispatch(setThemeMode(isLight ? "dark" : "light"))}
+                className="theme-action-button inline-flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition"
+                aria-label={`Switch to ${themeLabel.toLowerCase()} mode`}
+              >
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-black/5 text-gray-900">
+                  {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={() => {
                   setMobileOpen(false);
                   router.push("/login");
                 }}
-                className="rounded-2xl px-4 py-3 text-left text-sm font-semibold text-white/80 transition hover:bg-white/6 hover:text-white"
+                className="rounded-2xl px-4 py-3 text-left text-sm font-semibold text-gray-800/80 transition hover:bg-black/5 hover:text-gray-900"
               >
                 Login
               </button>

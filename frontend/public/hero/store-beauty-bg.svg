@@ -1,0 +1,39 @@
+<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g0" x1="120" y1="80" x2="1480" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111F"/>
+      <stop offset="0.48" stop-color="#0A1020"/>
+      <stop offset="1" stop-color="#050A14"/>
+    </linearGradient>
+    <radialGradient id="r1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(520 320) rotate(55) scale(960 720)">
+      <stop stop-color="#FB7185" stop-opacity="0.50"/>
+      <stop offset="1" stop-color="#FB7185" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="r2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1180 280) rotate(120) scale(920 700)">
+      <stop stop-color="#F472B6" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#F472B6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="r3" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 840) rotate(10) scale(980 760)">
+      <stop stop-color="#FFB86B" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFB86B" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-40" y="-40" width="1680" height="1080" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#g0)"/>
+  <g filter="url(#blur)">
+    <ellipse cx="520" cy="360" rx="660" ry="480" fill="url(#r1)"/>
+    <ellipse cx="1180" cy="320" rx="640" ry="460" fill="url(#r2)"/>
+    <ellipse cx="980" cy="840" rx="720" ry="540" fill="url(#r3)"/>
+  </g>
+
+  <!-- soft bokeh dots -->
+  <circle cx="260" cy="280" r="40" fill="rgba(251,113,133,0.12)"/>
+  <circle cx="340" cy="340" r="22" fill="rgba(244,114,182,0.10)"/>
+  <circle cx="1180" cy="240" r="46" fill="rgba(244,114,182,0.10)"/>
+  <circle cx="1300" cy="300" r="26" fill="rgba(255,184,107,0.08)"/>
+  <circle cx="980" cy="700" r="52" fill="rgba(251,113,133,0.08)"/>
+</svg>
+

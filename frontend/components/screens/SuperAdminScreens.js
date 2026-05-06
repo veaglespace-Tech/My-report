@@ -22,7 +22,6 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { Modal } from "@/components/common/Modal";
 import { SectionHeading } from "@/components/common/SectionHeading";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { downloadCsv, formatCurrency, formatDate, printPage } from "@/lib/format";
 import { superAdminService } from "@/services/superAdminService";
 
@@ -819,7 +818,6 @@ export function SuperAdminSettingsScreen() {
           description="This screen is ready for advanced tenant controls, pricing policies, support routing, and audit preferences."
         />
         <div className="mt-6">
-          <ThemeToggle />
         </div>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[

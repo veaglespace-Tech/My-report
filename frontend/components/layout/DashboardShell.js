@@ -10,6 +10,7 @@ import { adminNav, resolvePageMeta, superAdminNav } from "@/lib/navigation";
 import { clearSession } from "@/lib/session";
 import { clearAuth } from "@/redux/slices/authSlice";
 import { setSidebarOpen } from "@/redux/slices/uiSlice";
+import { LogoMark } from "@/components/common/LogoMark";
 
 function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
   const items = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
@@ -26,9 +27,8 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
       <div className="mb-6 flex items-center gap-3 sm:mb-8">
-        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300 via-blue-400 to-violet-400 font-black text-slate-950 shadow-[0_0_20px_rgba(79,209,197,0.4)]">
-          <Sparkles size={14} className="absolute -right-1 -top-1 text-cyan-300 drop-shadow-md" />
-          MR
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300/18 to-indigo-300/14 ring-1 ring-white/10 shadow-[0_0_20px_rgba(79,209,197,0.25)]">
+          <LogoMark className="h-6 w-6" />
         </div>
         <div>
           <div className="text-lg font-semibold tracking-tight">MyReport</div>
@@ -83,10 +83,12 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
         <button
           type="button"
           onClick={onLogout}
-          className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-200 transition-all hover:bg-rose-500/20 hover:text-rose-100 hover:shadow-[0_0_20px_rgba(244,63,94,0.2)]"
+          className="group flex w-full items-center justify-start gap-3 rounded-2xl border border-rose-300/20 bg-gradient-to-r from-rose-600/25 to-fuchsia-600/15 px-4 py-3 text-sm font-semibold text-rose-100 shadow-[0_10px_30px_rgba(15,23,42,0.25)] ring-1 ring-white/10 transition hover:from-rose-600/35 hover:to-fuchsia-600/25 hover:shadow-[0_16px_44px_rgba(244,63,94,0.18)] active:scale-[0.99]"
         >
-          <LogOut size={16} className="transition-transform group-hover:-translate-x-1" />
-          Secure Logout
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
+            <LogOut size={16} className="transition-transform group-hover:-translate-x-0.5" />
+          </span>
+          <span className="truncate">Secure Logout</span>
         </button>
       </div>
     </div>

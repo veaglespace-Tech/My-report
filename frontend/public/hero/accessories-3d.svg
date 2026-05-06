@@ -1,0 +1,45 @@
+<svg width="560" height="420" viewBox="0 0 560 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="70" y1="30" x2="510" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C1424"/>
+      <stop offset="0.5" stop-color="#091224"/>
+      <stop offset="1" stop-color="#050A14"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="120" y1="70" x2="500" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB86B" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#7C8CFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#4FD1C5" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="watch" x1="190" y1="130" x2="380" y2="330" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF3DE" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="#FFD1A6" stop-opacity="0.7"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="560" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.07 0 0 0 0 0.18 0 0 0 0.9 0" result="colored"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="colored"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="36" y="28" width="488" height="364" rx="36" fill="url(#bg)"/>
+    <rect x="36" y="28" width="488" height="364" rx="36" fill="url(#glow)" opacity="0.55"/>
+    <rect x="36" y="28" width="488" height="364" rx="36" stroke="rgba(255,255,255,0.14)"/>
+
+    <circle cx="170" cy="140" r="94" fill="#FFB86B" opacity="0.18"/>
+    <circle cx="420" cy="150" r="112" fill="#7C8CFF" opacity="0.15"/>
+    <circle cx="330" cy="330" r="140" fill="#4FD1C5" opacity="0.1"/>
+
+    <!-- simple "watch" silhouette -->
+    <rect x="248" y="120" width="64" height="64" rx="20" fill="url(#watch)" opacity="0.92"/>
+    <rect x="258" y="194" width="44" height="110" rx="18" fill="url(#watch)" opacity="0.62"/>
+    <rect x="258" y="70" width="44" height="44" rx="16" fill="url(#watch)" opacity="0.62"/>
+    <circle cx="280" cy="152" r="20" fill="rgba(8,18,33,0.16)"/>
+    <path d="M280 152l10-7" stroke="rgba(8,18,33,0.32)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M280 152l-6-11" stroke="rgba(8,18,33,0.22)" stroke-width="6" stroke-linecap="round"/>
+
+    <rect x="74" y="60" width="186" height="40" rx="18" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.12)"/>
+    <text x="96" y="86" fill="rgba(243,246,251,0.9)" font-family="Segoe UI, Arial" font-size="16" font-weight="700" letter-spacing="2">ACCESSORIES</text>
+  </g>
+</svg>
+

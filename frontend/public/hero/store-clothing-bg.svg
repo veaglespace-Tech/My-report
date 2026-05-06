@@ -1,0 +1,37 @@
+<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g0" x1="120" y1="80" x2="1480" y2="920" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111F"/>
+      <stop offset="0.45" stop-color="#081327"/>
+      <stop offset="1" stop-color="#050A14"/>
+    </linearGradient>
+    <radialGradient id="r1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(480 320) rotate(58) scale(820 620)">
+      <stop stop-color="#4FD1C5" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#4FD1C5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="r2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1180 260) rotate(128) scale(900 680)">
+      <stop stop-color="#7C8CFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#7C8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="r3" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 820) rotate(18) scale(980 760)">
+      <stop stop-color="#FFB86B" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#FFB86B" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-40" y="-40" width="1680" height="1080" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#g0)"/>
+  <g filter="url(#blur)">
+    <ellipse cx="520" cy="360" rx="520" ry="380" fill="url(#r1)"/>
+    <ellipse cx="1180" cy="300" rx="560" ry="420" fill="url(#r2)"/>
+    <ellipse cx="950" cy="820" rx="680" ry="520" fill="url(#r3)"/>
+  </g>
+
+  <!-- soft "fabric" ribbons -->
+  <path d="M-40 660C250 560 420 480 680 520C940 560 1040 720 1300 720C1500 720 1640 640 1680 620" stroke="rgba(255,255,255,0.10)" stroke-width="90" stroke-linecap="round" opacity="0.35"/>
+  <path d="M-20 560C240 470 460 410 700 450C940 490 1080 640 1300 640C1480 640 1600 590 1680 560" stroke="rgba(79,209,197,0.20)" stroke-width="56" stroke-linecap="round" opacity="0.35"/>
+  <path d="M-20 740C280 650 480 600 720 640C980 680 1120 820 1320 820C1500 820 1610 770 1680 740" stroke="rgba(124,140,255,0.18)" stroke-width="70" stroke-linecap="round" opacity="0.28"/>
+</svg>
+
