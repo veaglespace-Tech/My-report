@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register", "/api/auth/admin/signup", "/api/auth/admin/verify-otp")
                         .permitAll()
+                        .requestMatchers("/api/stores/**")
+                        .hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/super-admin/**")
                         .hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/admin/**", "/api/payments/**")

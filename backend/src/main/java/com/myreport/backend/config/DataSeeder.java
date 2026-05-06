@@ -173,6 +173,7 @@ public class DataSeeder implements CommandLineRunner {
 
         Store approvedStore = storeRepository.save(Store.builder()
                 .name("GlowMart")
+                .storeType("Grocery Shop")
                 .city("Mumbai")
                 .address("Bandra West, Mumbai")
                 .status(StoreStatus.ACTIVE)
@@ -186,6 +187,7 @@ public class DataSeeder implements CommandLineRunner {
 
         Store pendingStore = storeRepository.save(Store.builder()
                 .name("Urban Basket")
+                .storeType("Grocery Shop")
                 .city("Ahmedabad")
                 .address("Satellite Road, Ahmedabad")
                 .status(StoreStatus.PENDING)
@@ -199,6 +201,7 @@ public class DataSeeder implements CommandLineRunner {
 
         Store secondStore = storeRepository.save(Store.builder()
                 .name("Craft Avenue")
+                .storeType("Accessories Shop")
                 .city("Bengaluru")
                 .address("Indiranagar, Bengaluru")
                 .status(StoreStatus.ACTIVE)

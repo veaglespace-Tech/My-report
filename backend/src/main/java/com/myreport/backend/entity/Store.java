@@ -38,6 +38,8 @@ public class Store extends AuditableEntity {
     @Column(nullable = false)
     private String name;
 
+    private String storeType;
+
     @Column(nullable = false)
     private String city;
 

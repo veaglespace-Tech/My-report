@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Pattern;
 
 public record OrganizationRegistrationRequest(
         @NotBlank String organizationName,
+        @NotBlank String storeType,
         @NotBlank @Email String businessEmail,
         @NotBlank String city,
         @NotBlank String state,

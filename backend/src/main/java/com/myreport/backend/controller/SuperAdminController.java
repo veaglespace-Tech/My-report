@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -62,8 +63,8 @@ public class SuperAdminController {
     }
 
     @GetMapping("/stores")
-    public ApiResponse<Map<String, Object>> stores() {
-        return new ApiResponse<>(true, "Stores loaded", superAdminService.getStores());
+    public ApiResponse<Map<String, Object>> stores(@RequestParam(required = false) String storeType) {
+        return new ApiResponse<>(true, "Stores loaded", superAdminService.getStores(storeType));
     }
 
     @GetMapping("/plans")

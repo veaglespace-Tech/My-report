@@ -107,6 +107,7 @@ public class AuthService {
 
         Store store = Store.builder()
                 .name(request.organization().organizationName())
+                .storeType(request.organization().storeType())
                 .city(request.organization().city())
                 .state(request.organization().state())
                 .country(request.organization().country())
@@ -154,6 +155,7 @@ public class AuthService {
 
         Store store = Store.builder()
                 .name(request.storeName())
+                .storeType("Grocery Shop")
                 .city(request.city())
                 .address(request.address())
                 .status(StoreStatus.PENDING)

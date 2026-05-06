@@ -113,6 +113,7 @@ public class SuperAdminService {
 
         Store store = Store.builder()
                 .name(request.storeName())
+                .storeType("Grocery Shop")
                 .city(request.city())
                 .address(request.address())
                 .status(StoreStatus.ACTIVE)
@@ -214,18 +215,22 @@ public class SuperAdminService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getStores() {
-        List<Map<String, Object>> items = storeRepository.findAllByOrderByCreatedAtDesc()
+    public Map<String, Object> getStores(String storeType) {
+        List<Map<String, Object>> items = (storeType == null || storeType.isBlank()
+                ? storeRepository.findAllByOrderByCreatedAtDesc()
+                : storeRepository.findAllByStoreTypeIgnoreCaseOrderByCreatedAtDesc(storeType))
                 .stream()
                 .map(store -> {
                     Map<String, Object> data = new LinkedHashMap<>();
                     data.put("id", store.getId());
                     data.put("name", store.getName());
+                    data.put("storeType", store.getStoreType());
                     data.put("city", store.getCity());
                     data.put("status", store.getStatus());
                     data.put("plan", store.getPlan() != null ? store.getPlan().getName() : null);
                     data.put("planExpiresAt", store.getPlanExpiresAt());
                     data.put("owner", store.getOwner() != null ? store.getOwner().getFullName() : null);
+                    data.put("ownerEmail", store.getOwner() != null ? store.getOwner().getEmail() : null);
                     return data;
                 })
                 .toList();

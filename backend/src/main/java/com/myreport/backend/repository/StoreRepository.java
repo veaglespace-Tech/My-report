@@ -10,6 +10,8 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 
     List<Store> findAllByOrderByCreatedAtDesc();
 
+    List<Store> findAllByStoreTypeIgnoreCaseOrderByCreatedAtDesc(String storeType);
+
     Optional<Store> findByOwnerId(Long ownerId);
 
     List<Store> findByPlanExpiresAtBetween(LocalDate startDate, LocalDate endDate);
