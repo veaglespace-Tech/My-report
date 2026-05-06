@@ -1,5 +1,6 @@
 import { AppProviders } from "@/components/providers/AppProviders";
 import { RootChrome } from "@/components/layout/RootChrome";
+import { FloatingChatbot } from "@/components/chat/FloatingChatbot";
 import "./globals.css";
 
 export const metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
       <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
         <AppProviders>
           <RootChrome>{children}</RootChrome>
+          <FloatingChatbot />
         </AppProviders>
       </body>
     </html>

@@ -71,9 +71,9 @@ export const mockSuperAdminData = {
   },
   stores: {
     items: [
-      { id: 1, name: "GlowMart", city: "Mumbai", status: "ACTIVE", plan: "Starter", planExpiresAt: "2026-05-17", owner: "Neha Sharma" },
-      { id: 2, name: "Craft Avenue", city: "Bengaluru", status: "ACTIVE", plan: "Growth", planExpiresAt: "2026-06-08", owner: "Riya Kapoor" },
-      { id: 3, name: "Urban Basket", city: "Ahmedabad", status: "PENDING", plan: "Starter", planExpiresAt: "2026-05-29", owner: "Arjun Mehta" },
+      { id: 1, name: "GlowMart", storeType: "Grocery Shop", city: "Mumbai", status: "ACTIVE", plan: "Starter", planExpiresAt: "2026-05-17", owner: "Neha Sharma", ownerEmail: "admin@myreport.com" },
+      { id: 2, name: "Craft Avenue", storeType: "Accessories Shop", city: "Bengaluru", status: "ACTIVE", plan: "Growth", planExpiresAt: "2026-06-08", owner: "Riya Kapoor", ownerEmail: "riya@myreport.com" },
+      { id: 3, name: "Urban Basket", storeType: "Grocery Shop", city: "Ahmedabad", status: "PENDING", plan: "Starter", planExpiresAt: "2026-05-29", owner: "Arjun Mehta", ownerEmail: "arjun@myreport.com" },
     ],
   },
   plans: {

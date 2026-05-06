@@ -5,7 +5,11 @@ import { MarketingNavbar } from "@/components/layout/MarketingNavbar";
 
 function shouldHideMarketingNavbar(pathname) {
   if (!pathname) return false;
-  return pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
+  return (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/superadmin") ||
+    pathname.startsWith("/customers")
+  );
 }
 
 export function RootChrome({ children }) {

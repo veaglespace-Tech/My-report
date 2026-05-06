@@ -466,7 +466,8 @@ export function SuperAdminAdminsScreen() {
 }
 
 export function SuperAdminStoresScreen() {
-  const storesLoader = useMemo(() => superAdminService.getStores, []);
+  const [storeType, setStoreType] = useState("");
+  const storesLoader = useMemo(() => () => superAdminService.getStores(storeType || undefined), [storeType]);
   const { data, loading } = useAsyncLoader(storesLoader, { items: [] });
 
   if (loading) {
@@ -480,10 +481,41 @@ export function SuperAdminStoresScreen() {
         title="Stores"
         description="Keep visibility on every store, owner, assigned plan, and renewal horizon."
       />
+
+      <GlassPanel className="p-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+          <div className="grid gap-2">
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Store Type</div>
+            <select
+              value={storeType}
+              onChange={(event) => setStoreType(event.target.value)}
+              className="h-12 w-full rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white/85 outline-none transition focus:border-white/20"
+            >
+              <option value="">All</option>
+              <option value="Shoe Shop">Shoe Shop</option>
+              <option value="Clothes Shop">Clothes Shop</option>
+              <option value="Grocery Shop">Grocery Shop</option>
+              <option value="Electronics Shop">Electronics Shop</option>
+              <option value="Beauty Shop">Beauty Shop</option>
+              <option value="Accessories Shop">Accessories Shop</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStoreType("")}
+            className="h-12 rounded-2xl border border-white/10 bg-white/6 px-5 text-sm font-semibold text-white/75 transition hover:bg-white/10"
+          >
+            Clear Filter
+          </button>
+        </div>
+      </GlassPanel>
+
       <DataTable
         columns={[
           { key: "name", label: "Store" },
+          { key: "storeType", label: "Store Type" },
           { key: "owner", label: "Owner" },
+          { key: "ownerEmail", label: "Email" },
           { key: "city", label: "City" },
           { key: "plan", label: "Plan" },
           { key: "status", label: "Status", render: (value) => <StatusBadge value={value} /> },

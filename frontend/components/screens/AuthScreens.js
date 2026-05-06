@@ -375,6 +375,7 @@ export function AdminSignupScreen() {
   const [form, setForm] = useState(() => ({
     organization: {
       organizationName: "",
+      storeType: "",
       businessEmail: "",
       city: "",
       state: "",
@@ -437,7 +438,10 @@ export function AdminSignupScreen() {
 
     if (currentStep === 1) {
       if (!form.organization.organizationName.trim()) {
-        errors.organizationName = "Organization name is required.";
+        errors.organizationName = "Store name is required.";
+      }
+      if (!form.organization.storeType.trim()) {
+        errors.storeType = "Store type is required.";
       }
       if (!form.organization.businessEmail.trim()) {
         errors.businessEmail = "Business email is required.";
@@ -483,13 +487,14 @@ export function AdminSignupScreen() {
 
     if (currentStep === 1) {
       const requiredFields = [
-        ["organizationName", "Organization name"],
+        ["organizationName", "Store name"],
+        ["storeType", "Store type"],
         ["businessEmail", "Business email"],
         ["city", "City"],
         ["state", "State"],
         ["country", "Country"],
         ["address", "Address"],
-        ["phone", "Phone"],
+        ["phone", "Phone number"],
       ];
 
       for (const [field, label] of requiredFields) {
@@ -623,15 +628,33 @@ export function AdminSignupScreen() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {renderField(
-                "Organization Name",
+                "Store Name",
                 <Building2 size={18} />,
                 <input
                   value={form.organization.organizationName}
                   onChange={(event) => updateSection("organization", "organizationName", event.target.value)}
-                  placeholder="Enter organization name"
+                  placeholder="GlowMart"
                   className="w-full bg-transparent text-sm outline-none"
                 />,
                 attemptedNext ? getStepErrors.organizationName : null
+              )}
+              {renderField(
+                "Store Type",
+                <Building2 size={18} />,
+                <select
+                  value={form.organization.storeType}
+                  onChange={(event) => updateSection("organization", "storeType", event.target.value)}
+                  className="w-full bg-transparent text-sm outline-none"
+                >
+                  <option value="">Select store type</option>
+                  <option value="Shoe Shop">Shoe Shop</option>
+                  <option value="Clothes Shop">Clothes Shop</option>
+                  <option value="Grocery Shop">Grocery Shop</option>
+                  <option value="Electronics Shop">Electronics Shop</option>
+                  <option value="Beauty Shop">Beauty Shop</option>
+                  <option value="Accessories Shop">Accessories Shop</option>
+                </select>,
+                attemptedNext ? getStepErrors.storeType : null
               )}
               {renderField(
                 "Business Email",
@@ -640,7 +663,7 @@ export function AdminSignupScreen() {
                   type="email"
                   value={form.organization.businessEmail}
                   onChange={(event) => updateSection("organization", "businessEmail", event.target.value)}
-                  placeholder="name@company.com"
+                  placeholder="store@example.com"
                   className="w-full bg-transparent text-sm outline-none"
                 />,
                 attemptedNext ? getStepErrors.businessEmail : null
@@ -676,7 +699,7 @@ export function AdminSignupScreen() {
                 />
               )}
               {renderField(
-                "Phone",
+                "Phone Number",
                 <Phone size={18} />,
                 <input
                   value={form.organization.phone}
@@ -873,7 +896,8 @@ export function AdminSignupScreen() {
                 </div>
 
                 <div className="grid gap-3 rounded-[24px] border border-slate-100 bg-slate-50/80 p-5 text-sm text-slate-600">
-                  <div><span className="font-semibold text-slate-900">Organization:</span> {form.organization.organizationName}</div>
+                  <div><span className="font-semibold text-slate-900">Store:</span> {form.organization.organizationName}</div>
+                  <div><span className="font-semibold text-slate-900">Store type:</span> {form.organization.storeType}</div>
                   <div><span className="font-semibold text-slate-900">Business email:</span> {form.organization.businessEmail}</div>
                   <div><span className="font-semibold text-slate-900">Location:</span> {form.organization.city}, {form.organization.state}, {form.organization.country}</div>
                   <div><span className="font-semibold text-slate-900">Phone:</span> {form.organization.phone}</div>

@@ -13,7 +13,16 @@ async function fetchWithFallback(request, fallback) {
 export const superAdminService = {
   getDashboard: () => fetchWithFallback(() => axiosInstance.get("/super-admin/dashboard"), mockSuperAdminData.dashboard),
   getAdmins: () => fetchWithFallback(() => axiosInstance.get("/super-admin/admins"), mockSuperAdminData.admins),
-  getStores: () => fetchWithFallback(() => axiosInstance.get("/super-admin/stores"), mockSuperAdminData.stores),
+  getStores: (storeType) =>
+    fetchWithFallback(
+      () => axiosInstance.get("/super-admin/stores", { params: { storeType } }),
+      storeType
+        ? {
+            ...mockSuperAdminData.stores,
+            items: mockSuperAdminData.stores.items.filter((s) => (s.storeType || "").toLowerCase() === String(storeType || "").toLowerCase()),
+          }
+        : mockSuperAdminData.stores
+    ),
   getPlans: () => fetchWithFallback(() => axiosInstance.get("/super-admin/plans"), mockSuperAdminData.plans),
   getInvoices: () => fetchWithFallback(() => axiosInstance.get("/super-admin/invoices"), mockSuperAdminData.invoices),
   getReports: () => fetchWithFallback(() => axiosInstance.get("/super-admin/reports"), mockSuperAdminData.reports),
