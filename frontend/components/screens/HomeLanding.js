@@ -75,7 +75,7 @@ export function HomeLanding() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="mx-auto max-w-5xl px-6 pb-14 pt-16 text-center md:pb-16 md:pt-18"
+          className="mx-auto max-w-5xl px-6 pb-12 pt-10 text-center sm:pb-14 sm:pt-12"
         >
           <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-800 shadow-sm ring-1 ring-black/10 backdrop-blur">
             <Sparkles size={14} />

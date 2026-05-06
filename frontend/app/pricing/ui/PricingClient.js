@@ -120,7 +120,7 @@ export default function PricingClient() {
         initial="hidden"
         animate="show"
         variants={container}
-        className="relative mx-auto w-full max-w-7xl px-6 py-20"
+        className="relative mx-auto w-full max-w-7xl px-6 py-12 sm:py-14"
       >
         <motion.div variants={item} className="text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-700 ring-1 ring-black/5 backdrop-blur-md">
@@ -146,4 +146,3 @@ export default function PricingClient() {
     </div>
   );
 }
-

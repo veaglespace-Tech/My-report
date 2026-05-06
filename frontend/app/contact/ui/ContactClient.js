@@ -46,7 +46,7 @@ export default function ContactClient() {
         initial="hidden"
         animate="show"
         variants={container}
-        className="relative mx-auto w-full max-w-6xl px-6 py-16"
+        className="relative mx-auto w-full max-w-6xl px-6 py-12 sm:py-14"
       >
         <motion.div variants={item} className="text-center">
           <h1 className="text-balance text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
@@ -155,4 +155,3 @@ export default function ContactClient() {
     </div>
   );
 }
-

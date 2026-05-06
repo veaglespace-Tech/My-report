@@ -22,7 +22,7 @@ export function RootChrome({ children }) {
         <div className="absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-indigo-400/10 blur-3xl" />
       </div>
       <MarketingNavbar />
-      <main className="relative z-10 flex-1 pt-16">{children}</main>
+      <main className="relative z-10 flex-1">{children}</main>
     </div>
   );
 }
