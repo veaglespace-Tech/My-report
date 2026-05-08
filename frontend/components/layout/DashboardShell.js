@@ -45,7 +45,9 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
         <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl" />
         <div className="relative z-10 flex w-full items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70">
-            <span className="text-sm font-semibold">{profileInitials}</span>
+            <span suppressHydrationWarning className="text-sm font-semibold">
+              {profileInitials}
+            </span>
           </div>
           <div className="min-w-0">
             <div className="truncate text-base font-semibold text-slate-900">{profileName}</div>
