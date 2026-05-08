@@ -9,6 +9,7 @@ import com.myreport.backend.dto.admin.ProfileUpdateRequest;
 import com.myreport.backend.entity.Customer;
 import com.myreport.backend.entity.Invoice;
 import com.myreport.backend.entity.Notification;
+import com.myreport.backend.entity.Order;
 import com.myreport.backend.entity.Product;
 import com.myreport.backend.entity.Store;
 import com.myreport.backend.entity.UserAccount;
@@ -19,6 +20,7 @@ import com.myreport.backend.exception.ApiException;
 import com.myreport.backend.repository.CustomerRepository;
 import com.myreport.backend.repository.InvoiceRepository;
 import com.myreport.backend.repository.NotificationRepository;
+import com.myreport.backend.repository.OrderRepository;
 import com.myreport.backend.repository.ProductRepository;
 import com.myreport.backend.repository.StoreRepository;
 import com.myreport.backend.repository.UserAccountRepository;
@@ -49,6 +51,7 @@ public class AdminService {
     private final ProductRepository productRepository;
     private final InvoiceRepository invoiceRepository;
     private final NotificationRepository notificationRepository;
+    private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
@@ -253,16 +256,20 @@ public class AdminService {
                 .build();
         invoiceRepository.save(invoice);
 
-        customerRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId()).stream()
+        Customer matchedCustomer = customerRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId()).stream()
                 .filter(customer -> customer.getFullName().equalsIgnoreCase(request.customerName()))
                 .findFirst()
-                .ifPresent(customer -> {
-                    customer.setTotalSpent(customer.getTotalSpent().add(totalAmount));
-                    customer.setPurchaseCount(customer.getPurchaseCount() + 1);
-                    customerRepository.save(customer);
-                });
+                .orElse(null);
+
+        if (matchedCustomer != null) {
+            matchedCustomer.setTotalSpent(matchedCustomer.getTotalSpent().add(totalAmount));
+            matchedCustomer.setPurchaseCount(matchedCustomer.getPurchaseCount() + 1);
+            customerRepository.save(matchedCustomer);
+        }
 
         List<Product> products = productRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId());
+        List<Order> orders = new ArrayList<>();
+
         request.items().forEach(item -> products.stream()
                 .filter(product -> product.getName().equalsIgnoreCase(item.productName()))
                 .findFirst()
@@ -272,7 +279,23 @@ public class AdminService {
                     if (product.getQuantity() <= product.getReorderThreshold()) {
                         createNotification(admin, "Low stock alert", product.getName() + " needs replenishment soon.", NotificationType.LOW_STOCK);
                     }
+
+                    if (matchedCustomer != null) {
+                        BigDecimal lineTotal = item.rate().multiply(BigDecimal.valueOf(item.quantity()));
+                        orders.add(Order.builder()
+                                .customer(matchedCustomer)
+                                .product(product)
+                                .store(store)
+                                .quantity(item.quantity())
+                                .price(item.rate())
+                                .totalAmount(lineTotal)
+                                .build());
+                    }
                 }));
+
+        if (!orders.isEmpty()) {
+            orderRepository.saveAll(orders);
+        }
 
         createNotification(admin, "Payment success", "Invoice " + invoice.getInvoiceNumber() + " was generated successfully.", NotificationType.PAYMENT_SUCCESS);
 

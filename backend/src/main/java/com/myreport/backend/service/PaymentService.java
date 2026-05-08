@@ -78,6 +78,10 @@ public class PaymentService {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("configured", true);
             result.put("keyId", razorpayKeyId);
+            result.put("orderId", response != null ? response.get("id") : null);
+            result.put("amount", request.amount());
+            result.put("currency", "INR");
+            result.put("planName", request.planName());
             result.put("gatewayResponse", response);
             return result;
         } catch (Exception exception) {
