@@ -27,6 +27,20 @@ export const adminService = {
     });
     return response.data.data;
   },
+  exportReportsExcel: async (startDate, endDate) => {
+    const response = await axiosInstance.get("/reports/export/excel", {
+      params: { startDate, endDate },
+      responseType: "blob",
+    });
+    return response.data;
+  },
+  exportReportsPdf: async (startDate, endDate) => {
+    const response = await axiosInstance.get("/reports/export/pdf", {
+      params: { startDate, endDate },
+      responseType: "blob",
+    });
+    return response.data;
+  },
   getNotifications: async () => {
     const response = await axiosInstance.get("/admin/notifications");
     return response.data.data;

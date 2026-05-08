@@ -105,7 +105,7 @@ export default function PricingClient() {
     } catch {
       // ignore
     }
-    router.push(`/register?plan=${encodeURIComponent(planValue)}&step=3`);
+    router.push(`/register/store-details?plan=${encodeURIComponent(planValue)}`);
   };
 
   return (

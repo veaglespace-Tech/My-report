@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, startTransition } from "react";
+import { useEffect, useMemo, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -155,7 +155,14 @@ export function RoleSelectionScreen() {
   );
 }
 
-function AuthFormField({ label, name, type = "text", value, onChange, placeholder, helper, required = false }) {
+function AuthFormField({ label, name, type = "text", value, onChange, placeholder, helper, required = false, status = "idle" }) {
+  const statusClassName =
+    status === "error"
+      ? "border-red-400 focus:ring-2 focus:ring-red-300"
+      : status === "success"
+        ? "border-green-300 focus:ring-2 focus:ring-cyan-300"
+        : "focus:ring-2 focus:ring-cyan-300";
+
   return (
     <label className="grid gap-2 text-sm">
       <span className="font-medium text-[var(--muted-strong)]">{label}</span>
@@ -166,7 +173,7 @@ function AuthFormField({ label, name, type = "text", value, onChange, placeholde
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="theme-input w-full rounded-2xl px-4 py-3 text-sm outline-none transition"
+        className={`theme-input w-full rounded-xl bg-white/70 px-5 py-4 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 ${statusClassName}`}
       />
       {helper ? <span className="text-xs text-[var(--muted)]">{helper}</span> : null}
     </label>
@@ -221,6 +228,8 @@ export function LoginScreen({ role }) {
 
     if (!form.password) {
       nextErrors.password = "Password is required.";
+    } else if (form.password.length < 6) {
+      nextErrors.password = "Password must be at least 6 characters.";
     }
 
     return nextErrors;
@@ -289,19 +298,35 @@ export function LoginScreen({ role }) {
           value={form.email}
           onChange={handleChange}
           required
-          placeholder="name@company.com"
+          placeholder="Enter your email"
+          status={
+            touched
+              ? errors.email
+                ? "error"
+                : form.email.trim()
+                  ? "success"
+                  : "idle"
+              : "idle"
+          }
         />
-        {touched && errors.email ? <div className="text-sm text-red-500">{errors.email}</div> : null}
         <PasswordField
           label="Password"
           name="password"
           value={form.password}
           onChange={handleChange}
           required
-          placeholder="Enter password"
+          placeholder="Enter your password"
+          status={
+            touched
+              ? errors.password
+                ? "error"
+                : form.password
+                  ? "success"
+                  : "idle"
+              : "idle"
+          }
           helper={role === "SUPER_ADMIN" ? "Fixed credentials seeded in the backend configuration." : undefined}
         />
-        {touched && errors.password ? <div className="text-sm text-red-500">{errors.password}</div> : null}
 
         <div className="flex items-center justify-between text-sm">
           {role === "SUPER_ADMIN" ? (
@@ -363,11 +388,8 @@ export function AdminSignupScreen() {
   }, [searchParams]);
 
   const [currentStep, setCurrentStep] = useState(() => {
-    if (preselectStep && preselectStep >= 1 && preselectStep <= 4) {
+    if (preselectStep && preselectStep >= 1 && preselectStep <= 2) {
       return preselectStep;
-    }
-    if (preselectPlan) {
-      return 3;
     }
     return 1;
   });
@@ -431,6 +453,65 @@ export function AdminSignupScreen() {
 
   const selectedPlan = planCards.find((item) => item.value === form.plan) ?? planCards[1];
 
+  const isStep1Complete = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+    return (
+      Boolean(form.organization.organizationName.trim()) &&
+      Boolean(form.organization.storeType.trim()) &&
+      Boolean(form.organization.businessEmail.trim()) &&
+      emailRegex.test(form.organization.businessEmail.trim()) &&
+      Boolean(form.organization.phone.trim()) &&
+      phoneRegex.test(form.organization.phone.trim())
+    );
+  }, [form.organization]);
+
+  const isStep2Complete = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+    const email = form.admin.email.trim();
+    const mobile = form.admin.mobile.trim();
+
+    return (
+      Boolean(form.admin.fullName.trim()) &&
+      Boolean(email) &&
+      emailRegex.test(email) &&
+      Boolean(form.admin.password) &&
+      form.admin.password.length >= 8 &&
+      form.admin.password === form.admin.confirmPassword &&
+      Boolean(mobile) &&
+      phoneRegex.test(mobile)
+    );
+  }, [form.admin]);
+
+  const isPlanSelected = Boolean(form.plan);
+
+  useEffect(() => {
+    if (preselectStep && preselectStep >= 3 && preselectStep <= 4) {
+      toast.error("Please complete previous steps first");
+      setCurrentStep(1);
+    }
+  }, [preselectStep]);
+
+  useEffect(() => {
+    if (currentStep >= 3 && !isStep1Complete) {
+      toast.error("Please complete all required fields");
+      setCurrentStep(1);
+      return;
+    }
+
+    if (currentStep >= 3 && !isStep2Complete) {
+      toast.error("Please complete all required fields");
+      setCurrentStep(2);
+      return;
+    }
+
+    if (currentStep === 4 && !isPlanSelected) {
+      toast.error("Please select a plan");
+      setCurrentStep(3);
+    }
+  }, [currentStep, isPlanSelected, isStep1Complete, isStep2Complete]);
+
   const getStepErrors = useMemo(() => {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -456,11 +537,25 @@ export function AdminSignupScreen() {
     }
 
     if (currentStep === 2) {
-      if (form.admin.email.trim() && !emailRegex.test(form.admin.email.trim())) {
+      if (!form.admin.email.trim()) {
+        errors.adminEmail = "Admin email is required.";
+      } else if (!emailRegex.test(form.admin.email.trim())) {
         errors.adminEmail = "Enter a valid email address.";
       }
-      if (form.admin.mobile.trim() && !phoneRegex.test(form.admin.mobile.trim())) {
+      if (!form.admin.mobile.trim()) {
+        errors.adminMobile = "Mobile is required.";
+      } else if (!phoneRegex.test(form.admin.mobile.trim())) {
         errors.adminMobile = "Mobile must be exactly 10 digits.";
+      }
+      if (!form.admin.password) {
+        errors.password = "Password is required.";
+      } else if (form.admin.password.length < 8) {
+        errors.password = "Password must contain minimum 8 characters.";
+      }
+      if (!form.admin.confirmPassword) {
+        errors.confirmPassword = "Confirm password is required.";
+      } else if (form.admin.password !== form.admin.confirmPassword) {
+        errors.confirmPassword = "Password and confirm password must match.";
       }
     }
 
@@ -482,6 +577,8 @@ export function AdminSignupScreen() {
   const validateCurrentStep = () => {
     setAttemptedNext(true);
     if (!isCurrentStepValid) {
+      const firstError = Object.values(getStepErrors)[0];
+      toast.error(firstError || "Please complete all required fields");
       return false;
     }
 
@@ -490,10 +587,6 @@ export function AdminSignupScreen() {
         ["organizationName", "Store name"],
         ["storeType", "Store type"],
         ["businessEmail", "Business email"],
-        ["city", "City"],
-        ["state", "State"],
-        ["country", "Country"],
-        ["address", "Address"],
         ["phone", "Phone number"],
       ];
 
@@ -520,6 +613,24 @@ export function AdminSignupScreen() {
           toast.error(`${label} is required`);
           return false;
         }
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^[0-9]{10}$/;
+
+      if (!emailRegex.test(form.admin.email.trim())) {
+        toast.error("Invalid email format");
+        return false;
+      }
+
+      if (!phoneRegex.test(form.admin.mobile.trim())) {
+        toast.error("Invalid mobile number");
+        return false;
+      }
+
+      if (form.admin.password.length < 8) {
+        toast.error("Password must contain minimum 8 characters");
+        return false;
       }
 
       if (form.admin.password !== form.admin.confirmPassword) {

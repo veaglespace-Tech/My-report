@@ -10,7 +10,7 @@ import { adminNav, resolvePageMeta, superAdminNav } from "@/lib/navigation";
 import { clearSession } from "@/lib/session";
 import { clearAuth } from "@/redux/slices/authSlice";
 import { setSidebarOpen } from "@/redux/slices/uiSlice";
-import { LogoMark } from "@/components/common/LogoMark";
+import { Store } from "lucide-react";
 
 function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
   const items = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
@@ -26,28 +26,30 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
-      <div className="mb-6 flex items-center gap-3 sm:mb-8">
-        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-300/18 to-indigo-300/14 ring-1 ring-white/10 shadow-[0_0_20px_rgba(79,209,197,0.25)]">
-          <LogoMark className="h-6 w-6" />
-        </div>
-        <div>
-          <div className="text-lg font-semibold tracking-tight">MyReport</div>
-          <div className="text-xs uppercase tracking-[0.26em] text-white/45">
-            {role === "SUPER_ADMIN" ? "Platform HQ" : "Store OS"}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-center gap-4 rounded-3xl bg-white/75 px-4 py-4 shadow-lg ring-1 ring-white/20 backdrop-blur-xl">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-200 via-indigo-200 to-purple-200 shadow-lg">
+            <Store className="h-9 w-9 text-slate-900" />
+          </div>
+
+          <div className="flex min-w-0 flex-col leading-tight">
+            <h1 className="truncate text-3xl font-bold text-slate-900">MyReport</h1>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+              {role === "SUPER_ADMIN" ? "Platform HQ" : "My Store"}
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="relative mb-6 overflow-hidden rounded-[28px] border border-white/5 bg-gradient-to-b from-white/[0.08] to-transparent p-4 shadow-2xl backdrop-blur-xl sm:mb-8">
-        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-cyan-400/20 blur-2xl" />
-        <div className="relative z-10 text-xs uppercase tracking-[0.24em] text-white/50">Signed in</div>
-        <div className="relative z-10 mt-3 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold shadow-inner ring-1 ring-white/20">
-            {profileInitials}
+      <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-white/70 px-4 py-3 shadow-lg backdrop-blur-xl sm:mb-8">
+        <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl" />
+        <div className="relative z-10 flex w-full items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70">
+            <span className="text-sm font-semibold">{profileInitials}</span>
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{profileName}</div>
-            <div className="truncate text-xs text-[var(--muted)]">{profileEmail}</div>
+            <div className="truncate text-base font-semibold text-slate-900">{profileName}</div>
+            <div className="truncate text-sm text-slate-500">{profileEmail}</div>
           </div>
         </div>
       </div>
@@ -83,11 +85,9 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
         <button
           type="button"
           onClick={onLogout}
-          className="group flex w-full items-center justify-start gap-3 rounded-2xl border border-rose-300/20 bg-gradient-to-r from-rose-600/25 to-fuchsia-600/15 px-4 py-3 text-sm font-semibold text-rose-100 shadow-[0_10px_30px_rgba(15,23,42,0.25)] ring-1 ring-white/10 transition hover:from-rose-600/35 hover:to-fuchsia-600/25 hover:shadow-[0_16px_44px_rgba(244,63,94,0.18)] active:scale-[0.99]"
+          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
         >
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15">
-            <LogOut size={16} className="transition-transform group-hover:-translate-x-0.5" />
-          </span>
+          <LogOut size={16} className="text-white" />
           <span className="truncate">Secure Logout</span>
         </button>
       </div>
@@ -199,7 +199,7 @@ export function DashboardShell({ role, children }) {
                       </div>
                     </div>
                     <div className="hidden min-w-0 items-center gap-3 sm:flex">
-                      <div className="theme-soft-panel min-w-0 rounded-2xl px-4 py-3 text-right">
+                      <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2 text-right">
                         <div className="truncate text-sm font-semibold">
                           {profile?.fullName || "MyReport User"}
                         </div>

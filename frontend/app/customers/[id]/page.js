@@ -39,7 +39,7 @@ function Table({ rows }) {
 
 export default function CustomerDetailsPage() {
   const params = useParams();
-  const id = params?.id;
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const [loading, setLoading] = useState(true);
   const [details, setDetails] = useState(null);
@@ -55,10 +55,14 @@ export default function CustomerDetailsPage() {
     setLoading(true);
     setError(null);
     try {
+      // eslint-disable-next-line no-console
+      console.log("CustomerDetails: loading", { customerId });
       const [customer, customerOrders] = await Promise.all([
         customerService.getCustomer(customerId),
         customerService.getCustomerOrders(customerId),
       ]);
+      // eslint-disable-next-line no-console
+      console.log("CustomerDetails: loaded", { customer, orders: customerOrders });
       setDetails(customer);
       setOrders(customerOrders || []);
     } catch (e) {
@@ -107,6 +111,11 @@ export default function CustomerDetailsPage() {
 
   if (loading && !details) return <LoadingSkeleton rows={3} />;
 
+  const mobile = details?.mobileNumber ?? details?.mobile ?? "-";
+  const address = details?.address ?? details?.city ?? "-";
+  const totalBilling = details?.totalBilling ?? details?.totalSpent ?? 0;
+  const totalOrders = details?.totalOrders ?? details?.purchaseCount ?? 0;
+
   return (
     <div className="grid gap-6">
       <SectionHeading
@@ -126,19 +135,19 @@ export default function CustomerDetailsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
               <div className="text-xs uppercase tracking-[0.22em] text-white/45">Mobile</div>
-              <div className="mt-2 text-sm font-semibold text-white/90">{details?.mobileNumber || "-"}</div>
+              <div className="mt-2 text-sm font-semibold text-white/90">{mobile || "-"}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
               <div className="text-xs uppercase tracking-[0.22em] text-white/45">Address</div>
-              <div className="mt-2 text-sm font-semibold text-white/90">{details?.address || "-"}</div>
+              <div className="mt-2 text-sm font-semibold text-white/90">{address || "-"}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
               <div className="text-xs uppercase tracking-[0.22em] text-white/45">Total Billing</div>
-              <div className="mt-2 text-sm font-semibold text-white/90">{formatCurrency(details?.totalBilling || 0)}</div>
+              <div className="mt-2 text-sm font-semibold text-white/90">{formatCurrency(totalBilling || 0)}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
               <div className="text-xs uppercase tracking-[0.22em] text-white/45">Total Orders</div>
-              <div className="mt-2 text-sm font-semibold text-white/90">{details?.totalOrders ?? 0}</div>
+              <div className="mt-2 text-sm font-semibold text-white/90">{totalOrders ?? 0}</div>
             </div>
           </div>
         </GlassPanel>
@@ -153,46 +162,46 @@ export default function CustomerDetailsPage() {
         <GlassPanel className="p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
             <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
-              <label className="grid gap-2 text-sm text-slate-700 dark:text-white/70">
+              <label className="grid gap-2 text-sm text-[var(--muted-strong)]">
                 Start Date
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-200/60 dark:border-white/10 dark:bg-white/6 dark:text-white/85 dark:focus:border-white/20 dark:focus:ring-indigo-500/25"
+                  className="theme-input h-12 rounded-2xl px-4 py-3 text-sm outline-none transition"
                 />
               </label>
-              <label className="grid gap-2 text-sm text-slate-700 dark:text-white/70">
+              <label className="grid gap-2 text-sm text-[var(--muted-strong)]">
                 End Date
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-200/60 dark:border-white/10 dark:bg-white/6 dark:text-white/85 dark:focus:border-white/20 dark:focus:ring-indigo-500/25"
+                  className="theme-input h-12 rounded-2xl px-4 py-3 text-sm outline-none transition"
                 />
               </label>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-2 lg:justify-end">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={applyFilters}
                 disabled={loading || !canFilter}
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:from-indigo-500 hover:to-fuchsia-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="theme-primary-button inline-flex h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Loading..." : "Apply Filters"}
               </button>
               <button
                 type="button"
                 onClick={clearFilters}
-                disabled={loading && Boolean(details)}
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/6 dark:text-white/85 dark:hover:bg-white/10"
+                disabled={loading}
+                className="theme-action-button inline-flex h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Clear
               </button>
             </div>
           </div>
-          <div className="mt-3 text-xs text-slate-500 dark:text-white/45">
+          <div className="mt-3 text-xs text-[var(--muted)]">
             Select a date range and apply to filter this customer’s order history.
           </div>
         </GlassPanel>
@@ -201,7 +210,7 @@ export default function CustomerDetailsPage() {
           <LoadingSkeleton rows={2} />
         ) : orders.length === 0 ? (
           <GlassPanel className="p-6">
-            <div className="text-sm text-white/70">No Data Found</div>
+            <div className="text-sm text-white/70">No Purchase History Found</div>
           </GlassPanel>
         ) : (
           <Table rows={orders} />

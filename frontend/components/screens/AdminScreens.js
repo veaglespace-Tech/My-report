@@ -30,8 +30,13 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { Modal } from "@/components/common/Modal";
 import { SectionHeading } from "@/components/common/SectionHeading";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { TopSalesChart } from "@/components/TopSalesChart";
 import { downloadCsv, formatCurrency, formatDate, printPage } from "@/lib/format";
 import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
+import { printInvoice } from "@/lib/printInvoice";
+import { downloadBlob } from "@/lib/downloadBlob";
+import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
+import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 import { adminService } from "@/services/adminService";
 import { createRazorpayOrder } from "@/services/paymentService";
 import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
@@ -153,7 +158,11 @@ export function AdminDashboardScreen() {
 
   return (
     <div className="grid max-w-full gap-6">
-      <SectionHeading eyebrow="Store performance" title="MyReport" description="Stay on top of daily cashflow, fast movers, inventory risk, and plan usage." />
+      <SectionHeading
+        eyebrow="Store performance"
+        title={data.store?.name || "MyReport"}
+        description="Stay on top of daily cashflow, fast movers, inventory risk, and plan usage."
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {data.metrics.map((item, index) => (
           <MetricCard key={item.label} item={item} index={index} />
@@ -179,19 +188,7 @@ export function AdminDashboardScreen() {
             </ResponsiveContainer>
           </div>
         </ChartCard>
-        <ChartCard title="Top Sales" description="Best-performing products this cycle.">
-          <div className="h-72 w-full max-w-full sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.topSales}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="name" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
-                <Bar dataKey="value" fill="#7c8cff" radius={[10, 10, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
+        <TopSalesChart />
       </div>
       <div className="grid max-w-full gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <GlassPanel className="p-5 sm:p-6">
@@ -402,7 +399,8 @@ export function AdminCustomersScreen() {
             key: "actions",
             label: "Actions",
             render: (_, row) => (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-max items-center gap-2">
                 <Link href={`/admin/customers/${row.id}`} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75">
                   View Details
                 </Link>
@@ -412,9 +410,14 @@ export function AdminCustomersScreen() {
                 <button type="button" onClick={() => handleToggleBlock(row.id)} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75">
                   {row.blocked ? "Unblock" : "Block"}
                 </button>
-                <button type="button" onClick={() => handleDelete(row.id)} className="rounded-xl border border-rose-400/20 bg-rose-500/12 px-3 py-2 text-xs font-semibold text-rose-100">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(row.id)}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
+                >
                   Delete
                 </button>
+                </div>
               </div>
             ),
           },
@@ -638,7 +641,11 @@ export function AdminProductsScreen() {
                 <button type="button" onClick={() => openEdit(row)} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75">
                   Edit
                 </button>
-                <button type="button" onClick={() => handleDelete(row.id)} className="rounded-xl border border-rose-400/20 bg-rose-500/12 px-3 py-2 text-xs font-semibold text-rose-100">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(row.id)}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
+                >
                   Delete
                 </button>
               </div>
@@ -691,6 +698,7 @@ export function AdminBillingScreen() {
   const [invoiceResult, setInvoiceResult] = useState(null);
   const [nextRowId, setNextRowId] = useState(2);
   const [exporting, setExporting] = useState(null);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
 
   const loading = customersLoading || productsLoading;
 
@@ -820,16 +828,7 @@ export function AdminBillingScreen() {
           eyebrow="POS"
           title="Billing Workspace"
           description="Create a customer bill with GST, discounts, print flow, and invoice generation."
-          action={
-            <DownloadToolbar
-              onRefresh={refreshWorkspace}
-              onExportPdf={exportBillPdf}
-              onExportExcel={exportBillExcel}
-              exporting={exporting}
-              downloadDisabled={!lineItems.length}
-              className="w-full lg:w-auto"
-            />
-          }
+          action={null}
         />
         <div className="mt-6 grid gap-4">
           <SelectField
@@ -877,7 +876,7 @@ export function AdminBillingScreen() {
                   onClick={() =>
                     setRows((previous) => (previous.length === 1 ? previous : previous.filter((entry) => entry.id !== row.id)))
                   }
-                  className="rounded-2xl border border-rose-400/20 bg-rose-500/12 px-4 py-3 text-sm font-semibold text-rose-100"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
                 >
                   Remove
                 </button>
@@ -907,8 +906,43 @@ export function AdminBillingScreen() {
             <ControlButton variant="primary" className="w-full sm:w-auto" onClick={handleGenerate}>
               <span className="inline-flex items-center gap-2"><ShoppingCart size={16} /> Generate Bill</span>
             </ControlButton>
-            <ControlButton className="w-full sm:w-auto" onClick={printPage}>
-              <span className="inline-flex items-center gap-2"><Printer size={16} /> Print Bill</span>
+            <ControlButton
+              className="w-full sm:w-auto"
+              disabled={!invoiceResult || pdfGenerating}
+              onClick={async () => {
+                if (!invoiceResult) {
+                  toast.error("Generate the bill first");
+                  return;
+                }
+
+                setPdfGenerating(true);
+                try {
+                  const doc = await generateInvoicePdf({
+                    storeName: "MyReport",
+                    invoiceNumber: invoiceResult?.invoiceNumber,
+                    customerName,
+                    createdAt: invoiceResult?.createdAt || new Date().toISOString(),
+                    items: lineItems,
+                    gstPercentage: Number(gstPercentage || 0),
+                    discountAmount: Number(discountAmount || 0),
+                    subtotal,
+                    taxAmount,
+                    totalAmount,
+                    notes,
+                  });
+                  doc.save(`invoice-${invoiceResult.invoiceNumber}.pdf`);
+                  toast.success("Invoice PDF downloaded");
+                } catch (error) {
+                  toast.error(error?.message || "Failed to generate PDF");
+                } finally {
+                  setPdfGenerating(false);
+                }
+              }}
+            >
+              <span className="inline-flex items-center gap-2">
+                <Printer size={16} />
+                {pdfGenerating ? "Generating PDF..." : "Print Bill"}
+              </span>
             </ControlButton>
           </div>
         </div>
@@ -1057,6 +1091,7 @@ export function AdminPlanScreen() {
   const loader = useMemo(() => adminService.getPlan, []);
   const { data, loading } = useAsyncLoader(loader, { plan: null });
   const [orderState, setOrderState] = useState(null);
+  const [paying, setPaying] = useState(false);
 
   const handleUpgrade = async () => {
     if (!data.plan) {
@@ -1069,7 +1104,33 @@ export function AdminPlanScreen() {
     });
 
     setOrderState(response);
-    toast.success(response.configured ? "Razorpay order created" : "Demo Razorpay order prepared");
+
+    if (!response?.configured || !response?.orderId) {
+      toast.error("Razorpay is not configured on server (demo mode). Add valid Razorpay keys in backend.");
+      return;
+    }
+
+    setPaying(true);
+    try {
+      await openRazorpayCheckout({
+        key: response.keyId,
+        orderId: response.orderId,
+        amount: response.amount,
+        currency: response.currency || "INR",
+        name: "MyReport",
+        description: `Renew ${response.planName || data.plan.name}`,
+        onSuccess: () => {
+          toast.success("Payment completed (Razorpay)");
+        },
+        onDismiss: () => {
+          toast.message("Payment cancelled");
+        },
+      });
+    } catch (e) {
+      toast.error(e?.message || "Failed to open Razorpay checkout");
+    } finally {
+      setPaying(false);
+    }
   };
 
   if (loading) {
@@ -1102,7 +1163,7 @@ export function AdminPlanScreen() {
             Days left on current plan: <span className="font-semibold text-white">{data.plan.daysLeft}</span>
           </div>
           <ControlButton variant="primary" className="w-full sm:w-auto" onClick={handleUpgrade}>
-            Renew with Razorpay
+            {paying ? "Opening Razorpay..." : "Renew with Razorpay"}
           </ControlButton>
           {orderState ? (
             <div className="rounded-3xl border border-white/10 bg-white/6 p-5 text-sm text-white/65">
@@ -1120,11 +1181,36 @@ export function AdminPlanScreen() {
 export function AdminReportsScreen() {
   const [filters, setFilters] = useState({ startDate: "", endDate: "" });
   const [appliedFilters, setAppliedFilters] = useState({ startDate: "", endDate: "" });
+  const [exporting, setExporting] = useState(null);
   const loader = useMemo(
     () => () => adminService.getReports(appliedFilters.startDate || undefined, appliedFilters.endDate || undefined),
     [appliedFilters.endDate, appliedFilters.startDate]
   );
   const { data, loading } = useAsyncLoader(loader, { summary: {}, series: [] });
+
+  const handleExport = async (type) => {
+    if (exporting) return;
+    setExporting(type);
+    try {
+      const startDate = appliedFilters.startDate || undefined;
+      const endDate = appliedFilters.endDate || undefined;
+      const fileBase = `myreport-admin-report-${startDate || "all"}-${endDate || "all"}`;
+
+      if (type === "excel") {
+        const blob = await adminService.exportReportsExcel(startDate, endDate);
+        downloadBlob(blob, `${fileBase}.xlsx`);
+      } else {
+        const blob = await adminService.exportReportsPdf(startDate, endDate);
+        downloadBlob(blob, `${fileBase}.pdf`);
+      }
+
+      toast.success("Report downloaded");
+    } catch (error) {
+      toast.error(error?.message || "Failed to download report");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   if (loading) {
     return <LoadingSkeleton rows={3} />;
@@ -1137,12 +1223,13 @@ export function AdminReportsScreen() {
         title="Reports"
         description="Export clean store performance views by date range."
         action={
-          <div className="flex flex-wrap gap-3">
-            <ControlButton onClick={() => downloadCsv("myreport-admin-reports.csv", data.series)}>Export Excel</ControlButton>
-            <ControlButton onClick={printPage}>
-              <span className="inline-flex items-center gap-2"><Printer size={16} /> Export PDF</span>
-            </ControlButton>
-          </div>
+          <DownloadToolbar
+            onExportPdf={() => handleExport("pdf")}
+            onExportExcel={() => handleExport("excel")}
+            exporting={exporting}
+            downloadDisabled={!data?.series?.length}
+            className="w-full lg:w-auto"
+          />
         }
       />
 
@@ -1151,7 +1238,20 @@ export function AdminReportsScreen() {
           <FormField label="Start Date" name="startDate" type="date" value={filters.startDate} onChange={(event) => setFilters((previous) => ({ ...previous, startDate: event.target.value }))} />
           <FormField label="End Date" name="endDate" type="date" value={filters.endDate} onChange={(event) => setFilters((previous) => ({ ...previous, endDate: event.target.value }))} />
           <div className="self-end">
-            <ControlButton variant="primary" className="w-full lg:w-auto" onClick={() => setAppliedFilters(filters)}>Apply Filters</ControlButton>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <ControlButton variant="primary" className="w-full lg:w-auto" onClick={() => setAppliedFilters(filters)}>
+                Apply Filters
+              </ControlButton>
+              <ControlButton
+                className="w-full lg:w-auto"
+                onClick={() => {
+                  setFilters({ startDate: "", endDate: "" });
+                  setAppliedFilters({ startDate: "", endDate: "" });
+                }}
+              >
+                Clear
+              </ControlButton>
+            </div>
           </div>
         </div>
       </GlassPanel>

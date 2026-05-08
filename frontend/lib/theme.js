@@ -36,5 +36,10 @@ export function applyThemeMode(themeMode) {
   }
 
   document.documentElement.dataset.theme = themeMode;
+  if (themeMode === "dark") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
   document.documentElement.style.colorScheme = themeMode === "light" ? "light" : "dark";
 }

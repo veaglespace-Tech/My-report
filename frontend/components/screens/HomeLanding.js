@@ -75,18 +75,18 @@ export function HomeLanding() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="mx-auto max-w-5xl px-6 pb-12 pt-10 text-center sm:pb-14 sm:pt-12"
+          className="mx-auto max-w-5xl px-6 pb-12 pt-10 text-center transition-colors duration-300 sm:pb-14 sm:pt-12"
         >
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-800 shadow-sm ring-1 ring-black/10 backdrop-blur">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[var(--surface-soft)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--foreground)] shadow-sm ring-1 ring-[var(--stroke)] backdrop-blur">
             <Sparkles size={14} />
-            MyReport Store OS
+            Multi Store Management Softwares
           </div>
 
-          <h1 className="mt-6 text-5xl font-bold leading-tight tracking-tight text-gray-900 md:text-6xl">
+          <h1 className="mt-6 text-5xl font-bold leading-tight tracking-tight text-[var(--foreground)] md:text-6xl">
             A premium dashboard for modern retail stores.
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-gray-700 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg">
             Track sales, inventory, invoices, customers, and reports across grocery, clothing, shoes, electronics, beauty, and accessories — all in one clean workspace.
           </p>
 
@@ -100,7 +100,7 @@ export function HomeLanding() {
             </Link>
             <Link
               href="/admin/signup"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white/50 px-6 py-3 text-sm font-semibold text-gray-900 shadow-md shadow-black/10 transition hover:bg-white/65"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--stroke)] bg-[var(--surface-soft)] px-6 py-3 text-sm font-semibold text-[var(--foreground)] shadow-md shadow-black/10 transition hover:bg-[var(--surface-strong)]"
             >
               <Sparkles size={16} />
               Create store account
