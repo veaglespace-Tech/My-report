@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { MarketingNavbar } from "@/components/layout/MarketingNavbar";
 import { SiteFooter } from "@/components/common/SiteFooter";
@@ -13,15 +14,15 @@ function shouldHideMarketingNavbar(pathname) {
   );
 }
 
-function needsExtraTopSpacing(pathname) {
-  if (!pathname) return false;
-  return pathname === "/login" || pathname.startsWith("/register");
-}
-
 export function RootChrome({ children }) {
   const pathname = usePathname();
   const hideNavbar = shouldHideMarketingNavbar(pathname);
-  const extraTopSpacing = needsExtraTopSpacing(pathname);
+
+  useEffect(() => {
+    if (pathname === "/") {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
 
   if (hideNavbar) return children;
 
@@ -33,7 +34,7 @@ export function RootChrome({ children }) {
         <div className="absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-indigo-400/10 blur-3xl" />
       </div>
       <MarketingNavbar />
-      <main className={["relative z-10 flex-1", extraTopSpacing ? "pt-[84px] sm:pt-[90px]" : "pt-[84px] sm:pt-24"].join(" ")}>
+      <main className="relative z-10 flex-1 pt-28 sm:pt-32">
         {children}
       </main>
       <SiteFooter />

@@ -1108,20 +1108,20 @@ export function AdminPlanScreen() {
       return;
     }
 
-    const response = await createRazorpayOrder({
-      planName: data.plan.name,
-      amount: Number(data.plan.monthlyPrice),
-    });
-
-    setOrderState(response);
-
-    if (!response?.configured || !response?.orderId) {
-      toast.error("Razorpay is not configured on server (demo mode). Add valid Razorpay keys in backend.");
-      return;
-    }
-
     setPaying(true);
     try {
+      const response = await createRazorpayOrder({
+        planName: data.plan.name,
+        amount: Number(data.plan.monthlyPrice),
+      });
+
+      setOrderState(response);
+
+      if (!response?.configured || !response?.orderId) {
+        toast.error("Razorpay is not configured on server. Add valid Razorpay keys in backend.");
+        return;
+      }
+
       await openRazorpayCheckout({
         key: response.keyId,
         orderId: response.orderId,
