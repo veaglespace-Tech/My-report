@@ -85,7 +85,7 @@ public class CustomerHistoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<CustomerOrderRowResponse> filterOrders(String email, String name, LocalDate startDate, LocalDate endDate) {
+    public List<CustomerOrderRowResponse> filterOrders(String email, String query, LocalDate startDate, LocalDate endDate) {
         UserAccount admin = userAccountRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Admin not found"));
 
@@ -93,7 +93,7 @@ public class CustomerHistoryService {
         LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
 
         try {
-            return orderRepository.filterOrders(admin.getId(), name, start, end).stream().map(this::mapRow).toList();
+            return orderRepository.filterOrders(admin.getId(), query, start, end).stream().map(this::mapRow).toList();
         } catch (DataAccessException e) {
             return List.of();
         }
@@ -102,6 +102,9 @@ public class CustomerHistoryService {
     private CustomerOrderRowResponse mapRow(Order order) {
         return new CustomerOrderRowResponse(
                 order.getId(),
+                order.getCustomer() != null ? order.getCustomer().getFullName() : null,
+                order.getCustomer() != null ? order.getCustomer().getMobileNumber() : null,
+                order.getCustomer() != null ? order.getCustomer().getCity() : null,
                 order.getCreatedAt(),
                 order.getProduct() != null ? order.getProduct().getName() : null,
                 order.getQuantity(),

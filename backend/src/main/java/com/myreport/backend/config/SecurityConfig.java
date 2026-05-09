@@ -44,7 +44,13 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/api/health", "/favicon.ico")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register", "/api/auth/admin/signup", "/api/auth/admin/verify-otp")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/register/razorpay/order",
+                                "/api/auth/register/razorpay/verify",
+                                "/api/auth/admin/signup",
+                                "/api/auth/admin/verify-otp")
                         .permitAll()
                         .requestMatchers("/api/stores/**")
                         .hasRole("SUPER_ADMIN")
@@ -78,7 +84,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(frontendOrigin));
+        List<String> origins = List.of(frontendOrigin.split(","))
+                .stream()
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+        configuration.setAllowedOriginPatterns(origins.isEmpty() || origins.contains("*") ? List.of("*") : origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

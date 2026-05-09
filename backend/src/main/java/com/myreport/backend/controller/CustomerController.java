@@ -40,11 +40,13 @@ public class CustomerController {
     @GetMapping("/orders/filter")
     public ApiResponse<List<CustomerOrderRowResponse>> filterOrders(
             Principal principal,
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        return new ApiResponse<>(true, "Orders filtered", customerHistoryService.filterOrders(principal.getName(), name, startDate, endDate));
+        String effectiveQuery = (query != null && !query.isBlank()) ? query : name;
+        return new ApiResponse<>(true, "Orders filtered", customerHistoryService.filterOrders(principal.getName(), effectiveQuery, startDate, endDate));
     }
 }
 

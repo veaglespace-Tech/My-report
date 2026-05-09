@@ -23,5 +23,9 @@ public class ContactController {
         Long id = contactService.createInquiry(request);
         return new ApiResponse<>(true, "Message Sent Successfully", Map.of("id", id));
     }
-}
 
+    @PostMapping("/contact/send")
+    public ApiResponse<Map<String, Object>> sendInquiry(@Valid @RequestBody ContactRequest request) {
+        return createInquiry(request);
+    }
+}

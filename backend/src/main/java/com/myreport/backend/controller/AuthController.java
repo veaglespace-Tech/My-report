@@ -5,7 +5,10 @@ import com.myreport.backend.dto.auth.OtpVerificationRequest;
 import com.myreport.backend.dto.auth.RegisterRequest;
 import com.myreport.backend.dto.auth.SignupRequest;
 import com.myreport.backend.dto.common.ApiResponse;
+import com.myreport.backend.dto.payments.RazorpaySignupOrderRequest;
+import com.myreport.backend.dto.payments.RazorpayVerifyRequest;
 import com.myreport.backend.service.AuthService;
+import com.myreport.backend.service.PaymentService;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.Map;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final PaymentService paymentService;
 
     @PostMapping("/login")
     public ApiResponse<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
@@ -31,6 +35,16 @@ public class AuthController {
     @PostMapping("/register")
     public ApiResponse<Map<String, Object>> register(@Valid @RequestBody RegisterRequest request) {
         return new ApiResponse<>(true, "Registration successful", authService.register(request));
+    }
+
+    @PostMapping("/register/razorpay/order")
+    public ApiResponse<Map<String, Object>> createSignupOrder(@Valid @RequestBody RazorpaySignupOrderRequest request) {
+        return new ApiResponse<>(true, "Razorpay signup order created", paymentService.createRazorpaySignupOrder(request));
+    }
+
+    @PostMapping("/register/razorpay/verify")
+    public ApiResponse<Map<String, Object>> verifySignupPayment(@Valid @RequestBody RazorpayVerifyRequest request) {
+        return new ApiResponse<>(true, "Razorpay signup payment verified", paymentService.verifyRazorpayPayment(request));
     }
 
     @PostMapping("/admin/signup")

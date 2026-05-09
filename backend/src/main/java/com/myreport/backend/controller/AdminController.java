@@ -106,9 +106,31 @@ public class AdminController {
     @GetMapping("/reports")
     public ApiResponse<Map<String, Object>> reports(
             Principal principal,
+            @RequestParam(required = false) String range,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
+        if (range != null && !range.isBlank()) {
+            String normalized = range.trim().toLowerCase();
+            LocalDate today = LocalDate.now();
+            switch (normalized) {
+                case "daily" -> {
+                    startDate = today;
+                    endDate = today;
+                }
+                case "monthly" -> {
+                    startDate = today.withDayOfMonth(1);
+                    endDate = today;
+                }
+                case "yearly" -> {
+                    startDate = today.withDayOfYear(1);
+                    endDate = today;
+                }
+                default -> {
+                    // Unknown range, fall back to explicit dates (if any).
+                }
+            }
+        }
         return new ApiResponse<>(true, "Reports loaded", adminService.getReports(principal.getName(), startDate, endDate));
     }
 

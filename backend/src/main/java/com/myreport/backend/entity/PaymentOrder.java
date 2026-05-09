@@ -43,6 +43,12 @@ public class PaymentOrder extends AuditableEntity {
     @Column(nullable = false)
     private String paymentGateway;
 
+    private String gatewayOrderId;
+
+    private String gatewayPaymentId;
+
+    private String gatewaySignature;
+
     @Column(length = 1600)
     private String metadataJson;
 
