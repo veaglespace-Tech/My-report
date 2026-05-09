@@ -55,8 +55,7 @@ public class PaymentService {
                 .build();
         paymentOrderRepository.save(order);
 
-        if (razorpayKeyId == null || razorpayKeyId.isBlank() || razorpayKeySecret == null
-                || razorpayKeySecret.isBlank()) {
+        if (!isRazorpayConfigured()) {
             return mockOrder(request, orderReference);
         }
 
@@ -64,7 +63,7 @@ public class PaymentService {
                 .baseUrl("https://api.razorpay.com/v1")
                 .defaultHeader(HttpHeaders.AUTHORIZATION,
                         "Basic " + Base64.getEncoder()
-                                .encodeToString((razorpayKeyId + ":" + razorpayKeySecret).getBytes()))
+                                .encodeToString((configuredKeyId() + ":" + configuredKeySecret()).getBytes()))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
 
@@ -87,7 +86,7 @@ public class PaymentService {
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("configured", true);
-            result.put("keyId", razorpayKeyId);
+            result.put("keyId", configuredKeyId());
             result.put("orderId", gatewayOrderId);
             result.put("amount", request.amount());
             result.put("currency", "INR");
@@ -97,7 +96,7 @@ public class PaymentService {
         } catch (Exception exception) {
             order.setStatus("fallback");
             paymentOrderRepository.save(order);
-            return mockOrder(request, orderReference);
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "Unable to create Razorpay order. Check Razorpay credentials and network access.");
         }
     }
 
@@ -115,8 +114,7 @@ public class PaymentService {
                 .build();
         paymentOrderRepository.save(order);
 
-        if (razorpayKeyId == null || razorpayKeyId.isBlank() || razorpayKeySecret == null
-                || razorpayKeySecret.isBlank()) {
+        if (!isRazorpayConfigured()) {
             Map<String, Object> mock = mockOrder(new RazorpayOrderRequest(request.planName(), request.amount()), orderReference);
             mock.put("flow", "signup");
             return mock;
@@ -126,7 +124,7 @@ public class PaymentService {
                 .baseUrl("https://api.razorpay.com/v1")
                 .defaultHeader(HttpHeaders.AUTHORIZATION,
                         "Basic " + Base64.getEncoder()
-                                .encodeToString((razorpayKeyId + ":" + razorpayKeySecret).getBytes()))
+                                .encodeToString((configuredKeyId() + ":" + configuredKeySecret()).getBytes()))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
 
@@ -150,7 +148,7 @@ public class PaymentService {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("configured", true);
             result.put("flow", "signup");
-            result.put("keyId", razorpayKeyId);
+            result.put("keyId", configuredKeyId());
             result.put("orderId", gatewayOrderId);
             result.put("amount", request.amount());
             result.put("currency", "INR");
@@ -159,9 +157,7 @@ public class PaymentService {
         } catch (Exception exception) {
             order.setStatus("fallback");
             paymentOrderRepository.save(order);
-            Map<String, Object> mock = mockOrder(new RazorpayOrderRequest(request.planName(), request.amount()), orderReference);
-            mock.put("flow", "signup");
-            return mock;
+            throw new ApiException(HttpStatus.BAD_GATEWAY, "Unable to create Razorpay signup order. Check Razorpay credentials and network access.");
         }
     }
 
@@ -174,7 +170,7 @@ public class PaymentService {
 
     @Transactional
     public Map<String, Object> verifyRazorpayPayment(RazorpayVerifyRequest request) {
-        if (razorpayKeySecret == null || razorpayKeySecret.isBlank()) {
+        if (!hasText(configuredKeySecret())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Razorpay is not configured");
         }
 
@@ -182,7 +178,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment order not found"));
 
         String payload = request.razorpayOrderId() + "|" + request.razorpayPaymentId();
-        String expected = hmacSha256Hex(payload, razorpayKeySecret);
+        String expected = hmacSha256Hex(payload, configuredKeySecret());
         boolean valid = MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.UTF_8),
                 request.razorpaySignature().getBytes(StandardCharsets.UTF_8)
@@ -218,10 +214,39 @@ public class PaymentService {
         }
     }
 
+    private boolean isRazorpayConfigured() {
+        return hasText(configuredKeyId()) && hasText(configuredKeySecret());
+    }
+
+    private String configuredKeyId() {
+        return normalizeConfigValue(razorpayKeyId);
+    }
+
+    private String configuredKeySecret() {
+        return normalizeConfigValue(razorpayKeySecret);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private static String normalizeConfigValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() >= 2
+                && ((trimmed.startsWith("\"") && trimmed.endsWith("\""))
+                || (trimmed.startsWith("'") && trimmed.endsWith("'")))) {
+            return trimmed.substring(1, trimmed.length() - 1).trim();
+        }
+        return trimmed;
+    }
+
     private Map<String, Object> mockOrder(RazorpayOrderRequest request, String orderReference) {
         Map<String, Object> mock = new LinkedHashMap<>();
         mock.put("configured", false);
-        mock.put("keyId", razorpayKeyId == null || razorpayKeyId.isBlank() ? "rzp_test_your_key" : razorpayKeyId);
+        mock.put("keyId", hasText(configuredKeyId()) ? configuredKeyId() : "rzp_test_your_key");
         mock.put("orderId", orderReference);
         mock.put("amount", request.amount());
         mock.put("currency", "INR");
