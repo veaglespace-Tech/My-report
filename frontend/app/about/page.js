@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { SiteFooter } from "@/components/common/SiteFooter";
 
 export const metadata = {
   title: "About MyReport",
@@ -8,10 +7,7 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <div className="relative overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[var(--body-landscape)]"
-      />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[var(--body-landscape)]" />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 opacity-80 [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:72px_72px]"
@@ -34,15 +30,15 @@ export default function AboutPage() {
                 About MyReport
               </h1>
               <p className="mt-5 max-w-2xl text-pretty text-base leading-7 text-[var(--muted)] sm:text-lg">
-                MyReport helps modern stores manage billing, customers, inventory, reports, and daily
-                operations through one powerful dashboard.
+                MyReport helps modern stores manage billing, customers, inventory, reports, and daily operations through one
+                powerful dashboard.
               </p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 {[
                   {
                     title: "Designed for every store type",
-                    text: "Grocery, clothing, electronics, beauty, shoes, and accessories—built for real-world retail workflows.",
+                    text: "Grocery, clothing, electronics, beauty, shoes, and accessoriesâ€”built for real-world retail workflows.",
                   },
                   {
                     title: "Fast onboarding and scaling",
@@ -91,36 +87,24 @@ export default function AboutPage() {
 
         <section className="mt-14 sm:mt-16 lg:mt-20">
           <div className="max-w-3xl">
-            <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
-              Built for multi-store operations
-            </h2>
-            <p className="mt-4 text-base leading-7 text-[var(--muted)]">
-              MyReport is a multi-store SaaS management and billing platform built for modern retail.
-              From onboarding new branches to daily billing, stock tracking, and reports, everything is
-              connected in a single workflow-aware system.
+            <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">How it works</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              Built around real store operations: billing, inventory, customers, reporting, and subscription governance.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {[
               {
-                title: "Multi-store management",
-                text: "Manage multiple branches under one account with consistent settings, roles, and store-level visibility.",
+                title: "Fast billing and invoicing",
+                text: "Create invoices, print receipts, and track sales with a premium POS flow.",
               },
               {
-                title: "Billing & POS system",
-                text: "Fast billing flows that keep queues moving with saved customers, products, and configurable billing rules.",
+                title: "Customers that convert",
+                text: "Capture mobile, purchase history, and customer profiles to drive repeat business.",
               },
               {
-                title: "Customer management",
-                text: "Maintain customer profiles, purchase history, and insights to improve retention and service.",
-              },
-              {
-                title: "Product & stock tracking",
-                text: "Track products, variants, stock movements, and low-stock alerts to stay in control of inventory.",
-              },
-              {
-                title: "Reports & analytics",
+                title: "Reports that drive decisions",
                 text: "Daily sales, store comparisons, inventory insights, and trend views for confident decision-making.",
               },
               {
@@ -130,6 +114,10 @@ export default function AboutPage() {
               {
                 title: "Subscription & plan management",
                 text: "Plan upgrades, renewals, and billing status tracking built for SaaS subscription operations.",
+              },
+              {
+                title: "Secure role-based access",
+                text: "JWT authentication, role routing, and premium security best-practices baked in.",
               },
             ].map((item) => (
               <div
@@ -148,9 +136,7 @@ export default function AboutPage() {
 
         <section className="mt-14 sm:mt-16 lg:mt-20">
           <div className="max-w-2xl">
-            <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
-              Resources
-            </h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">Resources</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
               Quick links for onboarding, policy templates, and commonly asked questions.
             </p>
@@ -193,8 +179,8 @@ export default function AboutPage() {
                   Need Personal Assistance?
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-[var(--muted)] sm:text-base">
-                  Our support team helps businesses with onboarding, billing workflows, dashboard
-                  setup, and operational guidance.
+                  Our support team helps businesses with onboarding, billing workflows, dashboard setup, and operational
+                  guidance.
                 </p>
               </div>
 
@@ -207,11 +193,6 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
-
-        <footer className="mt-14 border-t border-[var(--stroke)] pt-8 text-center text-xs text-[var(--muted)] sm:mt-16">
-          <p>All Rights Reserved © MyReport Technology Pvt. Ltd.</p>
-          <p className="mt-2">Designed &amp; Developed by MyReport Technology Pvt. Ltd.</p>
-        </footer>
       </div>
     </div>
   );
@@ -222,20 +203,17 @@ function ResourceCard({ title, description, buttonLabel, href, accent }) {
     primary: {
       ring: "ring-[rgba(79,209,197,0.2)]",
       badge: "bg-[rgba(79,209,197,0.14)] text-[var(--primary)]",
-      button:
-        "bg-[rgba(79,209,197,0.14)] text-[var(--foreground)] hover:bg-[rgba(79,209,197,0.22)]",
+      button: "bg-[rgba(79,209,197,0.14)] text-[var(--foreground)] hover:bg-[rgba(79,209,197,0.22)]",
     },
     secondary: {
       ring: "ring-[rgba(124,140,255,0.22)]",
       badge: "bg-[rgba(124,140,255,0.14)] text-[var(--secondary)]",
-      button:
-        "bg-[rgba(124,140,255,0.14)] text-[var(--foreground)] hover:bg-[rgba(124,140,255,0.22)]",
+      button: "bg-[rgba(124,140,255,0.14)] text-[var(--foreground)] hover:bg-[rgba(124,140,255,0.22)]",
     },
     accent: {
       ring: "ring-[rgba(255,184,107,0.22)]",
       badge: "bg-[rgba(255,184,107,0.14)] text-[var(--accent)]",
-      button:
-        "bg-[rgba(255,184,107,0.14)] text-[var(--foreground)] hover:bg-[rgba(255,184,107,0.22)]",
+      button: "bg-[rgba(255,184,107,0.14)] text-[var(--foreground)] hover:bg-[rgba(255,184,107,0.22)]",
     },
   }[accent];
 

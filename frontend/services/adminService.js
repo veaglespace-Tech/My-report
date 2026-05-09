@@ -21,9 +21,9 @@ export const adminService = {
     const response = await axiosInstance.get("/admin/my-plan");
     return response.data.data;
   },
-  getReports: async (startDate, endDate) => {
+  getReports: async (startDate, endDate, range) => {
     const response = await axiosInstance.get("/admin/reports", {
-      params: { startDate, endDate },
+      params: { startDate, endDate, range },
     });
     return response.data.data;
   },

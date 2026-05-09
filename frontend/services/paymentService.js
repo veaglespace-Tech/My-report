@@ -16,3 +16,8 @@ export async function createRazorpayOrder(payload) {
     };
   }
 }
+
+export async function verifyRazorpayPayment(payload) {
+  const response = await axiosInstance.post("/payments/razorpay/verify", payload);
+  return response.data.data;
+}

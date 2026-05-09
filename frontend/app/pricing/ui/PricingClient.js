@@ -25,9 +25,9 @@ const features = [
 
 const plans = [
   { value: "TRIAL", name: "Free Trial", price: "Rs. 0", cycle: "7 Days Trial", featured: false },
-  { value: "3_MONTHS", name: "Plan 1", price: "Rs. 3,000", cycle: "3 Months", featured: false },
-  { value: "6_MONTHS", name: "Plan 2", price: "Rs. 4,500", cycle: "6 Months", featured: true, badge: "Most Popular" },
-  { value: "12_MONTHS", name: "Plan 3", price: "Rs. 6,000", cycle: "12 Months", featured: false },
+  { value: "3_MONTHS", name: "Launch", price: "Rs. 3,000", cycle: "3 Months", featured: false },
+  { value: "6_MONTHS", name: "Growth", price: "Rs. 4,500", cycle: "6 Months", featured: true, badge: "Most Popular" },
+  { value: "12_MONTHS", name: "Scale", price: "Rs. 6,000", cycle: "12 Months", featured: false },
 ];
 
 function PricingCard({ plan, onSelect }) {
@@ -60,9 +60,13 @@ function PricingCard({ plan, onSelect }) {
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-white/80">{plan.name}</div>
-            <div className="mt-2 text-4xl font-black tracking-tight text-white">{plan.price}</div>
-            <div className="mt-2 text-sm text-white/60">{plan.cycle}</div>
+            <div className="text-sm font-semibold text-white/90">{plan.name}</div>
+            <div className="mt-2 text-4xl font-black tracking-tight text-white">
+              <span className="bg-gradient-to-r from-cyan-200 via-blue-200 to-violet-200 bg-clip-text text-transparent">
+                {plan.price}
+              </span>
+            </div>
+            <div className="mt-2 text-sm text-white/70">{plan.cycle}</div>
           </div>
 
           {plan.badge ? (
@@ -75,7 +79,7 @@ function PricingCard({ plan, onSelect }) {
 
         <div className="mt-6 space-y-3">
           {features.map((feature) => (
-            <div key={feature} className="flex items-start gap-3 text-sm text-white/70">
+            <div key={feature} className="flex items-start gap-3 text-sm text-white/80">
               <div className="mt-0.5 rounded-full bg-cyan-400/15 p-1 ring-1 ring-cyan-200/15">
                 <Check className="h-4 w-4 text-cyan-200" />
               </div>

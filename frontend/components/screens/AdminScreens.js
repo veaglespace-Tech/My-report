@@ -38,7 +38,7 @@ import { downloadBlob } from "@/lib/downloadBlob";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 import { adminService } from "@/services/adminService";
-import { createRazorpayOrder } from "@/services/paymentService";
+import { createRazorpayOrder, verifyRazorpayPayment } from "@/services/paymentService";
 import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
 
 function useAsyncLoader(loader, initialState) {
@@ -92,9 +92,19 @@ function ControlButton({ children, variant = "default", className = "", ...props
   );
 }
 
-function FormField({ label, name, value, onChange, placeholder, type = "text", required = false }) {
+function FormField({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  required = false,
+  className = "",
+  inputClassName = "",
+}) {
   return (
-    <label className="grid gap-2 text-sm">
+    <label className={`grid gap-2 text-sm ${className}`}>
       <span className="font-medium text-[var(--muted-strong)]">{label}</span>
       <input
         required={required}
@@ -103,7 +113,7 @@ function FormField({ label, name, value, onChange, placeholder, type = "text", r
         onChange={onChange}
         type={type}
         placeholder={placeholder}
-        className="theme-input w-full rounded-2xl px-4 py-3 outline-none transition"
+        className={`theme-input w-full rounded-2xl px-4 py-3 outline-none transition ${inputClassName}`}
       />
     </label>
   );
@@ -1119,8 +1129,21 @@ export function AdminPlanScreen() {
         currency: response.currency || "INR",
         name: "MyReport",
         description: `Renew ${response.planName || data.plan.name}`,
-        onSuccess: () => {
-          toast.success("Payment completed (Razorpay)");
+        onSuccess: async (rzpResponse) => {
+          try {
+            const verification = await verifyRazorpayPayment({
+              razorpayOrderId: rzpResponse.razorpay_order_id,
+              razorpayPaymentId: rzpResponse.razorpay_payment_id,
+              razorpaySignature: rzpResponse.razorpay_signature,
+            });
+            if (verification?.verified) {
+              toast.success("Payment verified (Razorpay)");
+            } else {
+              toast.error("Payment verification failed (signature mismatch)");
+            }
+          } catch (error) {
+            toast.error(error?.message || "Failed to verify payment");
+          }
         },
         onDismiss: () => {
           toast.message("Payment cancelled");
@@ -1180,13 +1203,25 @@ export function AdminPlanScreen() {
 
 export function AdminReportsScreen() {
   const [filters, setFilters] = useState({ startDate: "", endDate: "" });
-  const [appliedFilters, setAppliedFilters] = useState({ startDate: "", endDate: "" });
+  const [appliedFilters, setAppliedFilters] = useState({ startDate: "", endDate: "", range: "" });
+  const [quickRange, setQuickRange] = useState("");
   const [exporting, setExporting] = useState(null);
   const loader = useMemo(
-    () => () => adminService.getReports(appliedFilters.startDate || undefined, appliedFilters.endDate || undefined),
-    [appliedFilters.endDate, appliedFilters.startDate]
+    () => () =>
+      adminService.getReports(
+        appliedFilters.startDate || undefined,
+        appliedFilters.endDate || undefined,
+        appliedFilters.range || undefined
+      ),
+    [appliedFilters.endDate, appliedFilters.range, appliedFilters.startDate]
   );
   const { data, loading } = useAsyncLoader(loader, { summary: {}, series: [] });
+
+  const applyQuickRange = (range) => {
+    setQuickRange(range);
+    setFilters({ startDate: "", endDate: "" });
+    setAppliedFilters({ startDate: "", endDate: "", range });
+  };
 
   const handleExport = async (type) => {
     if (exporting) return;
@@ -1234,24 +1269,80 @@ export function AdminReportsScreen() {
       />
 
       <GlassPanel className="p-5">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
-          <FormField label="Start Date" name="startDate" type="date" value={filters.startDate} onChange={(event) => setFilters((previous) => ({ ...previous, startDate: event.target.value }))} />
-          <FormField label="End Date" name="endDate" type="date" value={filters.endDate} onChange={(event) => setFilters((previous) => ({ ...previous, endDate: event.target.value }))} />
-          <div className="self-end">
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <ControlButton variant="primary" className="w-full lg:w-auto" onClick={() => setAppliedFilters(filters)}>
-                Apply Filters
-              </ControlButton>
-              <ControlButton
-                className="w-full lg:w-auto"
-                onClick={() => {
-                  setFilters({ startDate: "", endDate: "" });
-                  setAppliedFilters({ startDate: "", endDate: "" });
-                }}
-              >
-                Clear
-              </ControlButton>
-            </div>
+        <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-[minmax(320px,1fr)_minmax(320px,1fr)_190px_120px] lg:items-end">
+            <FormField
+              label="Start Date"
+              name="startDate"
+              type="date"
+              value={filters.startDate}
+              className="w-full"
+              inputClassName="h-12"
+              onChange={(event) => {
+                setQuickRange("");
+                setFilters((previous) => ({ ...previous, startDate: event.target.value }));
+              }}
+            />
+            <FormField
+              label="End Date"
+              name="endDate"
+              type="date"
+              value={filters.endDate}
+              className="w-full"
+              inputClassName="h-12"
+              onChange={(event) => {
+                setQuickRange("");
+                setFilters((previous) => ({ ...previous, endDate: event.target.value }));
+              }}
+            />
+
+            <ControlButton
+              variant="primary"
+              className="h-12 w-full"
+              onClick={() => {
+                setQuickRange("");
+                setAppliedFilters({ ...filters, range: "" });
+              }}
+            >
+              Apply Filters
+            </ControlButton>
+            <ControlButton
+              className="h-12 w-full"
+              onClick={() => {
+                setQuickRange("");
+                setFilters({ startDate: "", endDate: "" });
+                setAppliedFilters({ startDate: "", endDate: "", range: "" });
+              }}
+            >
+              Clear
+            </ControlButton>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {[
+              { key: "daily", label: "Daily" },
+              { key: "monthly", label: "Monthly" },
+              { key: "yearly", label: "Yearly" },
+            ].map((item) => {
+              const active = quickRange === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => applyQuickRange(item.key)}
+                  className={[
+                    "inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300",
+                    "ring-1 ring-white/10 backdrop-blur-md",
+                    active
+                      ? "bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 text-white shadow-lg shadow-indigo-500/25 ring-white/20"
+                      : "bg-white/6 text-white/80 hover:bg-white/10 hover:text-white hover:shadow-lg hover:shadow-indigo-500/10",
+                  ].join(" ")}
+                  style={active ? { boxShadow: "0 0 0 1px rgba(255,255,255,0.16), 0 16px 40px rgba(99,102,241,0.28)" } : undefined}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </GlassPanel>

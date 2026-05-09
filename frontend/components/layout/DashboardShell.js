@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -103,16 +103,20 @@ export function DashboardShell({ role, children }) {
   const dispatch = useDispatch();
   const profile = useSelector((state) => state.auth.profile);
   const sidebarOpen = useSelector((state) => state.ui.sidebarOpen);
+  const [mounted, setMounted] = useState(false);
   const navItems = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
   const pageMeta = resolvePageMeta(pathname, role);
   const PageIcon = pageMeta.icon;
 
   useEffect(() => {
+    setMounted(true);
     document.body.style.overflow = sidebarOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [sidebarOpen]);
+
+  const safeProfile = mounted ? profile : null;
 
   const handleLogout = () => {
     clearSession();
@@ -130,7 +134,7 @@ export function DashboardShell({ role, children }) {
       </div>
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
         <aside className="theme-sidebar hidden w-[280px] shrink-0 p-6 backdrop-blur-2xl lg:block xl:w-[300px]">
-          <SidebarContent role={role} pathname={pathname} profile={profile} onLogout={handleLogout} />
+          <SidebarContent role={role} pathname={pathname} profile={safeProfile} onLogout={handleLogout} />
         </aside>
 
         <AnimatePresence>
@@ -153,7 +157,7 @@ export function DashboardShell({ role, children }) {
                 <SidebarContent
                   role={role}
                   pathname={pathname}
-                  profile={profile}
+                  profile={safeProfile}
                   onNavigate={closeSidebar}
                   onLogout={handleLogout}
                 />
@@ -203,10 +207,10 @@ export function DashboardShell({ role, children }) {
                     <div className="hidden min-w-0 items-center gap-3 sm:flex">
                       <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2 text-right">
                         <div className="truncate text-sm font-semibold">
-                          {profile?.fullName || "MyReport User"}
+                          {safeProfile?.fullName || "MyReport User"}
                         </div>
                         <div className="truncate text-xs text-[var(--muted)]">
-                          {profile?.email || "Workspace ready"}
+                          {safeProfile?.email || "Workspace ready"}
                         </div>
                       </div>
                     </div>

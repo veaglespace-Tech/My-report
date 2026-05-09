@@ -69,7 +69,7 @@ const CATEGORY_CARDS = [
 export function HomeLanding() {
   const [activeStore, setActiveStore] = useState("clothing");
   return (
-    <div className="relative min-h-screen">
+    <div className="relative">
       <section className="relative">
         <motion.div
           initial={{ opacity: 0, y: 10 }}

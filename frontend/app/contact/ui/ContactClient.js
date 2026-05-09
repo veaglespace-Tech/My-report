@@ -15,23 +15,53 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-function InfoCard({ icon: Icon, title, value, hint }) {
+function InfoCard({ icon: Icon, title, value, hint, href }) {
+  const Wrapper = href ? motion.a : motion.div;
+  const wrapperProps = href
+    ? {
+        href,
+        target: "_blank",
+        rel: "noreferrer",
+      }
+    : {};
+
   return (
-    <motion.div
+    <Wrapper
       variants={item}
-      className="group rounded-2xl bg-[var(--surface-soft)] p-5 shadow-md ring-1 ring-[var(--stroke)] backdrop-blur-md transition hover:-translate-y-0.5 hover:shadow-lg"
+      className={[
+        "group w-full rounded-3xl border border-white/35 bg-white/55 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl",
+        "transition hover:-translate-y-0.5 hover:bg-white/65 hover:shadow-[0_24px_70px_rgba(15,23,42,0.14)]",
+        "dark:border-white/10 dark:bg-slate-900/40 dark:hover:bg-slate-900/50",
+        href ? "cursor-pointer" : "",
+      ].join(" ")}
+      {...wrapperProps}
     >
-      <div className="flex items-start gap-4">
-        <div className="rounded-xl bg-gradient-to-br from-cyan-400/20 to-indigo-400/20 p-3 ring-1 ring-[var(--stroke)]">
-          <Icon className="h-5 w-5 text-[var(--foreground)]" />
+      <div className="flex items-center gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400/18 via-indigo-400/14 to-fuchsia-400/12 ring-1 ring-white/35 dark:ring-white/10">
+          <Icon className="h-5 w-5 text-slate-900/90 dark:text-white" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-[var(--foreground)]">{title}</p>
-          <p className="mt-1 whitespace-pre-line break-words text-sm text-[var(--muted-strong)]">{value}</p>
-          {hint ? <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p> : null}
+          <p className="text-base font-semibold tracking-tight text-slate-900 dark:text-white">{title}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-sm leading-6 text-slate-600 dark:text-white/70">
+            {value}
+          </p>
+          {hint ? (
+            <div className="mt-3">
+              <span
+                className={[
+                  "inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-indigo-700",
+                  "ring-1 ring-indigo-500/20 transition group-hover:bg-white/85 group-hover:ring-indigo-500/30",
+                  "dark:bg-white/5 dark:text-cyan-200 dark:ring-white/15 dark:group-hover:bg-white/8",
+                ].join(" ")}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-500/80" />
+                {hint}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
-    </motion.div>
+    </Wrapper>
   );
 }
 
@@ -104,6 +134,10 @@ export default function ContactClient() {
     setTouched(true);
 
     if (!isValid || loading) {
+      if (errors.fullName) toast.error("Please enter your name");
+      else if (errors.email) toast.error("Invalid email address");
+      else if (errors.subject) toast.error("Please enter a subject");
+      else if (errors.message) toast.error("Message cannot be empty");
       return;
     }
 
@@ -111,28 +145,50 @@ export default function ContactClient() {
 
     startTransition(async () => {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         const response = await fetch("/api/contact", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(form),
+          signal: controller.signal,
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to Send Message");
+        clearTimeout(timeoutId);
+
+        let body = null;
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          body = await response.json().catch(() => null);
+        } else {
+          body = await response.text().catch(() => "");
+        }
+
+        if (!response.ok || body?.success === false) {
+          const message =
+            typeof body === "object" && body
+              ? body.message || "Failed to send message. Please try again."
+              : "Failed to send message. Please try again.";
+          throw new Error(message);
         }
 
         setForm({ fullName: "", email: "", subject: "", message: "" });
         setTouched(false);
-        toast.success("Message Sent Successfully");
+        toast.success("Message sent successfully");
       } catch (error) {
-        toast.error(error?.message || "Failed to Send Message");
+        const isTimeout = error?.name === "AbortError";
+        toast.error(isTimeout ? "Failed to send message. Please try again." : error?.message || "Failed to send message. Please try again.");
       } finally {
         setLoading(false);
       }
     });
   };
+
+  const googleMapsUrl =
+    "https://www.google.com/maps?rlz=1C1RXQR_enIN1141IN1141&biw=1536&bih=730&sca_esv=9700858d11d87a5f&output=search&q=veagle+space+technology,+office+no+207,+kudale+patil+chambers,+heritage,+near+bhairavnath+temple,+jadhav+nagar,+vadgaon+budruk,+pune,+maharashtra+411041&source=lnms&fbs=ADc_l-aN0CWEZBOHjofHoaMMDiKpUrv6YeyJhXfuYqj4Fj6c1U4Z6Yq0xAU8tFlmuJvKXCt2iug6axOV8fORMUDyzql5eftAvM01BCoXXxgyfHuMr6x2ZscPm0fwdyB5VxFc3qiGVCUKfBqOpiOih0-PzFDfuCOWG9-0wSFGakunBowexz4XsLuKcEFLp9zgDBYYBuIaky9uPZZCJfPP0TVu3_LchT-3QA&entry=mc&ved=1t:200715&ictx=111";
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-blue-200 transition-colors duration-300 dark:from-slate-950 dark:via-indigo-950 dark:to-slate-900">
@@ -160,20 +216,22 @@ export default function ContactClient() {
           </p>
         </motion.div>
 
-        <motion.div variants={item} className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="space-y-4">
+        <motion.div variants={item} className="mt-10 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             <InfoCard icon={Mail} title="Email" value="info@veaglespace.com" hint="Available 24/7" />
             <InfoCard icon={Phone} title="Call Support" value="+91 8237999101" hint="Mon-Sat, 10am - 7pm" />
             <InfoCard
               icon={MapPin}
               title="Visit Office"
               value={`Kudale Patil Tower, Office No. 207,\n2nd Floor, Jadhav Nagar,\nNear Shiv Temple,\nVadgaon Budruk,\nPune, Maharashtra 411041,\nIndia`}
+              hint="Open in Google Maps"
+              href={googleMapsUrl}
             />
           </div>
 
           <motion.div
             variants={item}
-            className="rounded-2xl bg-[var(--surface-soft)] p-6 shadow-md ring-1 ring-[var(--stroke)] backdrop-blur-md transition-colors duration-300"
+            className="w-full overflow-hidden rounded-3xl border border-white/35 bg-white/55 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/40"
           >
             <form className="grid grid-cols-1 gap-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -188,6 +246,9 @@ export default function ContactClient() {
                     value={form.fullName}
                     onChange={handleChange}
                   />
+                  {touched && errors.fullName ? (
+                    <p className="mt-2 text-xs font-medium text-red-600/90">{errors.fullName}</p>
+                  ) : null}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-[var(--foreground)]">Email Address</label>
@@ -200,6 +261,9 @@ export default function ContactClient() {
                     value={form.email}
                     onChange={handleChange}
                   />
+                  {touched && errors.email ? (
+                    <p className="mt-2 text-xs font-medium text-red-600/90">{errors.email}</p>
+                  ) : null}
                 </div>
               </div>
 
@@ -213,6 +277,9 @@ export default function ContactClient() {
                   value={form.subject}
                   onChange={handleChange}
                 />
+                {touched && errors.subject ? (
+                  <p className="mt-2 text-xs font-medium text-red-600/90">{errors.subject}</p>
+                ) : null}
               </div>
 
               <div>
@@ -224,6 +291,9 @@ export default function ContactClient() {
                   value={form.message}
                   onChange={handleChange}
                 />
+                {touched && errors.message ? (
+                  <p className="mt-2 text-xs font-medium text-red-600/90">{errors.message}</p>
+                ) : null}
               </div>
 
               <div className="pt-1">
@@ -232,7 +302,14 @@ export default function ContactClient() {
                   disabled={loading}
                   className="group inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-400 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:brightness-105 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  <span className="transition group-hover:-translate-y-0.5">{loading ? "Sending..." : "Send Message"}</span>
+                  {loading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-white" />
+                      <span>Sending...</span>
+                    </span>
+                  ) : (
+                    <span className="transition group-hover:-translate-y-0.5">Send Message</span>
+                  )}
                 </button>
                 <p className="mt-3 text-center text-xs text-[var(--muted)]">
                   By sending this, you agree to be contacted about your request.
@@ -245,4 +322,3 @@ export default function ContactClient() {
     </div>
   );
 }
-

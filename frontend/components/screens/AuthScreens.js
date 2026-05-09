@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Building2, Globe, LockKeyhole, Mail, MapPin, Phone, ShieldCheck, Sparkles, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -13,9 +14,10 @@ import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { GlassPanel } from "@/components/common/GlassPanel";
 import { clearSession, persistSession } from "@/lib/session";
 import { persistThemeMode } from "@/lib/theme";
-import { login, register } from "@/services/authService";
+import { createSignupRazorpayOrder, login, register, verifySignupRazorpayPayment } from "@/services/authService";
 import { setCredentials } from "@/redux/slices/authSlice";
 import { setThemeMode } from "@/redux/slices/uiSlice";
+import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
 function AuthBackdrop() {
   return (
@@ -28,8 +30,16 @@ function AuthBackdrop() {
 }
 
 function AuthShell({ headline, title, description, children, footer, hidePromo = false, containerClassName = "" }) {
+  const pathname = usePathname();
+  const isMarketingAuth = pathname === "/login" || pathname?.startsWith("/register");
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 px-4 py-10">
+    <div
+      className={[
+        "relative flex w-full justify-center overflow-hidden px-4 pb-10",
+        isMarketingAuth ? "min-h-0 items-start bg-transparent pt-0" : "min-h-screen items-center bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 pt-10",
+      ].join(" ")}
+    >
       <AuthBackdrop />
       <div
         className={[
@@ -155,7 +165,18 @@ export function RoleSelectionScreen() {
   );
 }
 
-function AuthFormField({ label, name, type = "text", value, onChange, placeholder, helper, required = false, status = "idle" }) {
+function AuthFormField({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  helper,
+  autoComplete,
+  required = false,
+  status = "idle",
+}) {
   const statusClassName =
     status === "error"
       ? "border-red-400 focus:ring-2 focus:ring-red-300"
@@ -167,12 +188,14 @@ function AuthFormField({ label, name, type = "text", value, onChange, placeholde
     <label className="grid gap-2 text-sm">
       <span className="font-medium text-[var(--muted-strong)]">{label}</span>
       <input
+        suppressHydrationWarning
         required={required}
         type={type}
         name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        autoComplete={autoComplete}
         className={`theme-input w-full rounded-xl bg-white/70 px-5 py-4 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 ${statusClassName}`}
       />
       {helper ? <span className="text-xs text-[var(--muted)]">{helper}</span> : null}
@@ -290,7 +313,7 @@ export function LoginScreen({ role }) {
         </div>
       }
     >
-      <form className="grid gap-5" onSubmit={handleSubmit}>
+      <form className="grid gap-5" onSubmit={handleSubmit} autoComplete="off">
         <AuthFormField
           label="Email"
           name="email"
@@ -299,6 +322,8 @@ export function LoginScreen({ role }) {
           onChange={handleChange}
           required
           placeholder="Enter your email"
+          autoComplete="off"
+          helper={touched && errors.email ? errors.email : undefined}
           status={
             touched
               ? errors.email
@@ -316,6 +341,7 @@ export function LoginScreen({ role }) {
           onChange={handleChange}
           required
           placeholder="Enter your password"
+          autoComplete="new-password"
           status={
             touched
               ? errors.password
@@ -325,7 +351,13 @@ export function LoginScreen({ role }) {
                   : "idle"
               : "idle"
           }
-          helper={role === "SUPER_ADMIN" ? "Fixed credentials seeded in the backend configuration." : undefined}
+          helper={
+            touched && errors.password
+              ? errors.password
+              : role === "SUPER_ADMIN"
+                ? "Fixed credentials seeded in the backend configuration."
+                : undefined
+          }
         />
 
         <div className="flex items-center justify-between text-sm">
@@ -422,6 +454,7 @@ export function AdminSignupScreen() {
       chip: "7 Days Trial",
       title: "Free Trial",
       price: "Rs. 0",
+      amount: 0,
       note: "Explore the dashboard before committing.",
       features: ["Starter workspace", "Up to 250 products", "7-day access"],
     },
@@ -430,6 +463,7 @@ export function AdminSignupScreen() {
       chip: "3 Months",
       title: "Launch",
       price: "Rs. 3,000",
+      amount: 3000,
       note: "Best for new stores getting started fast.",
       features: ["Starter workspace", "Priority setup", "Quarterly plan cycle"],
     },
@@ -438,6 +472,7 @@ export function AdminSignupScreen() {
       chip: "6 Months",
       title: "Growth",
       price: "Rs. 5,500",
+      amount: 5500,
       note: "More runway for teams building momentum.",
       features: ["Starter workspace", "Longer runway", "Biannual plan cycle"],
     },
@@ -446,6 +481,7 @@ export function AdminSignupScreen() {
       chip: "12 Months",
       title: "Scale",
       price: "Rs. 10,500",
+      amount: 10500,
       note: "Lowest cost for serious long-term operators.",
       features: ["Starter workspace", "Annual cycle", "Best value"],
     },
@@ -489,6 +525,7 @@ export function AdminSignupScreen() {
   useEffect(() => {
     if (preselectStep && preselectStep >= 3 && preselectStep <= 4) {
       toast.error("Please complete previous steps first");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentStep(1);
     }
   }, [preselectStep]);
@@ -496,6 +533,7 @@ export function AdminSignupScreen() {
   useEffect(() => {
     if (currentStep >= 3 && !isStep1Complete) {
       toast.error("Please complete all required fields");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentStep(1);
       return;
     }
@@ -665,14 +703,76 @@ export function AdminSignupScreen() {
     startTransition(async () => {
       try {
         clearSession();
-        const payload = await register(form);
-        persistSession(payload);
-        dispatch(setCredentials(payload));
-        const nextTheme = payload.profile?.preferences?.darkMode ? "dark" : "light";
-        persistThemeMode(nextTheme);
-        dispatch(setThemeMode(nextTheme));
-        toast.success("Registration completed successfully");
-        router.push("/admin/dashboard");
+
+        const selectedPlan = planCards.find((item) => item.value === form.plan) ?? planCards[1];
+
+        if (!selectedPlan) {
+          throw new Error("Please select a plan");
+        }
+
+        const amount = Number(selectedPlan.amount ?? 0);
+        if (Number.isNaN(amount) || amount < 0) {
+          throw new Error("Invalid plan amount");
+        }
+
+        if (!amount) {
+          const payload = await register(form);
+          persistSession(payload);
+          dispatch(setCredentials(payload));
+          const nextTheme = payload.profile?.preferences?.darkMode ? "dark" : "light";
+          persistThemeMode(nextTheme);
+          dispatch(setThemeMode(nextTheme));
+          toast.success("Registration completed successfully");
+          router.push("/admin/dashboard");
+          return;
+        }
+
+        const order = await createSignupRazorpayOrder({
+          email: form.admin.email,
+          planName: selectedPlan.title,
+          amount,
+        });
+
+        if (!order?.configured || !order?.orderId) {
+          throw new Error("Razorpay is not configured on server");
+        }
+
+        await openRazorpayCheckout({
+          key: order.keyId,
+          orderId: order.orderId,
+          amount: order.amount,
+          currency: order.currency || "INR",
+          name: "MyReport",
+          description: `Signup - ${order.planName || selectedPlan.title}`,
+          prefill: {
+            name: form.admin.fullName,
+            email: form.admin.email,
+            contact: form.admin.mobile,
+          },
+          onSuccess: async (rzpResponse) => {
+            const verification = await verifySignupRazorpayPayment({
+              razorpayOrderId: rzpResponse.razorpay_order_id,
+              razorpayPaymentId: rzpResponse.razorpay_payment_id,
+              razorpaySignature: rzpResponse.razorpay_signature,
+            });
+
+            if (!verification?.verified) {
+              throw new Error("Payment verification failed");
+            }
+
+            const payload = await register(form);
+            persistSession(payload);
+            dispatch(setCredentials(payload));
+            const nextTheme = payload.profile?.preferences?.darkMode ? "dark" : "light";
+            persistThemeMode(nextTheme);
+            dispatch(setThemeMode(nextTheme));
+            toast.success("Registration completed successfully");
+            router.push("/admin/dashboard");
+          },
+          onDismiss: () => {
+            toast.message("Payment cancelled");
+          },
+        });
       } catch (error) {
         toast.error(error.message || "Unable to complete registration");
       } finally {
@@ -911,6 +1011,11 @@ export function AdminSignupScreen() {
                 onChange={(event) => updateSection("admin", "confirmPassword", event.target.value)}
                 required
                 placeholder="Confirm your password"
+                inputProps={{
+                  onPaste: (event) => event.preventDefault(),
+                  onCopy: (event) => event.preventDefault(),
+                  onCut: (event) => event.preventDefault(),
+                }}
               />
             </div>
           </div>

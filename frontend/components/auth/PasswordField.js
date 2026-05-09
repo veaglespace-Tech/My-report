@@ -3,7 +3,18 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-export function PasswordField({ label, value, onChange, placeholder, name, helper, required = false, status = "idle" }) {
+export function PasswordField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  name,
+  helper,
+  autoComplete,
+  required = false,
+  status = "idle",
+  inputProps,
+}) {
   const [visible, setVisible] = useState(false);
 
   const statusClassName =
@@ -18,15 +29,19 @@ export function PasswordField({ label, value, onChange, placeholder, name, helpe
       <span className="font-medium text-[var(--muted-strong)]">{label}</span>
       <div className="relative">
         <input
+          suppressHydrationWarning
           required={required}
           type={visible ? "text" : "password"}
           name={name}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className={`theme-input w-full rounded-xl bg-white/70 px-5 py-4 pr-12 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 ${statusClassName}`}
+          {...(inputProps || {})}
         />
         <button
+          suppressHydrationWarning
           type="button"
           onClick={() => setVisible((previous) => !previous)}
           className="theme-action-button absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 transition"

@@ -10,6 +10,16 @@ export async function register(payload) {
   return response.data.data;
 }
 
+export async function createSignupRazorpayOrder(payload) {
+  const response = await axiosInstance.post("/auth/register/razorpay/order", payload);
+  return response.data.data;
+}
+
+export async function verifySignupRazorpayPayment(payload) {
+  const response = await axiosInstance.post("/auth/register/razorpay/verify", payload);
+  return response.data.data;
+}
+
 export async function signupAdmin(payload) {
   const response = await axiosInstance.post("/auth/admin/signup", payload);
   return response.data.data;

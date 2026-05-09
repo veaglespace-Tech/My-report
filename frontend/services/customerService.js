@@ -11,9 +11,9 @@ export const customerService = {
     });
     return response.data.data;
   },
-  filterOrders: async ({ name, startDate, endDate } = {}) => {
+  filterOrders: async ({ query, name, startDate, endDate } = {}) => {
     const response = await axiosInstance.get(`/customers/orders/filter`, {
-      params: { name, startDate, endDate },
+      params: { query, name, startDate, endDate },
     });
     return response.data.data;
   },
