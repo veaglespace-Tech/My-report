@@ -16,6 +16,7 @@ import {
 import { Ban, CheckCircle2, Pencil, Plus, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/common/DataTable";
+import { DownloadToolbar } from "@/components/common/DownloadToolbar";
 import { GlassPanel } from "@/components/common/GlassPanel";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { MetricCard } from "@/components/common/MetricCard";
@@ -472,7 +473,17 @@ export function SuperAdminAdminsScreen() {
 export function SuperAdminStoresScreen() {
   const [storeType, setStoreType] = useState("");
   const storesLoader = useMemo(() => () => superAdminService.getStores(storeType || undefined), [storeType]);
-  const { data, loading } = useAsyncLoader(storesLoader, { items: [] });
+  const { data, setData, loading } = useAsyncLoader(storesLoader, { items: [] });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    storeType: "Grocery Shop",
+    email: "",
+    phone: "",
+    city: "",
+    address: "",
+  });
 
   if (loading) {
     return <LoadingSkeleton rows={3} />;
@@ -484,6 +495,11 @@ export function SuperAdminStoresScreen() {
         eyebrow="Network"
         title="Stores"
         description="Keep visibility on every store, owner, assigned plan, and renewal horizon."
+        action={
+          <ControlButton variant="primary" onClick={() => setModalOpen(true)}>
+            <span className="inline-flex items-center gap-2"><Plus size={16} /> Add Store</span>
+          </ControlButton>
+        }
       />
 
       <GlassPanel className="p-5">
@@ -493,15 +509,15 @@ export function SuperAdminStoresScreen() {
             <select
               value={storeType}
               onChange={(event) => setStoreType(event.target.value)}
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white/85 outline-none transition focus:border-white/20"
+              className="h-12 w-full rounded-2xl border border-black/10 bg-white/90 px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
             >
               <option value="">All</option>
-              <option value="Shoe Shop">Shoe Shop</option>
-              <option value="Clothes Shop">Clothes Shop</option>
               <option value="Grocery Shop">Grocery Shop</option>
-              <option value="Electronics Shop">Electronics Shop</option>
+              <option value="Clothes Shop">Clothes Shop</option>
+              <option value="Shoe Shop">Shoe Shop</option>
+              <option value="Electronics">Electronics</option>
               <option value="Beauty Shop">Beauty Shop</option>
-              <option value="Accessories Shop">Accessories Shop</option>
+              <option value="Accessories">Accessories</option>
             </select>
           </div>
           <button
@@ -527,6 +543,69 @@ export function SuperAdminStoresScreen() {
         ]}
         rows={data.items}
       />
+
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Add Store"
+        description="Create a store workspace record with contact details for onboarding."
+      >
+        <form
+          className="grid gap-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (saving) return;
+            setSaving(true);
+            try {
+              const saved = await superAdminService.createStore(form);
+              setData((previous) => ({ ...previous, items: [saved, ...(previous.items || [])] }));
+              toast.success("Store created");
+              setModalOpen(false);
+              setForm({
+                name: "",
+                storeType: "Grocery Shop",
+                email: "",
+                phone: "",
+                city: "",
+                address: "",
+              });
+            } catch (error) {
+              toast.error(error?.message || "Failed to create store");
+            } finally {
+              setSaving(false);
+            }
+          }}
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Store Name" name="name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--muted-strong)]">Store Type</span>
+              <select
+                value={form.storeType}
+                onChange={(e) => setForm((p) => ({ ...p, storeType: e.target.value }))}
+                className="h-12 w-full rounded-2xl border border-black/10 bg-white/90 px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+              >
+                <option value="Grocery Shop">Grocery Shop</option>
+                <option value="Clothes Shop">Clothes Shop</option>
+                <option value="Shoe Shop">Shoe Shop</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Beauty Shop">Beauty Shop</option>
+                <option value="Accessories">Accessories</option>
+              </select>
+            </label>
+            <FormField label="Email" name="email" type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} required />
+            <FormField label="Phone" name="phone" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} required />
+            <FormField label="City" name="city" value={form.city} onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))} required />
+            <FormField label="Address" name="address" value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} required />
+          </div>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <ControlButton onClick={() => setModalOpen(false)}>Cancel</ControlButton>
+            <ControlButton type="submit" variant="primary" disabled={saving}>
+              {saving ? "Saving..." : "Create Store"}
+            </ControlButton>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -758,8 +837,15 @@ export function SuperAdminInvoicesScreen() {
 }
 
 export function SuperAdminReportsScreen() {
-  const loader = useMemo(() => superAdminService.getReports, []);
-  const { data, loading } = useAsyncLoader(loader, { summary: {}, monthly: [], planMix: [] });
+  const [range, setRange] = useState("monthly");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const loader = useMemo(
+    () => () => superAdminService.getReports({ range, startDate: startDate || undefined, endDate: endDate || undefined }),
+    [range, startDate, endDate]
+  );
+  const { data, loading } = useAsyncLoader(loader, { summary: {}, series: [], planMix: [] });
 
   if (loading) {
     return <LoadingSkeleton rows={3} />;
@@ -772,16 +858,58 @@ export function SuperAdminReportsScreen() {
         title="Reports"
         description="Deep-dive into revenue performance, store mix, and platform expansion."
         action={
-          <div className="flex flex-wrap gap-3">
-            <ControlButton onClick={() => downloadCsv("myreport-superadmin-reports.csv", data.monthly)}>
-              Export Excel
-            </ControlButton>
-            <ControlButton onClick={printPage}>
-              <span className="inline-flex items-center gap-2"><Printer size={16} /> Export PDF</span>
-            </ControlButton>
-          </div>
+          <DownloadToolbar
+            onExportExcel={() => downloadCsv("myreport-superadmin-reports.csv", data.series || [])}
+            onExportPdf={printPage}
+            downloadDisabled={!data?.series?.length}
+          />
         }
       />
+
+      <GlassPanel className="p-5">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="grid gap-2 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Start Date</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+                className="h-12 w-full rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white/85 outline-none transition focus:border-white/20"
+              />
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">End Date</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+                className="h-12 w-full rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white/85 outline-none transition focus:border-white/20"
+              />
+            </label>
+            <div className="grid gap-2">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Quick Range</div>
+              <div className="flex flex-wrap gap-2">
+                <ControlButton variant={range === "daily" ? "primary" : "default"} onClick={() => setRange("daily")}>Daily</ControlButton>
+                <ControlButton variant={range === "monthly" ? "primary" : "default"} onClick={() => setRange("monthly")}>Monthly</ControlButton>
+                <ControlButton variant={range === "yearly" ? "primary" : "default"} onClick={() => setRange("yearly")}>Yearly</ControlButton>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <ControlButton
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+                setRange("monthly");
+              }}
+            >
+              Reset
+            </ControlButton>
+          </div>
+        </div>
+      </GlassPanel>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard item={{ label: "Revenue", value: formatCurrency(data.summary.revenue || 0), helper: "All-store billing", accent: "cyan" }} />
@@ -793,7 +921,7 @@ export function SuperAdminReportsScreen() {
         <ChartCard title="Monthly Revenue" description="Performance trend over recent months.">
           <div className="h-72 w-full max-w-full sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.monthly}>
+              <AreaChart data={data.series}>
                 <defs>
                   <linearGradient id="reportsGradient" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="5%" stopColor="#7c8cff" stopOpacity={0.8} />
@@ -830,41 +958,144 @@ export function SuperAdminReportsScreen() {
 
 export function SuperAdminSettingsScreen() {
   const loader = useMemo(() => superAdminService.getSettings, []);
-  const { data, loading } = useAsyncLoader(loader, { profile: {} });
+  const { data, setData, loading } = useAsyncLoader(loader, { profile: {}, preferences: {} });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   if (loading) {
-    return <LoadingSkeleton rows={2} />;
+    return <LoadingSkeleton rows={3} />;
   }
 
+  const handleProfileSave = async (event) => {
+    event.preventDefault();
+    const response = await superAdminService.updateProfile({
+      fullName: data.profile.fullName,
+      mobileNumber: data.profile.mobileNumber,
+      city: data.profile.city,
+      address: data.profile.address,
+    });
+    setData(response);
+    toast.success("Profile updated");
+  };
+
+  const handlePreferenceToggle = async (key) => {
+    const nextPreferences = {
+      ...data.preferences,
+      [key]: !data.preferences[key],
+    };
+    const response = await superAdminService.updatePreferences(nextPreferences);
+    setData(response);
+    toast.success("Preferences updated");
+  };
+
+  const handlePasswordSave = async (event) => {
+    event.preventDefault();
+    await superAdminService.updatePassword(passwordForm);
+    toast.success("Password updated");
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+  };
+
   return (
-    <div className="grid max-w-full gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+    <div className="grid max-w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <GlassPanel className="p-5 sm:p-6">
-        <div className="text-xs uppercase tracking-[0.24em] text-cyan-200/75">Profile</div>
-        <h2 className="mt-3 text-2xl font-semibold">{data.profile.fullName || "SuperAdmin"}</h2>
-        <div className="mt-5 grid gap-3 text-sm text-white/62">
-          <div>Email: {data.profile.email || "N/A"}</div>
-          <div>Mobile: {data.profile.mobileNumber || "N/A"}</div>
-          <div>Role: SUPER_ADMIN</div>
+        <SectionHeading eyebrow="Profile" title="Super Admin settings" description="Keep your profile, password, and notification preferences in sync." />
+        <form className="mt-6 grid gap-4" onSubmit={handleProfileSave}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField
+              label="Full Name"
+              name="fullName"
+              value={data.profile.fullName || ""}
+              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, fullName: event.target.value } }))}
+              required
+            />
+            <div className="grid gap-2 text-sm">
+              <span className="font-medium text-white/72">Email</span>
+              <input
+                readOnly
+                type="email"
+                value={data.profile.email || ""}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white/60 outline-none"
+              />
+            </div>
+            <FormField
+              label="Mobile Number"
+              name="mobileNumber"
+              value={data.profile.mobileNumber || ""}
+              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, mobileNumber: event.target.value } }))}
+              required
+            />
+            <FormField
+              label="City"
+              name="city"
+              value={data.profile.city || ""}
+              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, city: event.target.value } }))}
+              required
+            />
+            <FormField
+              className="sm:col-span-2"
+              label="Address"
+              name="address"
+              value={data.profile.address || ""}
+              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, address: event.target.value } }))}
+              required
+            />
+          </div>
+          <div className="flex justify-start sm:justify-end">
+            <ControlButton type="submit" variant="primary">Save Profile</ControlButton>
+          </div>
+        </form>
+
+        <div className="mt-10 border-t border-white/10 pt-8">
+          <SectionHeading eyebrow="Security" title="Change password" description="Set a fresh password for this Super Admin account." />
+          <form className="mt-6 grid gap-4" onSubmit={handlePasswordSave}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <FormField label="Current Password" name="currentPassword" type="password" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))} required />
+              <FormField label="New Password" name="newPassword" type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))} required />
+              <FormField label="Confirm Password" name="confirmPassword" type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))} required />
+            </div>
+            <div className="flex justify-start sm:justify-end">
+              <ControlButton type="submit" variant="primary">Update Password</ControlButton>
+            </div>
+          </form>
         </div>
       </GlassPanel>
+
       <GlassPanel className="p-5 sm:p-6">
-        <SectionHeading
-          eyebrow="Workspace notes"
-          title="Platform settings"
-          description="This screen is ready for advanced tenant controls, pricing policies, support routing, and audit preferences."
-        />
-        <div className="mt-6">
-        </div>
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <SectionHeading eyebrow="Preferences" title="Notifications & theme" description="Tune alerts and dashboard appearance." />
+        <div className="mt-6 grid gap-3">
           {[
-            "Audit-ready activity trails",
-            "Global notification preferences",
-            "Pricing and billing defaults",
-            "Support escalation routing",
-          ].map((item) => (
-            <div key={item} className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72">
-              <span className="inline-flex items-center gap-2"><CheckCircle2 size={16} className="text-cyan-200" /> {item}</span>
-            </div>
+            { key: "lowStockAlerts", label: "Low stock alerts", helper: "Surface inventory risk signals." },
+            { key: "planExpiryAlerts", label: "Plan expiry alerts", helper: "Get reminders about renewals." },
+            { key: "paymentAlerts", label: "Payment alerts", helper: "Stay on top of payment status." },
+            { key: "darkMode", label: "Dark mode", helper: "Switch UI theme preference." },
+          ].map((pref) => (
+            <button
+              key={pref.key}
+              type="button"
+              onClick={() => handlePreferenceToggle(pref.key)}
+              className="flex w-full items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/6 p-4 text-left transition hover:bg-white/10"
+            >
+              <div>
+                <div className="text-sm font-semibold text-white/90">{pref.label}</div>
+                <div className="mt-1 text-xs text-white/55">{pref.helper}</div>
+              </div>
+              <div className={[
+                "h-6 w-11 rounded-full border transition",
+                data.preferences[pref.key] ? "border-cyan-200/50 bg-cyan-400/40" : "border-white/15 bg-white/10",
+              ].join(" ")}>
+                <div className={[
+                  "h-5 w-5 translate-y-[1px] rounded-full bg-white shadow transition",
+                  data.preferences[pref.key] ? "translate-x-5" : "translate-x-1",
+                ].join(" ")} />
+              </div>
+            </button>
           ))}
         </div>
       </GlassPanel>

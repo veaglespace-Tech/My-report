@@ -10,5 +10,7 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
 
     List<Plan> findAllByOrderByCreatedAtDesc();
 
+    List<Plan> findAllByStatusOrderByCreatedAtDesc(PlanStatus status);
+
     Optional<Plan> findFirstByStatusOrderByMonthlyPriceAsc(PlanStatus status);
 }

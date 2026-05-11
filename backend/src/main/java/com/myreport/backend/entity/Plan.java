@@ -55,6 +55,29 @@ public class Plan extends AuditableEntity {
     @Column(length = 1000)
     private String features;
 
+    @Column(length = 80)
+    private String duration;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal price;
+
+    @Column
+    private Integer maxUsers;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean trialAvailable = false;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean popular = false;
+
+    @Column(length = 40)
+    private String buttonText;
+
+    @Column(length = 40)
+    private String themeColor;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PlanStatus status;

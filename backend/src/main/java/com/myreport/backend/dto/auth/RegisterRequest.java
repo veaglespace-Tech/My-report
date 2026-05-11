@@ -6,6 +6,6 @@ import jakarta.validation.constraints.NotNull;
 public record RegisterRequest(
         @Valid @NotNull OrganizationRegistrationRequest organization,
         @Valid @NotNull AdminRegistrationRequest admin,
-        @NotNull RegistrationPlanDuration plan
+        @NotNull Long planId
 ) {
 }

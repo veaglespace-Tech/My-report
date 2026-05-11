@@ -50,7 +50,7 @@ export function DownloadToolbar({
           disabled={downloadDisabled}
           className={[
             baseButton,
-            "bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-indigo-500/25 hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30",
+            "bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-600 text-white shadow-indigo-500/25 hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30",
           ].join(" ")}
         >
           <Download size={16} />
@@ -99,4 +99,3 @@ export function DownloadToolbar({
     </div>
   );
 }
-

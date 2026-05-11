@@ -9,12 +9,19 @@ import java.math.BigDecimal;
 
 public record PlanRequest(
         @NotBlank String name,
+        @NotBlank String duration,
         @NotBlank String description,
+        @NotNull @DecimalMin("0.0") BigDecimal price,
         @NotNull @DecimalMin("0.0") BigDecimal monthlyPrice,
         @NotNull @DecimalMin("0.0") BigDecimal yearlyPrice,
         @NotNull @Positive Integer maxProducts,
+        @NotNull @Positive Integer maxUsers,
         @NotNull @Positive Integer maxCustomers,
         @NotBlank String features,
+        Boolean trialAvailable,
+        Boolean popular,
+        String buttonText,
+        String themeColor,
         @NotNull PlanStatus status
 ) {
 }

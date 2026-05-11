@@ -3,7 +3,6 @@ package com.myreport.backend.service;
 import com.myreport.backend.dto.auth.LoginRequest;
 import com.myreport.backend.dto.auth.OtpVerificationRequest;
 import com.myreport.backend.dto.auth.RegisterRequest;
-import com.myreport.backend.dto.auth.RegistrationPlanDuration;
 import com.myreport.backend.dto.auth.SignupRequest;
 import com.myreport.backend.entity.Notification;
 import com.myreport.backend.entity.Plan;
@@ -86,8 +85,9 @@ public class AuthService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Password and confirm password must match");
         }
 
-        Plan assignedPlan = planRepository.findFirstByStatusOrderByMonthlyPriceAsc(PlanStatus.ACTIVE)
-                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "No active plan is configured yet"));
+        Plan assignedPlan = planRepository.findById(request.planId())
+                .filter(plan -> plan.getStatus() == PlanStatus.ACTIVE)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Selected plan is not available"));
 
         UserAccount admin = UserAccount.builder()
                 .fullName(request.admin().fullName())
@@ -116,7 +116,7 @@ public class AuthService {
                 .address(request.organization().address())
                 .status(StoreStatus.ACTIVE)
                 .plan(assignedPlan)
-                .planExpiresAt(resolvePlanExpiry(request.plan()))
+                .planExpiresAt(resolvePlanExpiry(assignedPlan))
                 .owner(admin)
                 .build();
         storeRepository.save(store);
@@ -269,12 +269,31 @@ public class AuthService {
         return "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=" + fullName.replace(" ", "+");
     }
 
-    private LocalDate resolvePlanExpiry(RegistrationPlanDuration plan) {
-        return switch (plan) {
-            case TRIAL -> LocalDate.now().plusDays(7);
-            case THREE_MONTHS -> LocalDate.now().plusMonths(3);
-            case SIX_MONTHS -> LocalDate.now().plusMonths(6);
-            case TWELVE_MONTHS -> LocalDate.now().plusMonths(12);
-        };
+    private LocalDate resolvePlanExpiry(Plan plan) {
+        LocalDate now = LocalDate.now();
+        if (plan != null && plan.isTrialAvailable()) {
+            return now.plusDays(7);
+        }
+        String duration = plan != null ? plan.getDuration() : null;
+        if (duration != null && !duration.isBlank()) {
+            String normalized = duration.toLowerCase().trim();
+            try {
+                if (normalized.contains("year")) {
+                    int years = Integer.parseInt(normalized.replaceAll("[^0-9]", ""));
+                    return years > 0 ? now.plusYears(years) : now.plusMonths(12);
+                }
+                if (normalized.contains("month")) {
+                    int months = Integer.parseInt(normalized.replaceAll("[^0-9]", ""));
+                    return months > 0 ? now.plusMonths(months) : now.plusMonths(1);
+                }
+                if (normalized.contains("day")) {
+                    int days = Integer.parseInt(normalized.replaceAll("[^0-9]", ""));
+                    return days > 0 ? now.plusDays(days) : now.plusDays(30);
+                }
+            } catch (Exception ignored) {
+                // fall back
+            }
+        }
+        return now.plusDays(30);
     }
 }

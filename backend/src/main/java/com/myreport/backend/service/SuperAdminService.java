@@ -1,7 +1,11 @@
 package com.myreport.backend.service;
 
+import com.myreport.backend.dto.admin.ChangePasswordRequest;
+import com.myreport.backend.dto.admin.NotificationPreferenceRequest;
+import com.myreport.backend.dto.admin.ProfileUpdateRequest;
 import com.myreport.backend.dto.superadmin.AdminRequest;
 import com.myreport.backend.dto.superadmin.PlanRequest;
+import com.myreport.backend.dto.superadmin.StoreCreateRequest;
 import com.myreport.backend.entity.Invoice;
 import com.myreport.backend.entity.Notification;
 import com.myreport.backend.entity.Plan;
@@ -24,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -249,12 +254,19 @@ public class SuperAdminService {
     public Map<String, Object> createPlan(PlanRequest request) {
         Plan plan = Plan.builder()
                 .name(request.name())
+                .duration(request.duration())
                 .description(request.description())
+                .price(request.price())
                 .monthlyPrice(request.monthlyPrice())
                 .yearlyPrice(request.yearlyPrice())
                 .maxProducts(request.maxProducts())
+                .maxUsers(request.maxUsers())
                 .maxCustomers(request.maxCustomers())
                 .features(request.features())
+                .trialAvailable(Boolean.TRUE.equals(request.trialAvailable()))
+                .popular(Boolean.TRUE.equals(request.popular()))
+                .buttonText(request.buttonText())
+                .themeColor(request.themeColor())
                 .status(request.status())
                 .build();
         planRepository.save(plan);
@@ -267,12 +279,23 @@ public class SuperAdminService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Plan not found"));
 
         plan.setName(request.name());
+        plan.setDuration(request.duration());
         plan.setDescription(request.description());
+        plan.setPrice(request.price());
         plan.setMonthlyPrice(request.monthlyPrice());
         plan.setYearlyPrice(request.yearlyPrice());
         plan.setMaxProducts(request.maxProducts());
+        plan.setMaxUsers(request.maxUsers());
         plan.setMaxCustomers(request.maxCustomers());
         plan.setFeatures(request.features());
+        if (request.trialAvailable() != null) {
+            plan.setTrialAvailable(Boolean.TRUE.equals(request.trialAvailable()));
+        }
+        if (request.popular() != null) {
+            plan.setPopular(Boolean.TRUE.equals(request.popular()));
+        }
+        plan.setButtonText(request.buttonText());
+        plan.setThemeColor(request.themeColor());
         plan.setStatus(request.status());
         planRepository.save(plan);
         return mapPlan(plan);
@@ -317,9 +340,13 @@ public class SuperAdminService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getReports() {
+    public Map<String, Object> getReports(LocalDate startDate, LocalDate endDate) {
         List<Invoice> invoices = invoiceRepository.findAllByOrderByCreatedAtDesc();
-        BigDecimal totalRevenue = invoices.stream()
+        List<Invoice> filtered = filterInvoices(invoices, startDate, endDate);
+
+        List<Map<String, Object>> series = buildSeriesForRange(filtered, startDate, endDate);
+
+        BigDecimal totalRevenue = filtered.stream()
                 .map(Invoice::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -329,7 +356,7 @@ public class SuperAdminService {
                         "stores", storeRepository.count(),
                         "admins", userAccountRepository.countByRole(Role.ADMIN)
                 ),
-                "monthly", buildMonthlySeries(invoices),
+                "series", series,
                 "planMix", planRepository.findAllByOrderByCreatedAtDesc().stream()
                         .map(plan -> Map.of(
                                 "name", plan.getName(),
@@ -338,6 +365,36 @@ public class SuperAdminService {
                         ))
                         .toList()
         );
+    }
+
+    @Transactional
+    public Map<String, Object> createStore(StoreCreateRequest request) {
+        Store store = Store.builder()
+                .name(request.name())
+                .storeType(request.storeType())
+                .businessEmail(request.email().toLowerCase())
+                .phone(request.phone())
+                .city(request.city())
+                .address(request.address())
+                .status(StoreStatus.ACTIVE)
+                .planExpiresAt(LocalDate.now().plusDays(30))
+                .build();
+        storeRepository.save(store);
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", store.getId());
+        data.put("name", store.getName());
+        data.put("storeType", store.getStoreType());
+        data.put("city", store.getCity());
+        data.put("address", store.getAddress());
+        data.put("phone", store.getPhone());
+        data.put("email", store.getBusinessEmail());
+        data.put("status", store.getStatus());
+        data.put("plan", null);
+        data.put("planExpiresAt", store.getPlanExpiresAt());
+        data.put("owner", null);
+        data.put("ownerEmail", null);
+        return data;
     }
 
     @Transactional(readOnly = true)
@@ -349,8 +406,58 @@ public class SuperAdminService {
                         "email", user.getEmail(),
                         "mobileNumber", user.getMobileNumber(),
                         "avatarUrl", user.getAvatarUrl()
+                ),
+                "preferences", Map.of(
+                        "lowStockAlerts", user.isLowStockAlerts(),
+                        "planExpiryAlerts", user.isPlanExpiryAlerts(),
+                        "paymentAlerts", user.isPaymentAlerts(),
+                        "darkMode", user.isDarkMode()
                 )
         );
+    }
+
+    @Transactional
+    public Map<String, Object> updateProfile(String email, ProfileUpdateRequest request) {
+        UserAccount user = getUser(email, Role.SUPER_ADMIN);
+        user.setFullName(request.fullName());
+        user.setMobileNumber(request.mobileNumber());
+        user.setCity(request.city());
+        user.setAddress(request.address());
+        userAccountRepository.save(user);
+        return getSettings(email);
+    }
+
+    @Transactional
+    public Map<String, Object> changePassword(String email, ChangePasswordRequest request) {
+        UserAccount user = getUser(email, Role.SUPER_ADMIN);
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Password confirmation does not match");
+        }
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userAccountRepository.save(user);
+        return getSettings(email);
+    }
+
+    @Transactional
+    public Map<String, Object> updatePreferences(String email, NotificationPreferenceRequest request) {
+        UserAccount user = getUser(email, Role.SUPER_ADMIN);
+        if (request.lowStockAlerts() != null) {
+            user.setLowStockAlerts(request.lowStockAlerts());
+        }
+        if (request.planExpiryAlerts() != null) {
+            user.setPlanExpiryAlerts(request.planExpiryAlerts());
+        }
+        if (request.paymentAlerts() != null) {
+            user.setPaymentAlerts(request.paymentAlerts());
+        }
+        if (request.darkMode() != null) {
+            user.setDarkMode(request.darkMode());
+        }
+        userAccountRepository.save(user);
+        return getSettings(email);
     }
 
     private UserAccount getUser(String email, Role role) {
@@ -389,17 +496,24 @@ public class SuperAdminService {
     }
 
     private Map<String, Object> mapPlan(Plan plan) {
-        return Map.of(
-                "id", plan.getId(),
-                "name", plan.getName(),
-                "description", plan.getDescription(),
-                "monthlyPrice", plan.getMonthlyPrice(),
-                "yearlyPrice", plan.getYearlyPrice(),
-                "maxProducts", plan.getMaxProducts(),
-                "maxCustomers", plan.getMaxCustomers(),
-                "features", plan.getFeatures(),
-                "status", plan.getStatus()
-        );
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", plan.getId());
+        data.put("name", plan.getName());
+        data.put("duration", plan.getDuration());
+        data.put("description", plan.getDescription());
+        data.put("price", plan.getPrice());
+        data.put("monthlyPrice", plan.getMonthlyPrice());
+        data.put("yearlyPrice", plan.getYearlyPrice());
+        data.put("maxProducts", plan.getMaxProducts());
+        data.put("maxUsers", plan.getMaxUsers());
+        data.put("maxCustomers", plan.getMaxCustomers());
+        data.put("features", plan.getFeatures());
+        data.put("trialAvailable", plan.isTrialAvailable());
+        data.put("popular", plan.isPopular());
+        data.put("buttonText", plan.getButtonText());
+        data.put("themeColor", plan.getThemeColor());
+        data.put("status", plan.getStatus());
+        return data;
     }
 
     private List<Map<String, Object>> buildMonthlySeries(List<Invoice> invoices) {
@@ -415,6 +529,66 @@ public class SuperAdminService {
             series.add(seriesPoint(formatter.format(month.atDay(1)), total));
         }
         return series;
+    }
+
+    private List<Invoice> filterInvoices(List<Invoice> invoices, LocalDate startDate, LocalDate endDate) {
+        if (startDate == null && endDate == null) {
+            return invoices;
+        }
+        LocalDate start = startDate != null ? startDate : LocalDate.MIN;
+        LocalDate end = endDate != null ? endDate : LocalDate.MAX;
+        return invoices.stream()
+                .filter(invoice -> {
+                    LocalDate created = invoice.getCreatedAt().toLocalDate();
+                    return (!created.isBefore(start)) && (!created.isAfter(end));
+                })
+                .toList();
+    }
+
+    private List<Map<String, Object>> buildSeriesForRange(List<Invoice> invoices, LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            return buildMonthlySeries(invoices);
+        }
+
+        long days = ChronoUnit.DAYS.between(startDate, endDate);
+        if (days <= 0) {
+            BigDecimal total = invoices.stream()
+                    .filter(invoice -> invoice.getCreatedAt().toLocalDate().isEqual(startDate))
+                    .map(Invoice::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            return List.of(seriesPoint(startDate.toString(), total));
+        }
+
+        if (days <= 45) {
+            List<Map<String, Object>> series = new ArrayList<>();
+            for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+                LocalDate current = date;
+                BigDecimal total = invoices.stream()
+                        .filter(invoice -> invoice.getCreatedAt().toLocalDate().isEqual(current))
+                        .map(Invoice::getTotalAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                series.add(seriesPoint(current.getDayOfMonth() + " " + current.getMonth().name().substring(0, 3), total));
+            }
+            return series;
+        }
+
+        if (days <= 370) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM");
+            List<Map<String, Object>> series = new ArrayList<>();
+            YearMonth startMonth = YearMonth.from(startDate);
+            YearMonth endMonth = YearMonth.from(endDate);
+            for (YearMonth month = startMonth; !month.isAfter(endMonth); month = month.plusMonths(1)) {
+                YearMonth current = month;
+                BigDecimal total = invoices.stream()
+                        .filter(invoice -> YearMonth.from(invoice.getCreatedAt()).equals(current))
+                        .map(Invoice::getTotalAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                series.add(seriesPoint(formatter.format(month.atDay(1)), total));
+            }
+            return series;
+        }
+
+        return buildMonthlySeries(invoices);
     }
 
     private List<Map<String, Object>> buildGrowthSeries(List<UserAccount> admins, List<Store> stores) {

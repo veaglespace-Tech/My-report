@@ -44,6 +44,10 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/api/health", "/favicon.ico")
                         .permitAll()
+                        .requestMatchers("/api/plans", "/api/plans/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/**")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/login",
                                 "/api/auth/register",

@@ -25,8 +25,35 @@ export const superAdminService = {
     ),
   getPlans: () => fetchWithFallback(() => axiosInstance.get("/super-admin/plans"), mockSuperAdminData.plans),
   getInvoices: () => fetchWithFallback(() => axiosInstance.get("/super-admin/invoices"), mockSuperAdminData.invoices),
-  getReports: () => fetchWithFallback(() => axiosInstance.get("/super-admin/reports"), mockSuperAdminData.reports),
+  getReports: ({ range, startDate, endDate } = {}) =>
+    fetchWithFallback(
+      () =>
+        axiosInstance.get("/super-admin/reports", {
+          params: {
+            range,
+            startDate,
+            endDate,
+          },
+        }),
+      mockSuperAdminData.reports
+    ),
   getSettings: () => fetchWithFallback(() => axiosInstance.get("/super-admin/settings"), { profile: {} }),
+  updateProfile: async (payload) => {
+    const response = await axiosInstance.put("/super-admin/settings/profile", payload);
+    return response.data.data;
+  },
+  updatePassword: async (payload) => {
+    const response = await axiosInstance.put("/super-admin/settings/password", payload);
+    return response.data.data;
+  },
+  updatePreferences: async (payload) => {
+    const response = await axiosInstance.put("/super-admin/settings/preferences", payload);
+    return response.data.data;
+  },
+  createStore: async (payload) => {
+    const response = await axiosInstance.post("/super-admin/stores", payload);
+    return response.data.data;
+  },
   createAdmin: async (payload) => {
     try {
       const response = await axiosInstance.post("/super-admin/admins", payload);

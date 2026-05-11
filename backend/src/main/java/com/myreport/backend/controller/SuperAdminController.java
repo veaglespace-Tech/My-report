@@ -1,8 +1,12 @@
 package com.myreport.backend.controller;
 
 import com.myreport.backend.dto.common.ApiResponse;
+import com.myreport.backend.dto.admin.ChangePasswordRequest;
+import com.myreport.backend.dto.admin.NotificationPreferenceRequest;
+import com.myreport.backend.dto.admin.ProfileUpdateRequest;
 import com.myreport.backend.dto.superadmin.AdminRequest;
 import com.myreport.backend.dto.superadmin.PlanRequest;
+import com.myreport.backend.dto.superadmin.StoreCreateRequest;
 import com.myreport.backend.service.SuperAdminService;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -18,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/super-admin")
@@ -67,6 +73,11 @@ public class SuperAdminController {
         return new ApiResponse<>(true, "Stores loaded", superAdminService.getStores(storeType));
     }
 
+    @PostMapping("/stores")
+    public ApiResponse<Map<String, Object>> createStore(@Valid @RequestBody StoreCreateRequest request) {
+        return new ApiResponse<>(true, "Store created", superAdminService.createStore(request));
+    }
+
     @GetMapping("/plans")
     public ApiResponse<Map<String, Object>> plans() {
         return new ApiResponse<>(true, "Plans loaded", superAdminService.getPlans());
@@ -99,12 +110,52 @@ public class SuperAdminController {
     }
 
     @GetMapping("/reports")
-    public ApiResponse<Map<String, Object>> reports() {
-        return new ApiResponse<>(true, "Reports loaded", superAdminService.getReports());
+    public ApiResponse<Map<String, Object>> reports(
+            @RequestParam(required = false) String range,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        if (range != null && !range.isBlank()) {
+            String normalized = range.trim().toLowerCase();
+            LocalDate today = LocalDate.now();
+            switch (normalized) {
+                case "daily" -> {
+                    startDate = today;
+                    endDate = today;
+                }
+                case "monthly" -> {
+                    startDate = today.withDayOfMonth(1);
+                    endDate = today;
+                }
+                case "yearly" -> {
+                    startDate = today.withDayOfYear(1);
+                    endDate = today;
+                }
+                default -> {
+                    // Unknown range, fall back to explicit dates (if any).
+                }
+            }
+        }
+        return new ApiResponse<>(true, "Reports loaded", superAdminService.getReports(startDate, endDate));
     }
 
     @GetMapping("/settings")
     public ApiResponse<Map<String, Object>> settings(Principal principal) {
         return new ApiResponse<>(true, "Settings loaded", superAdminService.getSettings(principal.getName()));
+    }
+
+    @PutMapping("/settings/profile")
+    public ApiResponse<Map<String, Object>> updateProfile(Principal principal, @Valid @RequestBody ProfileUpdateRequest request) {
+        return new ApiResponse<>(true, "Profile updated", superAdminService.updateProfile(principal.getName(), request));
+    }
+
+    @PutMapping("/settings/password")
+    public ApiResponse<Map<String, Object>> updatePassword(Principal principal, @Valid @RequestBody ChangePasswordRequest request) {
+        return new ApiResponse<>(true, "Password updated", superAdminService.changePassword(principal.getName(), request));
+    }
+
+    @PutMapping("/settings/preferences")
+    public ApiResponse<Map<String, Object>> updatePreferences(Principal principal, @RequestBody NotificationPreferenceRequest request) {
+        return new ApiResponse<>(true, "Preferences updated", superAdminService.updatePreferences(principal.getName(), request));
     }
 }

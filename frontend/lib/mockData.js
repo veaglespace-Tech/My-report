@@ -95,7 +95,7 @@ export const mockSuperAdminData = {
       stores: 31,
       admins: 36,
     },
-    monthly: [
+    series: [
       { label: "Nov", value: 120000 },
       { label: "Dec", value: 165000 },
       { label: "Jan", value: 186000 },
