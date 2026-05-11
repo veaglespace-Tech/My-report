@@ -191,18 +191,12 @@ export default function ContactClient() {
     "https://www.google.com/maps?rlz=1C1RXQR_enIN1141IN1141&biw=1536&bih=730&sca_esv=9700858d11d87a5f&output=search&q=veagle+space+technology,+office+no+207,+kudale+patil+chambers,+heritage,+near+bhairavnath+temple,+jadhav+nagar,+vadgaon+budruk,+pune,+maharashtra+411041&source=lnms&fbs=ADc_l-aN0CWEZBOHjofHoaMMDiKpUrv6YeyJhXfuYqj4Fj6c1U4Z6Yq0xAU8tFlmuJvKXCt2iug6axOV8fORMUDyzql5eftAvM01BCoXXxgyfHuMr6x2ZscPm0fwdyB5VxFc3qiGVCUKfBqOpiOih0-PzFDfuCOWG9-0wSFGakunBowexz4XsLuKcEFLp9zgDBYYBuIaky9uPZZCJfPP0TVu3_LchT-3QA&entry=mc&ved=1t:200715&ictx=111";
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-blue-200 transition-colors duration-300 dark:from-slate-950 dark:via-indigo-950 dark:to-slate-900">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-cyan-300/50 blur-3xl dark:bg-cyan-500/20" />
-        <div className="absolute -right-28 top-10 h-80 w-80 rounded-full bg-indigo-300/50 blur-3xl dark:bg-indigo-500/20" />
-        <div className="absolute bottom-0 left-1/3 h-80 w-80 -translate-x-1/2 rounded-full bg-fuchsia-300/40 blur-3xl dark:bg-fuchsia-500/15" />
-      </div>
-
+    <>
       <motion.div
         initial="hidden"
         animate="show"
         variants={container}
-        className="relative mx-auto w-full max-w-6xl px-6 py-12 sm:py-14"
+        className="w-full"
       >
         <motion.div variants={item} className="text-center">
           <h1 className="text-balance text-4xl font-semibold tracking-tight text-[var(--foreground)] sm:text-5xl">
@@ -319,6 +313,6 @@ export default function ContactClient() {
           </motion.div>
         </motion.div>
       </motion.div>
-    </div>
+    </>
   );
 }

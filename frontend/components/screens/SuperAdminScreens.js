@@ -334,7 +334,7 @@ export function SuperAdminAdminsScreen() {
         toast.success(editingItem ? "Admin updated" : "Admin created");
         setModalOpen(false);
       } catch (error) {
-        toast.error(error.message || "Unable to save admin");
+        toast.error(error?.response?.data?.message || error?.message || "Unable to save admin");
       }
     });
   };
@@ -617,12 +617,19 @@ export function SuperAdminPlansScreen() {
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({
     name: "",
+    duration: "Monthly",
     description: "",
+    price: "",
     monthlyPrice: "",
     yearlyPrice: "",
     maxProducts: "",
+    maxUsers: "",
     maxCustomers: "",
     features: "",
+    trialAvailable: false,
+    popular: false,
+    buttonText: "Select Plan",
+    themeColor: "indigo",
     status: "ACTIVE",
   });
 
@@ -630,12 +637,19 @@ export function SuperAdminPlansScreen() {
     setEditingItem(null);
     setForm({
       name: "",
+      duration: "Monthly",
       description: "",
+      price: "",
       monthlyPrice: "",
       yearlyPrice: "",
       maxProducts: "",
+      maxUsers: "",
       maxCustomers: "",
       features: "",
+      trialAvailable: false,
+      popular: false,
+      buttonText: "Select Plan",
+      themeColor: "indigo",
       status: "ACTIVE",
     });
     setModalOpen(true);
@@ -645,12 +659,19 @@ export function SuperAdminPlansScreen() {
     setEditingItem(item);
     setForm({
       name: item.name,
+      duration: item.duration || "Monthly",
       description: item.description,
+      price: item.price,
       monthlyPrice: item.monthlyPrice,
       yearlyPrice: item.yearlyPrice,
       maxProducts: item.maxProducts,
+      maxUsers: item.maxUsers,
       maxCustomers: item.maxCustomers,
       features: item.features,
+      trialAvailable: Boolean(item.trialAvailable),
+      popular: Boolean(item.popular),
+      buttonText: item.buttonText || "Select Plan",
+      themeColor: item.themeColor || "indigo",
       status: item.status,
     });
     setModalOpen(true);
@@ -660,24 +681,72 @@ export function SuperAdminPlansScreen() {
     event.preventDefault();
     const payload = {
       ...form,
-      monthlyPrice: Number(form.monthlyPrice),
-      yearlyPrice: Number(form.yearlyPrice),
-      maxProducts: Number(form.maxProducts),
-      maxCustomers: Number(form.maxCustomers),
+      duration: String(form.duration || "").trim(),
+      price: Number(form.price || form.monthlyPrice || 0),
+      monthlyPrice: Number(form.monthlyPrice || form.price || 0),
+      yearlyPrice: Number(form.yearlyPrice || 0),
+      maxProducts: Number(form.maxProducts || 0),
+      maxUsers: Number(form.maxUsers || 0),
+      maxCustomers: Number(form.maxCustomers || 0),
     };
 
-    const saved = editingItem
-      ? await superAdminService.updatePlan(editingItem.id, payload)
-      : await superAdminService.createPlan(payload);
+    if (!payload.name?.trim()) {
+      toast.error("Plan name is required");
+      return;
+    }
+    if (!payload.duration) {
+      toast.error("Plan duration is required");
+      return;
+    }
+    if (!payload.description?.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+    if (!payload.features?.trim()) {
+      toast.error("Features are required");
+      return;
+    }
+    if (!Number.isFinite(payload.price) || payload.price < 0) {
+      toast.error("Price must be 0 or more");
+      return;
+    }
+    if (!Number.isFinite(payload.monthlyPrice) || payload.monthlyPrice < 0) {
+      toast.error("Monthly price must be 0 or more");
+      return;
+    }
+    if (!Number.isFinite(payload.yearlyPrice) || payload.yearlyPrice < 0) {
+      toast.error("Yearly price must be 0 or more");
+      return;
+    }
+    if (!Number.isFinite(payload.maxProducts) || payload.maxProducts <= 0) {
+      toast.error("Max Products must be greater than 0");
+      return;
+    }
+    if (!Number.isFinite(payload.maxUsers) || payload.maxUsers <= 0) {
+      toast.error("Max Users must be greater than 0");
+      return;
+    }
+    if (!Number.isFinite(payload.maxCustomers) || payload.maxCustomers <= 0) {
+      toast.error("Max Customers must be greater than 0");
+      return;
+    }
 
-    setData((previous) => ({
-      ...previous,
-      items: editingItem
-        ? previous.items.map((item) => (item.id === editingItem.id ? { ...item, ...saved } : item))
-        : [{ ...saved, id: saved.id || Date.now() }, ...previous.items],
-    }));
-    toast.success(editingItem ? "Plan updated" : "Plan created");
-    setModalOpen(false);
+    try {
+      const saved = editingItem
+        ? await superAdminService.updatePlan(editingItem.id, payload)
+        : await superAdminService.createPlan(payload);
+
+      setData((previous) => ({
+        ...previous,
+        items: editingItem
+          ? previous.items.map((item) => (item.id === editingItem.id ? { ...item, ...saved } : item))
+          : [{ ...saved, id: saved.id || Date.now() }, ...previous.items],
+      }));
+      toast.success(editingItem ? "Plan updated" : "Plan created");
+      setModalOpen(false);
+    } catch (error) {
+      toast.error(error?.message || "Failed to save plan");
+    }
   };
 
   const handleToggle = async (planId) => {
@@ -731,10 +800,14 @@ export function SuperAdminPlansScreen() {
                 <StatusBadge value={plan.status} />
               </div>
               <div className="mt-6 text-3xl font-semibold">{formatCurrency(plan.monthlyPrice)}<span className="text-base text-white/45"> / month</span></div>
+              <div className="mt-1 text-xs uppercase tracking-[0.22em] text-white/45">{plan.duration || "Monthly"}</div>
               <div className="mt-2 text-sm text-white/55">{formatCurrency(plan.yearlyPrice)} annual billing</div>
               <div className="mt-5 grid gap-2 text-sm text-white/68">
                 <div>Products: {plan.maxProducts}</div>
+                <div>Users: {plan.maxUsers}</div>
                 <div>Customers: {plan.maxCustomers}</div>
+                {plan.trialAvailable ? <div className="text-cyan-200/90">Free trial available</div> : null}
+                {plan.popular ? <div className="text-violet-200/90">Most popular</div> : null}
                 <div>{plan.features}</div>
               </div>
               <div className="mt-auto flex flex-wrap gap-2 pt-6">
@@ -766,6 +839,7 @@ export function SuperAdminPlansScreen() {
         <form className="grid gap-4" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Plan Name" name="name" value={form.name} onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))} required />
+            <FormField label="Plan Duration" name="duration" value={form.duration} onChange={(event) => setForm((previous) => ({ ...previous, duration: event.target.value }))} placeholder="Monthly / 3 Months / 12 Months" required />
             <SelectField
               label="Status"
               name="status"
@@ -777,15 +851,31 @@ export function SuperAdminPlansScreen() {
                 { label: "Draft", value: "DRAFT" },
               ]}
             />
+            <FormField label="Price" name="price" type="number" value={form.price} onChange={(event) => setForm((previous) => ({ ...previous, price: event.target.value }))} required />
             <FormField label="Monthly Price" name="monthlyPrice" type="number" value={form.monthlyPrice} onChange={(event) => setForm((previous) => ({ ...previous, monthlyPrice: event.target.value }))} required />
             <FormField label="Yearly Price" name="yearlyPrice" type="number" value={form.yearlyPrice} onChange={(event) => setForm((previous) => ({ ...previous, yearlyPrice: event.target.value }))} required />
             <FormField label="Max Products" name="maxProducts" type="number" value={form.maxProducts} onChange={(event) => setForm((previous) => ({ ...previous, maxProducts: event.target.value }))} required />
             <FormField label="Max Customers" name="maxCustomers" type="number" value={form.maxCustomers} onChange={(event) => setForm((previous) => ({ ...previous, maxCustomers: event.target.value }))} required />
+            <FormField label="Max Users" name="maxUsers" type="number" value={form.maxUsers} onChange={(event) => setForm((previous) => ({ ...previous, maxUsers: event.target.value }))} required />
+            <FormField label="Button Text" name="buttonText" value={form.buttonText} onChange={(event) => setForm((previous) => ({ ...previous, buttonText: event.target.value }))} placeholder="Select Plan" />
+            <FormField label="Theme Color" name="themeColor" value={form.themeColor} onChange={(event) => setForm((previous) => ({ ...previous, themeColor: event.target.value }))} placeholder="indigo / cyan / violet" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white/75">
+              <input type="checkbox" checked={form.trialAvailable} onChange={(event) => setForm((previous) => ({ ...previous, trialAvailable: event.target.checked }))} className="theme-input h-4 w-4 rounded" />
+              Trial Available
+            </label>
+            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white/75">
+              <input type="checkbox" checked={form.popular} onChange={(event) => setForm((previous) => ({ ...previous, popular: event.target.checked }))} className="theme-input h-4 w-4 rounded" />
+              Most Popular
+            </label>
           </div>
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-white/72">Description</span>
             <textarea
               rows={3}
+              required
               value={form.description}
               onChange={(event) => setForm((previous) => ({ ...previous, description: event.target.value }))}
               className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 outline-none transition focus:border-cyan-300/40"
@@ -795,6 +885,7 @@ export function SuperAdminPlansScreen() {
             <span className="font-medium text-white/72">Features</span>
             <textarea
               rows={3}
+              required
               value={form.features}
               onChange={(event) => setForm((previous) => ({ ...previous, features: event.target.value }))}
               className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 outline-none transition focus:border-cyan-300/40"
@@ -811,7 +902,9 @@ export function SuperAdminPlansScreen() {
 }
 
 export function SuperAdminInvoicesScreen() {
-  const loader = useMemo(() => superAdminService.getInvoices, []);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [exporting, setExporting] = useState(null);
+  const loader = useMemo(() => superAdminService.getInvoices, [refreshTick]);
   const { data, loading } = useAsyncLoader(loader, { items: [] });
 
   if (loading) {
@@ -820,7 +913,25 @@ export function SuperAdminInvoicesScreen() {
 
   return (
     <div className="grid max-w-full gap-6">
-      <SectionHeading eyebrow="Finance" title="Invoices" description="Review transaction volume across the platform in a single premium ledger." />
+      <SectionHeading
+        eyebrow="Finance"
+        title="Invoices"
+        description="Review transaction volume across the platform in a single premium ledger."
+        action={
+          <DownloadToolbar
+            onRefresh={async () => {
+              if (exporting) return;
+              setExporting("refresh");
+              startTransition(() => setRefreshTick((value) => value + 1));
+              setTimeout(() => setExporting(null), 300);
+            }}
+            onExportExcel={() => downloadCsv("myreport-superadmin-invoices.csv", data.items || [])}
+            onExportPdf={printPage}
+            exporting={exporting}
+            downloadDisabled={!data?.items?.length}
+          />
+        }
+      />
       <DataTable
         columns={[
           { key: "invoiceNumber", label: "Invoice" },
@@ -840,10 +951,12 @@ export function SuperAdminReportsScreen() {
   const [range, setRange] = useState("monthly");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [exporting, setExporting] = useState(null);
 
   const loader = useMemo(
     () => () => superAdminService.getReports({ range, startDate: startDate || undefined, endDate: endDate || undefined }),
-    [range, startDate, endDate]
+    [range, startDate, endDate, refreshTick]
   );
   const { data, loading } = useAsyncLoader(loader, { summary: {}, series: [], planMix: [] });
 
@@ -859,8 +972,15 @@ export function SuperAdminReportsScreen() {
         description="Deep-dive into revenue performance, store mix, and platform expansion."
         action={
           <DownloadToolbar
+            onRefresh={async () => {
+              if (exporting) return;
+              setExporting("refresh");
+              startTransition(() => setRefreshTick((value) => value + 1));
+              setTimeout(() => setExporting(null), 300);
+            }}
             onExportExcel={() => downloadCsv("myreport-superadmin-reports.csv", data.series || [])}
             onExportPdf={printPage}
+            exporting={exporting}
             downloadDisabled={!data?.series?.length}
           />
         }
@@ -983,8 +1103,8 @@ export function SuperAdminSettingsScreen() {
 
   const handlePreferenceToggle = async (key) => {
     const nextPreferences = {
-      ...data.preferences,
-      [key]: !data.preferences[key],
+      ...(data.preferences || {}),
+      [key]: !(data.preferences || {})[key],
     };
     const response = await superAdminService.updatePreferences(nextPreferences);
     setData(response);
@@ -1088,11 +1208,11 @@ export function SuperAdminSettingsScreen() {
               </div>
               <div className={[
                 "h-6 w-11 rounded-full border transition",
-                data.preferences[pref.key] ? "border-cyan-200/50 bg-cyan-400/40" : "border-white/15 bg-white/10",
+                (data.preferences || {})[pref.key] ? "border-cyan-200/50 bg-cyan-400/40" : "border-white/15 bg-white/10",
               ].join(" ")}>
                 <div className={[
                   "h-5 w-5 translate-y-[1px] rounded-full bg-white shadow transition",
-                  data.preferences[pref.key] ? "translate-x-5" : "translate-x-1",
+                  (data.preferences || {})[pref.key] ? "translate-x-5" : "translate-x-1",
                 ].join(" ")} />
               </div>
             </button>

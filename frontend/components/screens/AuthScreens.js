@@ -36,8 +36,8 @@ function AuthShell({ headline, title, description, children, footer, hidePromo =
   return (
     <div
       className={[
-        "relative flex w-full justify-center overflow-hidden px-4 pb-10",
-        isMarketingAuth ? "min-h-0 items-start bg-transparent pt-0" : "min-h-screen items-center bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 pt-10",
+        "relative flex w-full justify-center overflow-hidden",
+        isMarketingAuth ? "min-h-0 items-start bg-transparent" : "min-h-screen items-center bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100",
       ].join(" ")}
     >
       <AuthBackdrop />
@@ -298,11 +298,11 @@ export function LoginScreen({ role }) {
       headline={copy.headline}
       title={role === "SUPER_ADMIN" ? "Super Admin Login" : "Admin Login"}
       description={role === "ADMIN" ? "Login to manage your store" : copy.description}
-      hidePromo={role === "ADMIN"}
-      containerClassName={role === "ADMIN" ? "max-w-md" : ""}
+      hidePromo
+      containerClassName="max-w-md"
       footer={
-        <div className={role === "ADMIN" ? "flex items-center justify-between text-sm text-slate-600" : "flex items-center justify-between text-sm text-white/55"}>
-          <Link href="/" className={role === "ADMIN" ? "transition hover:text-slate-900" : "transition hover:text-white"}>
+        <div className="flex items-center justify-between text-sm text-slate-600">
+          <Link href="/" className="transition hover:text-slate-900 dark:hover:text-white">
             Back to role selection
           </Link>
           {role === "ADMIN" ? (
@@ -1030,11 +1030,11 @@ export function AdminSignupScreen() {
             <div className="grid gap-4 md:grid-cols-2">
               {planCards.map((plan) => (
                 <button
-                  key={plan.value}
+                  key={plan.id}
                   type="button"
-                  onClick={() => setForm((previous) => ({ ...previous, plan: plan.value }))}
+                  onClick={() => setForm((previous) => ({ ...previous, planId: plan.id }))}
                   className={`rounded-[30px] border p-6 text-left transition ${
-                    form.plan === plan.value
+                    String(form.planId) === String(plan.id)
                       ? "border-blue-300/60 bg-blue-500/8 shadow-[0_20px_50px_rgba(59,130,246,0.16)]"
                       : "border-white/12 bg-white/55 hover:border-blue-200/40"
                   }`}
@@ -1101,11 +1101,11 @@ export function AdminSignupScreen() {
                 <div className="rounded-[24px] border border-slate-100 bg-white p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="text-2xl font-semibold text-slate-900">{selectedPlan.title}</div>
-                      <div className="mt-2 text-sm text-slate-500">{selectedPlan.chip}</div>
+                      <div className="text-2xl font-semibold text-slate-900">{selectedPlan?.title || "Loading..."}</div>
+                      <div className="mt-2 text-sm text-slate-500">{selectedPlan?.chip || "..."}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-4xl font-black tracking-tight text-slate-900">{selectedPlan.price}</div>
+                      <div className="text-4xl font-black tracking-tight text-slate-900">{selectedPlan?.price || "-"}</div>
                       <div className="mt-1 text-sm text-slate-500">per cycle</div>
                     </div>
                   </div>

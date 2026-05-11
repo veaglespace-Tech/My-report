@@ -28,7 +28,7 @@ export function MarketingNavbar() {
 
   return (
     <header className="theme-navbar fixed left-0 right-0 top-0 z-50 w-full border-b border-black/10 backdrop-blur-xl transition-colors duration-300">
-      <nav className="mx-auto flex h-20 w-full max-w-6xl items-center justify-between px-6 lg:px-8">
+      <nav className="mx-auto flex h-[88px] w-full max-w-6xl items-center justify-between px-6 lg:px-8">
         <Link href="/" className="group inline-flex items-center gap-4">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-200 via-indigo-200 to-purple-200 shadow-lg shadow-indigo-500/10 ring-1 ring-black/10 transition group-hover:brightness-105 dark:ring-white/10">
             <Store className="h-9 w-9 text-slate-900" />

@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { publicPlanService } from "@/services/publicPlanService";
 
 const container = {
   hidden: { opacity: 0 },
@@ -23,12 +25,13 @@ const features = [
   "Chat Support",
 ];
 
-const plans = [
-  { value: "TRIAL", name: "Free Trial", price: "Rs. 0", cycle: "7 Days Trial", featured: false },
-  { value: "3_MONTHS", name: "Launch", price: "Rs. 3,000", cycle: "3 Months", featured: false },
-  { value: "6_MONTHS", name: "Growth", price: "Rs. 4,500", cycle: "6 Months", featured: true, badge: "Most Popular" },
-  { value: "12_MONTHS", name: "Scale", price: "Rs. 6,000", cycle: "12 Months", featured: false },
-];
+const fallbackPlans = [];
+
+function formatInr(amount) {
+  const value = Number(amount || 0);
+  if (!Number.isFinite(value)) return "Rs. 0";
+  return `Rs. ${value.toLocaleString("en-IN")}`;
+}
 
 function PricingCard({ plan, onSelect }) {
   return (
@@ -69,6 +72,13 @@ function PricingCard({ plan, onSelect }) {
             <div className="mt-2 text-sm text-white/70">{plan.cycle}</div>
           </div>
 
+          {plan.trialAvailable ? (
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/15">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+              Free Trial Available
+            </div>
+          ) : null}
+
           {plan.badge ? (
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/15">
               <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
@@ -90,10 +100,10 @@ function PricingCard({ plan, onSelect }) {
 
         <button
           type="button"
-          onClick={() => onSelect(plan.value)}
+          onClick={() => onSelect(plan.id)}
           className="mt-7 inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/25 active:scale-[0.99]"
         >
-          Select Plan
+          {plan.buttonText || "Select Plan"}
         </button>
       </div>
     </motion.div>
@@ -102,29 +112,82 @@ function PricingCard({ plan, onSelect }) {
 
 export default function PricingClient() {
   const router = useRouter();
+  const [plans, setPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
 
-  const handleSelect = (planValue) => {
+  const handleSelect = (planId) => {
     try {
-      localStorage.setItem("myreport:selectedPlan", planValue);
+      localStorage.setItem("myreport:selectedPlanId", String(planId));
     } catch {
       // ignore
     }
-    router.push(`/register/store-details?plan=${encodeURIComponent(planValue)}`);
+    router.push(`/register/store-details?planId=${encodeURIComponent(String(planId))}`);
   };
 
-  return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-blue-200">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-28 -top-24 h-80 w-80 rounded-full bg-cyan-300/50 blur-3xl" />
-        <div className="absolute -right-28 top-8 h-96 w-96 rounded-full bg-indigo-300/50 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-fuchsia-300/40 blur-3xl" />
-      </div>
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      setLoadingPlans(true);
+      try {
+        const response = await publicPlanService.getPlans();
+        console.log("Plans response:", response);
+        if (active) {
+          let fetchedPlans = [];
+          if (Array.isArray(response)) {
+            fetchedPlans = response;
+          } else if (response && Array.isArray(response.items)) {
+            fetchedPlans = response.items;
+          } else if (response && Array.isArray(response.data)) {
+            fetchedPlans = response.data;
+          } else if (response && response.data && Array.isArray(response.data.items)) {
+            fetchedPlans = response.data.items;
+          }
+          setPlans(fetchedPlans);
+        }
+      } catch (error) {
+        console.error("Failed to load plans:", error);
+        if (active) {
+          setPlans([]);
+        }
+      } finally {
+        if (active) {
+          setLoadingPlans(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
+  const dynamicPlans = useMemo(() => {
+    if (plans.length === 0) return [];
+    const normalized = plans.map((plan, index) => ({
+      id: String(plan.id),
+      name: plan.planName || plan.name,
+      price: formatInr(plan.price ?? plan.monthlyPrice),
+      cycle: plan.duration || "Monthly",
+      featured: Boolean(plan.popular) || index === 1,
+      badge: plan.popular ? "Most Popular" : index === 1 ? "Most Popular" : undefined,
+      trialAvailable: Boolean(plan.trialAvailable),
+      buttonText: plan.buttonText,
+      features: String(plan.features || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    }));
+
+    return normalized.slice(0, 4);
+  }, [plans]);
+
+  return (
+    <>
       <motion.div
         initial="hidden"
         animate="show"
         variants={container}
-        className="relative mx-auto w-full max-w-7xl px-6 py-12 sm:py-14"
+        className="w-full"
       >
         <motion.div variants={item} className="text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-700 ring-1 ring-black/5 backdrop-blur-md">
@@ -141,12 +204,24 @@ export default function PricingClient() {
           </p>
         </motion.div>
 
-        <motion.div variants={item} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {plans.map((plan) => (
-            <PricingCard key={plan.value} plan={plan} onSelect={handleSelect} />
-          ))}
-        </motion.div>
+        {loadingPlans ? (
+          <motion.div variants={item} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="h-[520px] rounded-3xl border border-white/10 bg-slate-950/50 p-6 shadow-xl backdrop-blur-md" />
+            ))}
+          </motion.div>
+        ) : dynamicPlans.length ? (
+          <motion.div variants={item} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {dynamicPlans.map((plan) => (
+              <PricingCard key={plan.id} plan={plan} onSelect={handleSelect} />
+            ))}
+          </motion.div>
+        ) : (
+          <motion.div variants={item} className="mx-auto mt-12 max-w-2xl rounded-3xl border border-white/10 bg-slate-950/70 p-8 text-center text-white/80 shadow-xl backdrop-blur-md">
+            No pricing plans available currently.
+          </motion.div>
+        )}
       </motion.div>
-    </div>
+    </>
   );
 }

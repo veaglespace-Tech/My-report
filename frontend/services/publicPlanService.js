@@ -2,8 +2,12 @@ import { axiosInstance } from "@/services/axiosInstance";
 
 export const publicPlanService = {
   getPlans: async () => {
-    const response = await axiosInstance.get("/public/plans");
-    return response.data.data;
+    try {
+      const response = await axiosInstance.get("/plans");
+      return response.data;
+    } catch {
+      const response = await axiosInstance.get("/public/plans");
+      return response.data;
+    }
   },
 };
-

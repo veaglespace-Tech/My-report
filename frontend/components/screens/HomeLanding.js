@@ -79,9 +79,19 @@ export function HomeLanding() {
       try {
         const response = await publicPlanService.getPlans();
         if (active) {
-          setPlans(Array.isArray(response?.items) ? response.items : []);
+          let fetchedPlans = [];
+          if (Array.isArray(response)) {
+            fetchedPlans = response;
+          } else if (response && Array.isArray(response.items)) {
+            fetchedPlans = response.items;
+          } else if (response && Array.isArray(response.data)) {
+            fetchedPlans = response.data;
+          } else if (response && response.data && Array.isArray(response.data.items)) {
+            fetchedPlans = response.data.items;
+          }
+          setPlans(fetchedPlans);
         }
-      } catch {
+      } catch (error) {
         if (active) {
           setPlans([]);
         }
@@ -100,32 +110,22 @@ export function HomeLanding() {
   const pricingPlans = useMemo(() => {
     const normalized = plans.map((plan) => ({
       id: plan.id,
-      name: plan.name,
+      name: plan.planName || plan.name,
       description: plan.description,
-      monthlyPrice: plan.monthlyPrice,
+      price: plan.price ?? plan.monthlyPrice,
+      duration: plan.duration,
       yearlyPrice: plan.yearlyPrice,
       features: String(plan.features || "")
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
+      trialAvailable: Boolean(plan.trialAvailable),
+      popular: Boolean(plan.popular),
+      buttonText: plan.buttonText,
+      themeColor: plan.themeColor,
     }));
 
-    const hasTrial = normalized.some((p) => (p.name || "").toLowerCase().includes("trial"));
-    const seeded = hasTrial
-      ? normalized
-      : [
-          {
-            id: "TRIAL",
-            name: "Free Trial",
-            description: "Explore the dashboard and export-ready reports with a starter workspace.",
-            monthlyPrice: 0,
-            yearlyPrice: 0,
-            features: ["Basic reports", "PDF/Excel exports", "Starter catalog"],
-          },
-          ...normalized,
-        ];
-
-    return seeded.slice(0, 3);
+    return normalized.slice(0, 3);
   }, [plans]);
 
   return (
@@ -135,7 +135,7 @@ export function HomeLanding() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="mx-auto max-w-5xl px-6 pb-12 pt-10 text-center transition-colors duration-300 sm:pb-14 sm:pt-12"
+          className="mx-auto max-w-5xl pb-12 text-center transition-colors duration-300 sm:pb-14"
         >
           <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[var(--surface-soft)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--foreground)] shadow-sm ring-1 ring-[var(--stroke)] backdrop-blur">
             <Sparkles size={14} />
@@ -221,6 +221,7 @@ export function HomeLanding() {
         </div>
       </div>
 
+      {false ? (
       <section className="relative mx-auto w-full max-w-7xl px-6 pb-20">
         <div className="mx-auto grid max-w-5xl gap-6 text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-[var(--surface-soft)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--foreground)] shadow-sm ring-1 ring-[var(--stroke)] backdrop-blur">
@@ -264,9 +265,9 @@ export function HomeLanding() {
                     <div className="text-sm font-semibold text-slate-900">{plan.name}</div>
                     <div className="mt-3 text-4xl font-black tracking-tight text-slate-900">
                       <span className="bg-gradient-to-r from-cyan-500 to-purple-600 bg-clip-text text-transparent">
-                        Rs. {Number(plan.monthlyPrice || 0).toLocaleString("en-IN")}
+                        Rs. {Number(plan.price || 0).toLocaleString("en-IN")}
                       </span>
-                      <span className="ml-2 text-sm font-semibold text-slate-600">/ month</span>
+                      <span className="ml-2 text-sm font-semibold text-slate-600">{plan.duration ? `/${plan.duration}` : "/ month"}</span>
                     </div>
                     <div className="mt-3 text-sm text-slate-700">{plan.description || "Plan details set by Super Admin."}</div>
                   </div>
@@ -294,6 +295,7 @@ export function HomeLanding() {
           ))}
         </div>
       </section>
+      ) : null}
     </div>
   );
 }

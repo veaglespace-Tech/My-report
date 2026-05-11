@@ -6,18 +6,8 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="relative overflow-hidden">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[var(--body-landscape)]" />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-80 [background-image:linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:72px_72px]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[-260px] -z-10 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgba(79,209,197,0.35),transparent_65%)] blur-2xl"
-      />
-
-      <div className="mx-auto w-full max-w-7xl px-6 py-12 sm:py-16 lg:py-20">
+    <>
+      <div className="w-full">
         <section className="relative">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--stroke)] bg-[var(--surface-soft)] px-4 py-2 text-xs font-medium tracking-wide text-[var(--muted-strong)] shadow-[0_12px_50px_rgba(3,10,25,0.18)] backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-[var(--primary)] shadow-[0_0_0_4px_rgba(79,209,197,0.14)]" />
@@ -194,7 +184,7 @@ export default function AboutPage() {
           </div>
         </section>
       </div>
-    </div>
+    </>
   );
 }
 

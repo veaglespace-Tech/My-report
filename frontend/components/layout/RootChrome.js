@@ -7,6 +7,15 @@ import { SiteFooter } from "@/components/common/SiteFooter";
 
 function shouldHideMarketingNavbar(pathname) {
   if (!pathname) return false;
+  if (
+    pathname === "/admin/login" ||
+    pathname === "/admin/signup" ||
+    pathname === "/superadmin/login" ||
+    pathname === "/login" ||
+    pathname === "/register"
+  ) {
+    return false;
+  }
   return (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/superadmin") ||
@@ -34,7 +43,7 @@ export function RootChrome({ children }) {
         <div className="absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-indigo-400/10 blur-3xl" />
       </div>
       <MarketingNavbar />
-      <main className="relative z-10 flex-1 pt-28 sm:pt-32">
+      <main className="relative z-10 flex-1 mx-auto w-full max-w-[1280px] px-6 pb-12 pt-[120px]">
         {children}
       </main>
       <SiteFooter />

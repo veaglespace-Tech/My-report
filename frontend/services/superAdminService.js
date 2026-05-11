@@ -37,7 +37,7 @@ export const superAdminService = {
         }),
       mockSuperAdminData.reports
     ),
-  getSettings: () => fetchWithFallback(() => axiosInstance.get("/super-admin/settings"), { profile: {} }),
+  getSettings: () => fetchWithFallback(() => axiosInstance.get("/super-admin/settings"), { profile: {}, preferences: {} }),
   updateProfile: async (payload) => {
     const response = await axiosInstance.put("/super-admin/settings/profile", payload);
     return response.data.data;
@@ -55,20 +55,12 @@ export const superAdminService = {
     return response.data.data;
   },
   createAdmin: async (payload) => {
-    try {
-      const response = await axiosInstance.post("/super-admin/admins", payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id: Date.now(), status: "ACTIVE", emailVerified: true, plan: "Starter" };
-    }
+    const response = await axiosInstance.post("/super-admin/admins", payload);
+    return response.data.data;
   },
   updateAdmin: async (id, payload) => {
-    try {
-      const response = await axiosInstance.put(`/super-admin/admins/${id}`, payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id };
-    }
+    const response = await axiosInstance.put(`/super-admin/admins/${id}`, payload);
+    return response.data.data;
   },
   approveAdmin: async (id) => {
     try {
@@ -95,20 +87,12 @@ export const superAdminService = {
     }
   },
   createPlan: async (payload) => {
-    try {
-      const response = await axiosInstance.post("/super-admin/plans", payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id: Date.now() };
-    }
+    const response = await axiosInstance.post("/super-admin/plans", payload);
+    return response.data.data;
   },
   updatePlan: async (id, payload) => {
-    try {
-      const response = await axiosInstance.put(`/super-admin/plans/${id}`, payload);
-      return response.data.data;
-    } catch (error) {
-      return { ...payload, id };
-    }
+    const response = await axiosInstance.put(`/super-admin/plans/${id}`, payload);
+    return response.data.data;
   },
   togglePlan: async (id) => {
     try {
