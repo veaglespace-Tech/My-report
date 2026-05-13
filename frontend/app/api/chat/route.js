@@ -115,13 +115,36 @@ function localAnswer(question) {
   );
 }
 
+async function createChatbotSupportTicket(message) {
+  try {
+    await fetch(`${process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api"}/support/chatbot`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "Chatbot User",
+        email: "chatbot@myreport.com",
+        phone: "",
+        message,
+      }),
+    });
+  } catch {
+    // best-effort only
+  }
+}
+
 export async function POST(request) {
   try {
     const { messages } = await request.json();
     const coerced = coerceMessages(messages);
 
     if (!process.env.OPENAI_API_KEY) {
-      const answer = localAnswer(lastUserMessage(coerced));
+      const userMessage = lastUserMessage(coerced);
+      const answer = localAnswer(userMessage);
+      if (answer.startsWith("I can help with")) {
+        await createChatbotSupportTicket(userMessage);
+      }
       return Response.json({ message: answer, timestamp: new Date().toISOString(), provider: "local" });
     }
 

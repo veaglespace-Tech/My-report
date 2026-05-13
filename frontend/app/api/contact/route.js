@@ -20,18 +20,29 @@ export async function POST(request) {
     });
 
     clearTimeout(timeoutId);
-    const text = await response.text();
+    const contentType = response.headers.get("content-type") || "";
+    const body = contentType.includes("application/json") ? await response.json().catch(() => null) : await response.text().catch(() => "");
 
-    return new Response(text, {
+    if (!response.ok) {
+      return Response.json(
+        {
+          success: false,
+          message: body?.message || "Something went wrong. Please try again.",
+        },
+        { status: response.status || 500 }
+      );
+    }
+
+    return new Response(typeof body === "string" ? body : JSON.stringify(body), {
       status: response.status,
       headers: {
-        "Content-Type": response.headers.get("content-type") || "application/json",
+        "Content-Type": contentType || "application/json",
       },
     });
   } catch (error) {
     const isTimeout = error?.name === "AbortError";
     return Response.json(
-      { success: false, message: isTimeout ? "Request timed out" : error?.message || "Failed to Send Message" },
+      { success: false, message: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

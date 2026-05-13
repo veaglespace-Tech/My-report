@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { withBasePath } from "@/lib/site-path";
 
 const LINKS = [
   { label: "HOME", href: "/" },
@@ -20,15 +21,15 @@ export function SiteFooter() {
   const pathname = usePathname();
 
   return (
-    <footer className="w-full pt-6 pb-3 text-center">
-      <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-3 px-6">
+    <footer className="w-full pb-3 text-center">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-2 px-6 pt-0">
         <nav className="flex flex-wrap items-center justify-center gap-x-[18px] gap-y-2 text-sm font-semibold tracking-[0.125em] text-slate-600">
           {LINKS.map((link, index) => {
             const active = isActivePath(pathname, link.href);
             return (
               <div key={link.href} className="inline-flex items-center">
                 <Link
-                  href={link.href}
+                  href={withBasePath(link.href)}
                   className={[
                     "group relative cursor-pointer px-1 py-1 transition",
                     active ? "text-indigo-700" : "hover:text-indigo-700",
@@ -54,22 +55,17 @@ export function SiteFooter() {
         </nav>
 
         <div className="flex flex-col items-center gap-1">
-          <Link
-            href="https://veaglespace.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="cursor-pointer rounded-xl px-2 py-0 font-['Times_New_Roman',serif] text-[15px] font-normal leading-[1.6] tracking-[0.3px] text-[rgba(55,65,81,0.75)] transition hover:text-indigo-700"
-          >
-            All Rights Reserved © 2026 Veagle Space Technology Pvt. Ltd.
-          </Link>
-          <a
-            href="https://veaglespace.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="cursor-pointer rounded-xl px-2 py-0 font-['Times_New_Roman',serif] text-[15px] font-normal leading-[1.6] tracking-[0.3px] text-[rgba(55,65,81,0.65)] transition hover:text-indigo-700"
-          >
-            Designed &amp; Developed by Veagle Space Technology Pvt. Ltd.
-          </a>
+          <span className="font-['Times_New_Roman',serif] text-[15px] font-normal leading-[1.6] tracking-[0.3px] text-[rgba(55,65,81,0.72)]">
+            All Rights Reserved © 2026{" "}
+            <a
+              href="https://veaglespace.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="cursor-pointer font-medium text-[rgba(37,99,235,0.9)] transition hover:text-[rgba(29,78,216,1)] hover:underline"
+            >
+              Veagle Space Technology Pvt. Ltd.
+            </a>
+          </span>
         </div>
       </div>
     </footer>

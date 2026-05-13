@@ -37,12 +37,12 @@ function PricingCard({ plan, onSelect }) {
   return (
     <motion.div
       variants={item}
-      whileHover={{ scale: 1.05, y: -6 }}
+      whileHover={{ scale: 1.02, y: -8 }}
       className={[
-        "relative h-full rounded-3xl border bg-slate-950/80 p-6 shadow-xl backdrop-blur-md transition",
+        "group relative flex h-full min-h-[520px] flex-col rounded-3xl border bg-[linear-gradient(135deg,rgba(14,14,24,0.98),rgba(29,24,49,0.96))] p-6 text-white shadow-xl backdrop-blur-md transition-all duration-300",
         plan.featured
-          ? "border-cyan-300/60 shadow-2xl shadow-indigo-500/25 ring-1 ring-cyan-200/25"
-          : "border-white/10 shadow-slate-900/20",
+          ? "border-cyan-300/70 shadow-2xl shadow-cyan-500/16 ring-1 ring-cyan-200/20 hover:shadow-[0_24px_48px_rgba(34,211,238,0.18)]"
+          : "border-white/12 shadow-slate-900/30 hover:shadow-[0_24px_48px_rgba(59,130,246,0.12)]",
       ].join(" ")}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
@@ -58,38 +58,41 @@ function PricingCard({ plan, onSelect }) {
             plan.featured ? "bg-indigo-400/20" : "bg-fuchsia-500/10",
           ].join(" ")}
         />
+        <div className="absolute inset-0 rounded-3xl border border-transparent transition duration-300 group-hover:border-cyan-300/30 group-hover:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.14)]" />
       </div>
 
-      <div className="relative">
+      <div className="relative flex h-full flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-white/90">{plan.name}</div>
+            <div className="text-sm font-semibold tracking-[0.04em] text-white/95">{plan.name}</div>
             <div className="mt-2 text-4xl font-black tracking-tight text-white">
               <span className="bg-gradient-to-r from-cyan-200 via-blue-200 to-violet-200 bg-clip-text text-transparent">
                 {plan.price}
               </span>
             </div>
-            <div className="mt-2 text-sm text-white/70">{plan.cycle}</div>
+            <div className="mt-2 text-sm text-white/78">{plan.cycle}</div>
           </div>
 
-          {plan.trialAvailable ? (
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/15">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
-              Free Trial Available
-            </div>
-          ) : null}
+          <div className="flex flex-col items-end gap-2">
+            {plan.trialAvailable ? (
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/18">
+                <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+                Free Trial Available
+              </div>
+            ) : null}
 
-          {plan.badge ? (
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/15">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
-              {plan.badge}
-            </div>
-          ) : null}
+            {plan.badge ? (
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/18">
+                <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+                {plan.badge}
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 flex-1 space-y-3">
           {features.map((feature) => (
-            <div key={feature} className="flex items-start gap-3 text-sm text-white/80">
+            <div key={feature} className="flex items-start gap-3 text-sm text-white/88">
               <div className="mt-0.5 rounded-full bg-cyan-400/15 p-1 ring-1 ring-cyan-200/15">
                 <Check className="h-4 w-4 text-cyan-200" />
               </div>
@@ -101,7 +104,7 @@ function PricingCard({ plan, onSelect }) {
         <button
           type="button"
           onClick={() => onSelect(plan.id)}
-          className="mt-7 inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/25 active:scale-[0.99]"
+          className="mt-7 inline-flex w-full items-center justify-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(17,24,39,0.98),rgba(55,65,81,0.96))] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-black/30 transition-all duration-300 hover:border-cyan-300/35 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.18),0_16px_30px_rgba(15,23,42,0.28)] active:scale-[0.99]"
         >
           {plan.buttonText || "Select Plan"}
         </button>
@@ -187,31 +190,31 @@ export default function PricingClient() {
         initial="hidden"
         animate="show"
         variants={container}
-        className="w-full"
+        className="mx-auto w-full max-w-7xl px-6"
       >
         <motion.div variants={item} className="text-center">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-700 ring-1 ring-black/5 backdrop-blur-md">
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-700 ring-1 ring-black/5 backdrop-blur-md">
             Flexible Pricing
           </div>
-          <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+          <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             Plans for{" "}
             <span className="bg-gradient-to-r from-cyan-500 to-indigo-600 bg-clip-text text-transparent">
               Every Scale
             </span>
           </h1>
-          <p className="mx-auto mt-4 max-w-3xl text-pretty text-base leading-7 text-slate-700">
+          <p className="mx-auto mt-4 max-w-3xl text-pretty text-base leading-7 text-slate-800">
             Transparent pricing with no hidden fees. Choose the plan that matches your organization’s needs.
           </p>
         </motion.div>
 
         {loadingPlans ? (
-          <motion.div variants={item} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <motion.div variants={item} className="mt-12 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[0, 1, 2, 3].map((index) => (
-              <div key={index} className="h-[520px] rounded-3xl border border-white/10 bg-slate-950/50 p-6 shadow-xl backdrop-blur-md" />
+              <div key={index} className="h-[520px] rounded-3xl border border-white/10 bg-[linear-gradient(135deg,rgba(16,16,28,0.96),rgba(29,24,49,0.94))] p-6 shadow-xl backdrop-blur-md" />
             ))}
           </motion.div>
         ) : dynamicPlans.length ? (
-          <motion.div variants={item} className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <motion.div variants={item} className="mt-12 grid grid-cols-1 items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {dynamicPlans.map((plan) => (
               <PricingCard key={plan.id} plan={plan} onSelect={handleSelect} />
             ))}

@@ -167,6 +167,14 @@ textarea {
   font: inherit;
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #111827;
+  transition: background-color 5000s ease-in-out 0s;
+  box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.95) inset;
+}
+
 ::selection {
   background: rgba(79, 209, 197, 0.28);
 }
@@ -176,6 +184,7 @@ textarea {
   border: 1px solid var(--stroke);
   box-shadow: var(--shadow-xl);
   backdrop-filter: blur(24px);
+  border-radius: 28px;
 }
 
 .glass-card {
@@ -183,6 +192,7 @@ textarea {
   border: 1px solid var(--stroke);
   box-shadow: 0 24px 60px rgba(2, 8, 20, 0.18);
   backdrop-filter: blur(18px);
+  border-radius: 24px;
 }
 
 .frost-line {
@@ -254,16 +264,20 @@ textarea {
 .invert-hover:hover {
   background: var(--primary-hover-bg);
   color: var(--primary-hover-text);
+  transform: translateY(-1px);
 }
 
 .theme-primary-button {
   background: linear-gradient(135deg, #7ee7df 0%, #b0baff 100%);
   color: var(--theme-primary-button-text);
   box-shadow: 0 18px 38px rgba(79, 209, 197, 0.22);
+  transition: transform 240ms ease, filter 240ms ease, box-shadow 240ms ease;
 }
 
 .theme-primary-button:hover {
   filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 22px 44px rgba(79, 209, 197, 0.26);
 }
 
 .theme-nav-link {
@@ -273,6 +287,7 @@ textarea {
 .theme-nav-link:hover {
   background: var(--primary-hover-bg);
   color: var(--primary-hover-text);
+  transform: translateY(-1px);
 }
 
 .theme-nav-link-active {
@@ -282,18 +297,23 @@ textarea {
 }
 
 .theme-navbar {
-  background: color-mix(in srgb, var(--background) 70%, transparent);
+  background: color-mix(in srgb, var(--background) 68%, transparent);
   border-bottom: 1px solid var(--stroke);
+  border-radius: 0 0 28px 28px;
+  backdrop-filter: blur(22px);
+  box-shadow: 0 16px 46px rgba(3, 10, 25, 0.12);
 }
 
 .theme-sidebar {
   border-right: 1px solid var(--stroke);
   background: var(--surface-sidebar);
+  backdrop-filter: blur(22px);
 }
 
 .theme-sidebar-strong {
   border-right: 1px solid var(--stroke);
   background: var(--surface-sidebar-strong);
+  backdrop-filter: blur(22px);
 }
 
 .theme-overlay {

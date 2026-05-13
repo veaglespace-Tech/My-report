@@ -1,13 +1,18 @@
-import { axiosInstance } from "@/services/axiosInstance";
-
 export const publicPlanService = {
   getPlans: async () => {
-    try {
-      const response = await axiosInstance.get("/plans");
-      return response.data;
-    } catch {
-      const response = await axiosInstance.get("/public/plans");
-      return response.data;
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
+    const response = await fetch(`${baseUrl}/public/plans`, {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const message = await response.text().catch(() => "");
+      throw new Error(message || `Failed to load plans (${response.status})`);
     }
+
+    return response.json();
   },
 };

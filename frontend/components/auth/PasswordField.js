@@ -10,7 +10,7 @@ export function PasswordField({
   placeholder,
   name,
   helper,
-  autoComplete,
+  autoComplete = "new-password",
   required = false,
   status = "idle",
   inputProps,
@@ -19,10 +19,10 @@ export function PasswordField({
 
   const statusClassName =
     status === "error"
-      ? "border-red-400 focus:ring-2 focus:ring-red-300"
+      ? "border-red-400 shadow-[0_0_0_1px_rgba(248,113,113,0.28)] focus:border-red-400 focus:ring-2 focus:ring-red-300/80 focus:shadow-[0_0_24px_rgba(248,113,113,0.22)]"
       : status === "success"
-        ? "border-green-300 focus:ring-2 focus:ring-cyan-300"
-        : "focus:ring-2 focus:ring-cyan-300";
+        ? "border-emerald-400 shadow-[0_0_0_1px_rgba(52,211,153,0.22)] focus:border-emerald-400 focus:ring-2 focus:ring-cyan-300/70 focus:shadow-[0_0_24px_rgba(45,212,191,0.24)]"
+        : "border-transparent focus:border-cyan-300 focus:ring-2 focus:ring-violet-300/60 focus:shadow-[0_0_24px_rgba(34,211,238,0.22)]";
 
   return (
     <label className="grid gap-2 text-sm">
@@ -37,7 +37,7 @@ export function PasswordField({
           onChange={onChange}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className={`theme-input w-full rounded-xl bg-white/70 px-5 py-4 pr-12 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 ${statusClassName}`}
+          className={`theme-input h-14 w-full rounded-xl bg-white/70 px-5 py-4 pr-12 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 ${statusClassName}`}
           {...(inputProps || {})}
         />
         <button

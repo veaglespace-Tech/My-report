@@ -15,9 +15,13 @@ import { GlassPanel } from "@/components/common/GlassPanel";
 import { clearSession, persistSession } from "@/lib/session";
 import { persistThemeMode } from "@/lib/theme";
 import { createSignupRazorpayOrder, login, register, verifySignupRazorpayPayment } from "@/services/authService";
+import { publicPlanService } from "@/services/publicPlanService";
 import { setCredentials } from "@/redux/slices/authSlice";
 import { setThemeMode } from "@/redux/slices/uiSlice";
 import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
+
+const ADMIN_SIGNUP_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ADMIN_SIGNUP_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 function AuthBackdrop() {
   return (
@@ -373,9 +377,9 @@ export function LoginScreen({ role }) {
               Remember me
             </label>
           ) : (
-            <button type="button" className="text-[var(--primary)] transition hover:opacity-80">
+            <Link href="/forgot-password" className="cursor-pointer text-[var(--primary)] transition hover:underline hover:opacity-80">
               Forgot Password
-            </button>
+            </Link>
           )}
         </div>
 
@@ -399,20 +403,12 @@ export function AdminSignupScreen() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [attemptedNext, setAttemptedNext] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState([]);
 
   // Allow selecting a plan from `/pricing` and jumping directly to plan selection.
-  // Supported inputs:
-  // - Query string: `/register?plan=6_MONTHS&step=3`
-  // - Local storage: `myreport:selectedPlan`
-  const preselectPlan = useMemo(() => {
-    const planParam = searchParams?.get("plan");
-    if (planParam) return planParam;
-    try {
-      return localStorage.getItem("myreport:selectedPlan");
-    } catch {
-      return null;
-    }
-  }, [searchParams]);
+  // Supported input:
+  // - Query string: `/register/store-details?planId=123`
+  const preselectPlan = searchParams?.get("planId") || "";
 
   const preselectStep = useMemo(() => {
     const step = Number(searchParams?.get("step") || "");
@@ -443,9 +439,10 @@ export function AdminSignupScreen() {
       password: "",
       confirmPassword: "",
       mobile: "",
-      gender: "MALE",
+      gender: "",
     },
     plan: preselectPlan || "3_MONTHS",
+    planId: preselectPlan,
   }));
 
   const planCards = [
@@ -488,32 +485,79 @@ export function AdminSignupScreen() {
   ];
 
   const selectedPlan = planCards.find((item) => item.value === form.plan) ?? planCards[1];
+  const selectedPlanIndex = Math.max(0, planCards.findIndex((item) => item.value === form.plan));
+  const selectedPlanId =
+    form.planId ||
+    availablePlans.find((plan) => String(plan.id) === String(preselectPlan))?.id ||
+    availablePlans[selectedPlanIndex]?.id ||
+    availablePlans[0]?.id ||
+    "";
+
+  useEffect(() => {
+    let active = true;
+    async function loadPlans() {
+      try {
+        const response = await publicPlanService.getPlans();
+        const items =
+          (Array.isArray(response) && response) ||
+          response?.items ||
+          response?.data?.items ||
+          [];
+        if (active && Array.isArray(items)) {
+          setAvailablePlans(items);
+          setForm((previous) =>
+            previous.planId || !items.length
+              ? previous
+              : {
+                  ...previous,
+                  planId: String(items[0].id),
+                }
+          );
+        }
+      } catch {
+        if (active) setAvailablePlans([]);
+      }
+    }
+    loadPlans();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const isStep1Complete = useMemo(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const storeNameRegex = /^[A-Za-z0-9]+(?:[A-Za-z0-9 ]*[A-Za-z0-9])?$/;
+    const placeRegex = /^[A-Za-z]{2,}(?:[ A-Za-z]{0,}[A-Za-z]{2,})*$/;
     const phoneRegex = /^[0-9]{10}$/;
+    const addressRegex = /[A-Za-z]{2,}/;
+
     return (
-      Boolean(form.organization.organizationName.trim()) &&
+      form.organization.organizationName.trim().length >= 3 &&
+      storeNameRegex.test(form.organization.organizationName.trim()) &&
       Boolean(form.organization.storeType.trim()) &&
       Boolean(form.organization.businessEmail.trim()) &&
-      emailRegex.test(form.organization.businessEmail.trim()) &&
+      ADMIN_SIGNUP_EMAIL_REGEX.test(form.organization.businessEmail.trim()) &&
+      placeRegex.test(form.organization.city.trim()) &&
+      placeRegex.test(form.organization.state.trim()) &&
+      placeRegex.test(form.organization.country.trim()) &&
       Boolean(form.organization.phone.trim()) &&
-      phoneRegex.test(form.organization.phone.trim())
+      phoneRegex.test(form.organization.phone.trim()) &&
+      form.organization.address.trim().length >= 5 &&
+      addressRegex.test(form.organization.address.trim())
     );
   }, [form.organization]);
 
   const isStep2Complete = useMemo(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const fullNameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
     const phoneRegex = /^[0-9]{10}$/;
     const email = form.admin.email.trim();
     const mobile = form.admin.mobile.trim();
 
     return (
-      Boolean(form.admin.fullName.trim()) &&
+      fullNameRegex.test(form.admin.fullName.trim()) &&
       Boolean(email) &&
-      emailRegex.test(email) &&
-      Boolean(form.admin.password) &&
-      form.admin.password.length >= 8 &&
+      ADMIN_SIGNUP_EMAIL_REGEX.test(email) &&
+      Boolean(form.admin.gender.trim()) &&
+      ADMIN_SIGNUP_PASSWORD_REGEX.test(form.admin.password) &&
       form.admin.password === form.admin.confirmPassword &&
       Boolean(mobile) &&
       phoneRegex.test(mobile)
@@ -552,48 +596,82 @@ export function AdminSignupScreen() {
 
   const getStepErrors = useMemo(() => {
     const errors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const fullNameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
+    const storeNameRegex = /^[A-Za-z0-9]+(?:[A-Za-z0-9 ]*[A-Za-z0-9])?$/;
+    const placeRegex = /^[A-Za-z]{2,}(?:[ A-Za-z]{0,}[A-Za-z]{2,})*$/;
     const phoneRegex = /^[0-9]{10}$/;
+    const addressRegex = /[A-Za-z]{2,}/;
 
     if (currentStep === 1) {
-      if (!form.organization.organizationName.trim()) {
-        errors.organizationName = "Store name is required.";
+      const storeName = form.organization.organizationName.trim();
+      const city = form.organization.city.trim();
+      const state = form.organization.state.trim();
+      const country = form.organization.country.trim();
+      const address = form.organization.address.trim();
+
+      if (storeName.length < 3 || !storeNameRegex.test(storeName)) {
+        errors.organizationName = "Please enter a valid store name.";
       }
       if (!form.organization.storeType.trim()) {
         errors.storeType = "Store type is required.";
       }
       if (!form.organization.businessEmail.trim()) {
         errors.businessEmail = "Business email is required.";
-      } else if (!emailRegex.test(form.organization.businessEmail.trim())) {
-        errors.businessEmail = "Enter a valid email address.";
+      } else if (!ADMIN_SIGNUP_EMAIL_REGEX.test(form.organization.businessEmail.trim())) {
+        errors.businessEmail = "Please enter a valid email address.";
+      }
+      if (!city || !placeRegex.test(city)) {
+        errors.city = "Please enter a valid city/state/country.";
+      }
+      if (!state || !placeRegex.test(state)) {
+        errors.state = "Please enter a valid city/state/country.";
+      }
+      if (!country || !placeRegex.test(country)) {
+        errors.country = "Please enter a valid city/state/country.";
       }
       if (!form.organization.phone.trim()) {
         errors.phone = "Phone number is required.";
       } else if (!phoneRegex.test(form.organization.phone.trim())) {
-        errors.phone = "Phone number must be exactly 10 digits.";
+        errors.phone = "Please enter a valid 10-digit phone number.";
+      }
+      if (!address || address.length < 5 || !addressRegex.test(address)) {
+        errors.address = "Please enter a valid address.";
       }
     }
 
     if (currentStep === 2) {
-      if (!form.admin.email.trim()) {
+      const fullName = form.admin.fullName.trim();
+      const email = form.admin.email.trim();
+      const mobile = form.admin.mobile.trim();
+      const password = form.admin.password;
+      const confirmPassword = form.admin.confirmPassword;
+      const gender = form.admin.gender.trim();
+
+      if (!fullName || fullName.length < 3 || !fullNameRegex.test(fullName)) {
+        errors.fullName = "Please enter a valid full name.";
+      }
+      if (!email) {
         errors.adminEmail = "Admin email is required.";
-      } else if (!emailRegex.test(form.admin.email.trim())) {
-        errors.adminEmail = "Enter a valid email address.";
+      } else if (!ADMIN_SIGNUP_EMAIL_REGEX.test(email)) {
+        errors.adminEmail = "Please enter a valid email address.";
       }
-      if (!form.admin.mobile.trim()) {
+      if (!gender) {
+        errors.gender = "Please select gender.";
+      }
+      if (!mobile) {
         errors.adminMobile = "Mobile is required.";
-      } else if (!phoneRegex.test(form.admin.mobile.trim())) {
-        errors.adminMobile = "Mobile must be exactly 10 digits.";
+      } else if (!phoneRegex.test(mobile) || /^0+$/.test(mobile) || /^(\d)\1{9}$/.test(mobile)) {
+        errors.adminMobile = "Please enter a valid 10-digit phone number.";
       }
-      if (!form.admin.password) {
+      if (!password) {
         errors.password = "Password is required.";
-      } else if (form.admin.password.length < 8) {
-        errors.password = "Password must contain minimum 8 characters.";
+      } else if (!ADMIN_SIGNUP_PASSWORD_REGEX.test(password)) {
+        errors.password = "Password must contain uppercase, lowercase, number, and special character.";
       }
-      if (!form.admin.confirmPassword) {
+      if (!confirmPassword) {
         errors.confirmPassword = "Confirm password is required.";
-      } else if (form.admin.password !== form.admin.confirmPassword) {
-        errors.confirmPassword = "Password and confirm password must match.";
+      } else if (password !== confirmPassword) {
+        errors.confirmPassword = "Passwords do not match.";
       }
     }
 
@@ -625,7 +703,11 @@ export function AdminSignupScreen() {
         ["organizationName", "Store name"],
         ["storeType", "Store type"],
         ["businessEmail", "Business email"],
+        ["city", "City"],
+        ["state", "State"],
+        ["country", "Country"],
         ["phone", "Phone number"],
+        ["address", "Address"],
       ];
 
       for (const [field, label] of requiredFields) {
@@ -653,26 +735,35 @@ export function AdminSignupScreen() {
         }
       }
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const phoneRegex = /^[0-9]{10}$/;
 
-      if (!emailRegex.test(form.admin.email.trim())) {
-        toast.error("Invalid email format");
+      if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(form.admin.fullName.trim()) || form.admin.fullName.trim().length < 3) {
+        toast.error("Please enter a valid full name.");
         return false;
       }
 
-      if (!phoneRegex.test(form.admin.mobile.trim())) {
-        toast.error("Invalid mobile number");
+      if (!ADMIN_SIGNUP_EMAIL_REGEX.test(form.admin.email.trim())) {
+        toast.error("Please enter a valid email address.");
         return false;
       }
 
-      if (form.admin.password.length < 8) {
-        toast.error("Password must contain minimum 8 characters");
+      if (!form.admin.gender.trim()) {
+        toast.error("Please select gender.");
+        return false;
+      }
+
+      if (!phoneRegex.test(form.admin.mobile.trim()) || /^0+$/.test(form.admin.mobile.trim()) || /^(\d)\1{9}$/.test(form.admin.mobile.trim())) {
+        toast.error("Please enter a valid 10-digit phone number.");
+        return false;
+      }
+
+      if (!ADMIN_SIGNUP_PASSWORD_REGEX.test(form.admin.password)) {
+        toast.error("Password must contain uppercase, lowercase, number, and special character.");
         return false;
       }
 
       if (form.admin.password !== form.admin.confirmPassword) {
-        toast.error("Password and confirm password must match");
+        toast.error("Passwords do not match.");
         return false;
       }
     }
@@ -716,7 +807,10 @@ export function AdminSignupScreen() {
         }
 
         if (!amount) {
-          const payload = await register(form);
+          const payload = await register({
+            ...form,
+            planId: Number(selectedPlanId),
+          });
           persistSession(payload);
           dispatch(setCredentials(payload));
           const nextTheme = payload.profile?.preferences?.darkMode ? "dark" : "light";
@@ -760,7 +854,10 @@ export function AdminSignupScreen() {
               throw new Error("Payment verification failed");
             }
 
-            const payload = await register(form);
+            const payload = await register({
+              ...form,
+              planId: Number(selectedPlanId),
+            });
             persistSession(payload);
             dispatch(setCredentials(payload));
             const nextTheme = payload.profile?.preferences?.darkMode ? "dark" : "light";
@@ -787,14 +884,15 @@ export function AdminSignupScreen() {
       <span className="font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">{label}</span>
       <div
         className={[
-          "theme-input flex items-center gap-3 rounded-[28px] px-4 py-3",
-          error ? "ring-1 ring-red-500/60" : "",
+          "theme-input flex items-center gap-3 rounded-[28px] px-4 py-3 transition-all duration-300",
+          error ? "border border-red-400 ring-1 ring-red-500/60" : "border border-transparent",
+          !error && attemptedNext && String(input?.props?.value ?? "").trim() ? "border border-emerald-400/80 ring-1 ring-emerald-300/40" : "",
         ].join(" ")}
       >
         <span className="text-[var(--muted)]">{icon}</span>
         {input}
       </div>
-      {error ? <div className="text-sm text-red-500">{error}</div> : null}
+      {error ? <div className="text-sm text-red-500/90">{error}</div> : null}
     </label>
   );
 
@@ -836,6 +934,9 @@ export function AdminSignupScreen() {
             <div>
               <h3 className="text-2xl font-semibold tracking-tight">Store details</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Set up your organization profile before we create the admin account.</p>
+              <p className="mt-2 text-xs font-medium text-[var(--muted)]">
+                Use a valid business email like <span className="font-semibold text-[var(--foreground)]">store@myreport.com</span> and a 10-digit phone number.
+              </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {renderField(
@@ -874,7 +975,7 @@ export function AdminSignupScreen() {
                   type="email"
                   value={form.organization.businessEmail}
                   onChange={(event) => updateSection("organization", "businessEmail", event.target.value)}
-                  placeholder="store@example.com"
+                  placeholder="store@company.com"
                   className="w-full bg-transparent text-sm outline-none"
                 />,
                 attemptedNext ? getStepErrors.businessEmail : null
@@ -887,7 +988,8 @@ export function AdminSignupScreen() {
                   onChange={(event) => updateSection("organization", "city", event.target.value)}
                   placeholder="City"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.city : null
               )}
               {renderField(
                 "State",
@@ -897,7 +999,8 @@ export function AdminSignupScreen() {
                   onChange={(event) => updateSection("organization", "state", event.target.value)}
                   placeholder="State"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.state : null
               )}
               {renderField(
                 "Country",
@@ -907,7 +1010,8 @@ export function AdminSignupScreen() {
                   onChange={(event) => updateSection("organization", "country", event.target.value)}
                   placeholder="Country"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.country : null
               )}
               {renderField(
                 "Phone Number",
@@ -931,7 +1035,8 @@ export function AdminSignupScreen() {
                 onChange={(event) => updateSection("organization", "address", event.target.value)}
                 placeholder="Street, area, landmark"
                 className="w-full bg-transparent text-sm outline-none"
-              />
+              />,
+              attemptedNext ? getStepErrors.address : null
             )}
           </div>
         ) : null}
@@ -951,7 +1056,8 @@ export function AdminSignupScreen() {
                   onChange={(event) => updateSection("admin", "fullName", event.target.value)}
                   placeholder="Full name"
                   className="w-full bg-transparent text-sm outline-none"
-                />
+                />,
+                attemptedNext ? getStepErrors.fullName : null
               )}
               {renderField(
                 "Admin Email",
@@ -961,6 +1067,7 @@ export function AdminSignupScreen() {
                   value={form.admin.email}
                   onChange={(event) => updateSection("admin", "email", event.target.value)}
                   placeholder="name@company.com"
+                  autoComplete="off"
                   className="w-full bg-transparent text-sm outline-none"
                 />,
                 attemptedNext ? getStepErrors.adminEmail : null
@@ -986,13 +1093,15 @@ export function AdminSignupScreen() {
                   onChange={(event) => updateSection("admin", "gender", event.target.value)}
                   className="w-full bg-transparent text-sm outline-none"
                 >
+                  <option value="">Select Gender</option>
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other</option>
-                </select>
+                </select>,
+                attemptedNext ? getStepErrors.gender : null
               )}
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="grid gap-3">
                 <PasswordField
                   label="Password"
@@ -1001,22 +1110,34 @@ export function AdminSignupScreen() {
                   onChange={(event) => updateSection("admin", "password", event.target.value)}
                   required
                   placeholder="Enter your password"
+                  autoComplete="new-password"
+                  status={attemptedNext ? (getStepErrors.password ? "error" : form.admin.password ? "success" : "idle") : "idle"}
                 />
                 <PasswordStrengthMeter password={form.admin.password} />
+                {attemptedNext && getStepErrors.password ? (
+                  <div className="text-sm text-red-500/90">{getStepErrors.password}</div>
+                ) : null}
               </div>
-              <PasswordField
-                label="Confirm Password"
-                name="confirmPassword"
-                value={form.admin.confirmPassword}
-                onChange={(event) => updateSection("admin", "confirmPassword", event.target.value)}
-                required
-                placeholder="Confirm your password"
-                inputProps={{
-                  onPaste: (event) => event.preventDefault(),
-                  onCopy: (event) => event.preventDefault(),
-                  onCut: (event) => event.preventDefault(),
-                }}
-              />
+              <div className="grid gap-3">
+                <PasswordField
+                  label="Confirm Password"
+                  name="confirmPassword"
+                  value={form.admin.confirmPassword}
+                  onChange={(event) => updateSection("admin", "confirmPassword", event.target.value)}
+                  required
+                  placeholder="Confirm your password"
+                  autoComplete="new-password"
+                  status={attemptedNext ? (getStepErrors.confirmPassword ? "error" : form.admin.confirmPassword ? "success" : "idle") : "idle"}
+                  inputProps={{
+                    onPaste: (event) => event.preventDefault(),
+                    onCopy: (event) => event.preventDefault(),
+                    onCut: (event) => event.preventDefault(),
+                  }}
+                />
+                {attemptedNext && getStepErrors.confirmPassword ? (
+                  <div className="text-sm text-red-500/90">{getStepErrors.confirmPassword}</div>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
@@ -1028,22 +1149,39 @@ export function AdminSignupScreen() {
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Choose the onboarding cycle that best matches your rollout speed.</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              {planCards.map((plan) => (
+              {planCards.map((plan, index) => (
                 <button
-                  key={plan.id}
+                  key={plan.value}
                   type="button"
-                  onClick={() => setForm((previous) => ({ ...previous, planId: plan.id }))}
-                  className={`rounded-[30px] border p-6 text-left transition ${
-                    String(form.planId) === String(plan.id)
-                      ? "border-blue-300/60 bg-blue-500/8 shadow-[0_20px_50px_rgba(59,130,246,0.16)]"
-                      : "border-white/12 bg-white/55 hover:border-blue-200/40"
+                  onClick={() => {
+                    const nextPlanId = availablePlans[index]?.id || form.planId || "";
+                    setForm((previous) => ({
+                      ...previous,
+                      plan: plan.value,
+                      planId: nextPlanId ? String(nextPlanId) : previous.planId,
+                    }));
+                  }}
+                  className={`group rounded-[30px] border p-6 text-left transition-all duration-300 ${
+                    String(form.plan) === String(plan.value)
+                      ? "border-cyan-300/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(232,244,255,0.92))] shadow-[0_20px_50px_rgba(59,130,246,0.16),0_0_0_1px_rgba(34,211,238,0.16),0_0_24px_rgba(139,92,246,0.16)]"
+                      : "border-white/12 bg-white/55 hover:-translate-y-0.5 hover:scale-[1.01] hover:border-cyan-200/50 hover:shadow-[0_16px_36px_rgba(59,130,246,0.1)]"
                   }`}
                 >
                   <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     {plan.chip}
                   </div>
-                  <div className="mt-5 text-3xl font-semibold text-slate-900">{plan.title}</div>
-                  <div className="mt-2 text-4xl font-black tracking-tight text-slate-900">{plan.price}</div>
+                  <div className="mt-5 flex items-baseline justify-between gap-4">
+                    <div className="min-w-0 text-2xl font-semibold text-slate-900 sm:text-3xl">{plan.title}</div>
+                    <div className="shrink-0 rounded-full bg-white/65 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      {plan.value === "3_MONTHS" ? "Launch Plan" : "Plan"}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-start justify-between gap-4">
+                    <div className="whitespace-nowrap text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                      {plan.price}
+                    </div>
+                    <div className="pt-2 whitespace-nowrap text-sm text-slate-500">per cycle</div>
+                  </div>
                   <p className="mt-3 text-sm leading-6 text-slate-500">{plan.note}</p>
                   <div className="mt-5 grid gap-2 text-sm text-slate-700">
                     {plan.features.map((feature) => (
@@ -1085,8 +1223,10 @@ export function AdminSignupScreen() {
                   text: "Your organization, admin profile, and plan assignment are created together.",
                 },
               ].map((item) => (
-                <div key={item.title} className="flex gap-4 rounded-[24px] border border-white/12 bg-white/55 p-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/12 text-blue-600">{item.icon}</div>
+                <div key={item.title} className="group flex gap-4 rounded-[24px] border border-white/12 bg-white/55 p-4 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:border-cyan-200/60 hover:bg-white/70 hover:shadow-[0_10px_25px_rgba(99,102,241,0.18),0_0_0_1px_rgba(34,211,238,0.16)]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(79,209,197,0.18),rgba(124,140,255,0.16))] text-blue-600 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-[0_8px_20px_rgba(99,102,241,0.18)] group-hover:text-cyan-600">
+                    <span className="transition-transform duration-300 group-hover:scale-110">{item.icon}</span>
+                  </div>
                   <div>
                     <div className="font-semibold text-slate-900">{item.title}</div>
                     <div className="mt-1 text-sm leading-6 text-slate-500">{item.text}</div>
@@ -1095,34 +1235,57 @@ export function AdminSignupScreen() {
               ))}
             </div>
 
-            <div className="rounded-[32px] border border-white/12 bg-white/70 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-              <div className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600">Your plan summary</div>
-              <div className="mt-5 grid gap-5">
-                <div className="rounded-[24px] border border-slate-100 bg-white p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-2xl font-semibold text-slate-900">{selectedPlan?.title || "Loading..."}</div>
-                      <div className="mt-2 text-sm text-slate-500">{selectedPlan?.chip || "..."}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-4xl font-black tracking-tight text-slate-900">{selectedPlan?.price || "-"}</div>
-                      <div className="mt-1 text-sm text-slate-500">per cycle</div>
+            <div className="plan-summary-card flex min-w-0 flex-col justify-between overflow-hidden rounded-[32px] border border-white/12 bg-white/70 p-6 pb-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600">Your plan summary</div>
+                <div className="mt-5 grid gap-5">
+                  <div className="rounded-[24px] border border-cyan-200/50 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(236,245,255,0.94))] p-5 shadow-[0_14px_34px_rgba(34,211,238,0.12),0_0_0_1px_rgba(139,92,246,0.08)]">
+                    <div className="flex min-w-0 flex-col gap-3">
+                      <div className="min-w-0">
+                        <div className="min-w-0 truncate text-[34px] font-bold leading-tight text-slate-900">{selectedPlan?.title || "Loading..."}</div>
+                      </div>
+                      <div className="flex min-w-0 items-baseline justify-center gap-2 whitespace-nowrap">
+                        <span className="text-[clamp(2.1rem,7.2vw,2.75rem)] font-extrabold leading-none tracking-tight text-slate-900">
+                          {selectedPlan?.price || "-"}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-500">per cycle</span>
+                      </div>
+                      <div className="text-center text-xl font-medium text-slate-500/80">
+                        {selectedPlan?.chip || "..."}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid gap-3 rounded-[24px] border border-slate-100 bg-slate-50/80 p-5 text-sm text-slate-600">
-                  <div><span className="font-semibold text-slate-900">Store:</span> {form.organization.organizationName}</div>
-                  <div><span className="font-semibold text-slate-900">Store type:</span> {form.organization.storeType}</div>
-                  <div><span className="font-semibold text-slate-900">Business email:</span> {form.organization.businessEmail}</div>
-                  <div><span className="font-semibold text-slate-900">Location:</span> {form.organization.city}, {form.organization.state}, {form.organization.country}</div>
-                  <div><span className="font-semibold text-slate-900">Phone:</span> {form.organization.phone}</div>
-                  <div><span className="font-semibold text-slate-900">Admin:</span> {form.admin.fullName}</div>
-                  <div><span className="font-semibold text-slate-900">Admin email:</span> {form.admin.email}</div>
-                  <div><span className="font-semibold text-slate-900">Mobile:</span> {form.admin.mobile}</div>
-                  <div><span className="font-semibold text-slate-900">Gender:</span> {form.admin.gender}</div>
+                  <div className="grid min-w-0 gap-3 rounded-[24px] border border-slate-100 bg-slate-50/80 p-5 text-sm text-slate-600">
+                    {[
+                      ["Store", form.organization.organizationName],
+                      ["Store type", form.organization.storeType],
+                      ["Business email", form.organization.businessEmail],
+                      ["Location", `${form.organization.city}, ${form.organization.state}, ${form.organization.country}`],
+                      ["Phone", form.organization.phone],
+                      ["Admin", form.admin.fullName],
+                      ["Admin email", form.admin.email],
+                      ["Mobile", form.admin.mobile],
+                      ["Gender", form.admin.gender],
+                    ].map(([label, value]) => (
+                      <div key={label} className="grid min-w-0 gap-1 sm:grid-cols-[120px_minmax(0,1fr)]">
+                        <span className="font-semibold text-slate-900">{label}:</span>
+                        <span className="min-w-0 break-words">{value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
+              <motion.button
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.99 }}
+                disabled={loading}
+                type="button"
+                onClick={handleConfirm}
+                className="mt-6 h-14 w-full rounded-[18px] bg-gradient-to-r from-cyan-400 to-purple-400 px-6 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(99,102,241,0.18)] transition-all duration-300 hover:shadow-[0_12px_24px_rgba(99,102,241,0.22)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Completing..." : "Confirm & Pay"}
+              </motion.button>
             </div>
           </div>
         ) : null}
@@ -1148,18 +1311,7 @@ export function AdminSignupScreen() {
               >
                 Next
               </motion.button>
-            ) : (
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                disabled={loading}
-                type="button"
-                onClick={handleConfirm}
-                className="theme-primary-button rounded-2xl px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Completing..." : "Confirm & Pay"}
-              </motion.button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

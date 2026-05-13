@@ -10,7 +10,7 @@ export async function POST(request) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    const response = await fetch(`${BACKEND_BASE_URL}/contact/send`, {
+    const response = await fetch(`${BACKEND_BASE_URL}/enquiry/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -20,19 +20,37 @@ export async function POST(request) {
     });
 
     clearTimeout(timeoutId);
-    const text = await response.text();
+    const contentType = response.headers.get("content-type") || "";
+    const body = contentType.includes("application/json") ? await response.json().catch(() => null) : await response.text().catch(() => "");
 
-    return new Response(text, {
+    if (!response.ok) {
+      const fieldErrors = body && typeof body === "object" ? body.data : null;
+      const firstFieldError =
+        fieldErrors && typeof fieldErrors === "object"
+          ? Object.values(fieldErrors).find(Boolean)
+          : null;
+
+      return Response.json(
+        {
+          success: false,
+          message: firstFieldError || body?.message || "Something went wrong. Please try again.",
+          errors: fieldErrors || undefined,
+        },
+        { status: 200 }
+      );
+    }
+
+    return new Response(typeof body === "string" ? body : JSON.stringify(body), {
       status: response.status,
       headers: {
-        "Content-Type": response.headers.get("content-type") || "application/json",
+        "Content-Type": contentType || "application/json",
       },
     });
   } catch (error) {
     const isTimeout = error?.name === "AbortError";
     return Response.json(
-      { success: false, message: isTimeout ? "Server unavailable. Try again later" : error?.message || "Server unavailable. Try again later" },
-      { status: 500 }
+      { success: false, message: isTimeout ? "Server is taking too long. Please try again." : "Unable to reach the backend server. Please make sure it is running." },
+      { status: 200 }
     );
   }
 }

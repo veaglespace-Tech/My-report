@@ -6,6 +6,9 @@ import "./globals.css";
 export const metadata = {
   title: "MyReport",
   description: "Premium SaaS reporting platform with SuperAdmin and Admin dashboards",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }) {

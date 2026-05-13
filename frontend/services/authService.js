@@ -25,6 +25,16 @@ export async function signupAdmin(payload) {
   return response.data.data;
 }
 
+export async function forgotPassword(payload) {
+  const response = await axiosInstance.post("/auth/forgot-password", payload);
+  return response.data.data;
+}
+
+export async function resetPassword(payload) {
+  const response = await axiosInstance.post("/auth/reset-password", payload);
+  return response.data.data;
+}
+
 export async function verifyOtp(payload) {
   const response = await axiosInstance.post("/auth/admin/verify-otp", payload);
   return response.data.data;

@@ -254,6 +254,10 @@ export function FloatingChatbot() {
     return sendMessageWithText(input);
   }
 
+  function sendFeatureQuestion(prompt) {
+    sendMessageWithText(prompt);
+  }
+
   function onKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -307,15 +311,24 @@ export function FloatingChatbot() {
                           : "bg-[rgba(255,255,255,0.94)] text-[rgba(15,23,42,0.92)] shadow-[0_8px_24px_rgba(0,0,0,0.08)] ring-black/10 backdrop-blur-[12px] dark:bg-white/12 dark:text-white/90 dark:ring-white/10 dark:shadow-none"
                       )}
                     >
-                      <div className="whitespace-pre-wrap break-words">{message.content}</div>
-                      <div className="mt-2 text-[12px] text-[rgba(100,116,139,0.8)] dark:text-white/60">
-                        {formatTime(message.timestamp)}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                        <div className="shrink-0 pt-0.5 text-right text-[11px] font-medium tracking-[0.08em] text-[rgba(148,163,184,0.88)] dark:text-white/55">
+                          {formatTime(message.timestamp)}
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {message.id === latestAssistantMessageId ? (
-                    <QuickQuestionChips disabled={sending} onSelect={sendMessageWithText} />
+                    <div className="flex items-end justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <QuickQuestionChips disabled={sending} onSelect={sendFeatureQuestion} />
+                      </div>
+                      <div className="shrink-0 pb-1 text-right text-[11px] font-medium tracking-[0.08em] text-white/45">
+                        {formatTime(message.timestamp)}
+                      </div>
+                    </div>
                   ) : null}
                 </div>
               ))}
@@ -338,7 +351,7 @@ export function FloatingChatbot() {
                   onKeyDown={onKeyDown}
                   rows={1}
                   placeholder="Ask about billing, GST, stock, reports..."
-                  className="min-h-[44px] max-h-28 flex-1 resize-none rounded-xl border border-white/10 bg-white/8 px-3 py-2 text-sm text-white/90 outline-none placeholder:text-white/50 focus:border-cyan-200/35 focus:ring-2 focus:ring-cyan-400/30 dark:bg-white/5"
+                  className="min-h-[44px] max-h-28 flex-1 resize-none rounded-xl border border-white/10 bg-white/8 px-3 py-2 text-sm text-white/95 outline-none placeholder:text-white/80 focus:border-cyan-200/35 focus:ring-2 focus:ring-cyan-400/30 dark:bg-white/5"
                 />
                 <button
                   type="button"
@@ -352,7 +365,7 @@ export function FloatingChatbot() {
                   )}
                   aria-label="Send message"
                 >
-                  <Send className="h-5 w-5" />
+                  <Send className="h-5 w-5 rotate-45 transform" />
                 </button>
               </div>
             </div>

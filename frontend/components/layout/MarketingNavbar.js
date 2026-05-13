@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Menu, Store, X } from "lucide-react";
 import { LogoMark } from "@/components/common/LogoMark";
+import { withBasePath } from "@/lib/site-path";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
@@ -19,6 +20,26 @@ function isActivePath(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function NavLink({ href, active, children }) {
+  return (
+    <Link
+      href={withBasePath(href)}
+      className={[
+        "group relative inline-flex min-w-[88px] items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-all duration-300",
+        "text-[var(--muted-strong)] hover:-translate-y-0.5 hover:text-[var(--foreground)]",
+        "before:absolute before:inset-x-4 before:bottom-1 before:h-px before:origin-center before:scale-x-0 before:bg-gradient-to-r before:from-cyan-400 before:via-indigo-400 before:to-fuchsia-400 before:transition-transform before:duration-300 before:content-['']",
+        "after:absolute after:inset-0 after:rounded-full after:bg-gradient-to-r after:from-cyan-400/0 after:via-indigo-400/0 after:to-fuchsia-400/0 after:opacity-0 after:transition-opacity after:duration-300 after:content-['']",
+        "hover:before:scale-x-100 hover:after:opacity-100 hover:after:from-cyan-400/10 hover:after:via-indigo-400/10 hover:after:to-fuchsia-400/10 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_0_18px_rgba(99,102,241,0.18)]",
+        active
+          ? "text-[var(--foreground)] shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_0_18px_rgba(99,102,241,0.22)] before:scale-x-100 after:opacity-100 after:from-cyan-400/12 after:via-indigo-400/12 after:to-fuchsia-400/12"
+          : "",
+      ].join(" ")}
+    >
+      <span className="relative z-10 transition-transform duration-300 group-hover:scale-[1.03]">{children}</span>
+    </Link>
+  );
+}
+
 export function MarketingNavbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -29,7 +50,7 @@ export function MarketingNavbar() {
   return (
     <header className="theme-navbar fixed left-0 right-0 top-0 z-50 w-full border-b border-black/10 backdrop-blur-xl transition-colors duration-300">
       <nav className="mx-auto flex h-[88px] w-full max-w-6xl items-center justify-between px-6 lg:px-8">
-        <Link href="/" className="group inline-flex items-center gap-4">
+        <Link href={withBasePath("/")} className="group inline-flex items-center gap-4">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-200 via-indigo-200 to-purple-200 shadow-lg shadow-indigo-500/10 ring-1 ring-black/10 transition group-hover:brightness-105 dark:ring-white/10">
             <Store className="h-9 w-9 text-slate-900" />
           </span>
@@ -40,25 +61,15 @@ export function MarketingNavbar() {
         </Link>
 
         <div className="hidden flex-1 items-center justify-center md:flex">
-          <div className="flex items-center gap-8">
-          {NAV_LINKS.map((link, index) => {
-            const active = index === activeIndex;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={[
-                  "relative rounded-full px-4 py-2 text-sm font-medium transition",
-                  "hover:bg-white/10 hover:text-[var(--foreground)] dark:hover:bg-white/5",
-                  active
-                    ? "bg-white/10 text-[var(--foreground)] shadow-sm ring-1 ring-white/25 dark:bg-white/5"
-                    : "text-[var(--muted-strong)]",
-                ].join(" ")}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-2 py-2 shadow-[0_12px_30px_rgba(3,10,25,0.08)] backdrop-blur-xl">
+            {NAV_LINKS.map((link, index) => {
+              const active = index === activeIndex;
+              return (
+                <NavLink key={link.href} href={link.href} active={active}>
+                  {link.label}
+                </NavLink>
+              );
+            })}
           </div>
         </div>
 
@@ -101,7 +112,7 @@ export function MarketingNavbar() {
                 return (
                   <Link
                     key={link.href}
-                    href={link.href}
+                    href={withBasePath(link.href)}
                     onClick={() => setMobileOpen(false)}
                     className={[
                       "rounded-2xl px-4 py-3 text-sm font-semibold transition",

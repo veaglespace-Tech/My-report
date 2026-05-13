@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   PackageSearch,
   Settings,
+  MessageSquareText,
   ShieldCheck,
   Store,
   Users,
@@ -20,6 +21,7 @@ export const superAdminNav = [
   { label: "Stores", href: "/superadmin/stores", icon: Store },
   { label: "Plans", href: "/superadmin/plans", icon: WalletCards },
   { label: "Invoices", href: "/superadmin/invoices", icon: CreditCard },
+  { label: "Enquiries", href: "/superadmin/enquiries", icon: MessageSquareText },
   { label: "Reports", href: "/superadmin/reports", icon: FileBarChart2 },
   { label: "Settings", href: "/superadmin/settings", icon: Settings },
 ];

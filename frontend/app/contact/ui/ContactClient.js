@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 import { startTransition, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,53 +15,32 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-function InfoCard({ icon: Icon, title, value, hint, href }) {
-  const Wrapper = href ? motion.a : motion.div;
-  const wrapperProps = href
-    ? {
-        href,
-        target: "_blank",
-        rel: "noreferrer",
-      }
-    : {};
+const mapsUrl =
+  "https://www.google.com/maps/place/Veagle+Space+Technology/@18.4664403,73.8212889,826m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3bc2952f1a0d1e2b:0x20c7362429855a2f!8m2!3d18.4664403!4d73.8238638!16s%2Fg%2F11ytd2b7gw?entry=ttu";
 
+const mapEmbedUrl =
+  "https://www.google.com/maps?q=Veagle%20Space%20Technology%2C%20Kudale%20Patil%20Tower%2C%20Vadgaon%20Budruk%2C%20Pune&output=embed";
+
+function ContactInfoItem({ icon: Icon, label, value }) {
   return (
-    <Wrapper
-      variants={item}
-      className={[
-        "group w-full rounded-3xl border border-white/35 bg-white/55 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl",
-        "transition hover:-translate-y-0.5 hover:bg-white/65 hover:shadow-[0_24px_70px_rgba(15,23,42,0.14)]",
-        "dark:border-white/10 dark:bg-slate-900/40 dark:hover:bg-slate-900/50",
-        href ? "cursor-pointer" : "",
-      ].join(" ")}
-      {...wrapperProps}
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400/18 via-indigo-400/14 to-fuchsia-400/12 ring-1 ring-white/35 dark:ring-white/10">
-          <Icon className="h-5 w-5 text-slate-900/90 dark:text-white" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-base font-semibold tracking-tight text-slate-900 dark:text-white">{title}</p>
-          <p className="mt-1 whitespace-pre-line break-words text-sm leading-6 text-slate-600 dark:text-white/70">
-            {value}
-          </p>
-          {hint ? (
-            <div className="mt-3">
-              <span
-                className={[
-                  "inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-indigo-700",
-                  "ring-1 ring-indigo-500/20 transition group-hover:bg-white/85 group-hover:ring-indigo-500/30",
-                  "dark:bg-white/5 dark:text-cyan-200 dark:ring-white/15 dark:group-hover:bg-white/8",
-                ].join(" ")}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-500/80" />
-                {hint}
-              </span>
-            </div>
-          ) : null}
-        </div>
+    <div className="group flex items-start gap-4 rounded-3xl p-3 transition-all duration-300 hover:-translate-y-1 hover:bg-white/45 dark:hover:bg-white/5">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-cyan-400/22 via-indigo-400/18 to-purple-400/18 ring-1 ring-white/45 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 group-hover:shadow-[0_12px_24px_rgba(99,102,241,0.18)] dark:ring-white/10">
+        <Icon className="h-5 w-5 text-slate-900/90 dark:text-white" />
       </div>
-    </Wrapper>
+      <div className="min-w-0 pt-1">
+        <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-700/75 dark:text-cyan-200/80">{label}</div>
+        <div className="mt-2 whitespace-pre-line break-words text-base font-semibold leading-6 text-slate-900 dark:text-white">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function BusinessHourBox({ label, value }) {
+  return (
+    <div className="flex min-h-24 flex-1 flex-col justify-center rounded-[18px] border border-white/35 bg-white/35 px-5 py-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(99,102,241,0.15)] dark:border-white/15 dark:bg-white/8">
+      <div className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-700/75 dark:text-cyan-200/80">{label}</div>
+      <div className="mt-2 text-base font-bold leading-6 text-slate-900 dark:text-white">{value}</div>
+    </div>
   );
 }
 
@@ -71,22 +50,31 @@ export default function ContactClient() {
   const [form, setForm] = useState({
     fullName: "",
     email: "",
+    phone: "",
     subject: "",
     message: "",
   });
 
   const errors = useMemo(() => {
     const nextErrors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^(?!.*\.\.)[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$/;
 
     if (!form.fullName.trim()) {
       nextErrors.fullName = "Full Name is required.";
     }
 
-    if (!form.email.trim()) {
+    const email = form.email.trim().toLowerCase();
+
+    if (!email) {
       nextErrors.email = "Email Address is required.";
-    } else if (!emailRegex.test(form.email.trim())) {
-      nextErrors.email = "Email Address is invalid.";
+    } else if (!emailRegex.test(email)) {
+      nextErrors.email = "Please enter a valid email address.";
+    }
+
+    if (!form.phone.trim()) {
+      nextErrors.phone = "Phone Number is required.";
+    } else if (!/^[0-9]{10,15}$/.test(form.phone.trim())) {
+      nextErrors.phone = "Phone Number is invalid.";
     }
 
     if (!form.subject.trim()) {
@@ -94,11 +82,11 @@ export default function ContactClient() {
     }
 
     if (!form.message.trim()) {
-      nextErrors.message = "Message is required.";
+      nextErrors.message = "Inquiry Message is required.";
     }
 
     return nextErrors;
-  }, [form.email, form.fullName, form.message, form.subject]);
+  }, [form.email, form.fullName, form.message, form.phone, form.subject]);
 
   const isValid = Object.keys(errors).length === 0;
 
@@ -126,7 +114,10 @@ export default function ContactClient() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setTouched(true);
-    setForm((previous) => ({ ...previous, [name]: value }));
+    setForm((previous) => ({
+      ...previous,
+      [name]: name === "phone" ? value.replace(/\D/g, "").slice(0, 15) : value,
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -136,8 +127,9 @@ export default function ContactClient() {
     if (!isValid || loading) {
       if (errors.fullName) toast.error("Please enter your name");
       else if (errors.email) toast.error("Invalid email address");
+      else if (errors.phone) toast.error("Please enter valid phone number");
       else if (errors.subject) toast.error("Please enter a subject");
-      else if (errors.message) toast.error("Message cannot be empty");
+      else if (errors.message) toast.error("Please enter your inquiry message");
       return;
     }
 
@@ -148,7 +140,7 @@ export default function ContactClient() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        const response = await fetch("/api/contact", {
+        const response = await fetch("/api/enquiry/send", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -175,7 +167,7 @@ export default function ContactClient() {
           throw new Error(message);
         }
 
-        setForm({ fullName: "", email: "", subject: "", message: "" });
+        setForm({ fullName: "", email: "", phone: "", subject: "", message: "" });
         setTouched(false);
         toast.success("Message sent successfully");
       } catch (error) {
@@ -186,9 +178,6 @@ export default function ContactClient() {
       }
     });
   };
-
-  const googleMapsUrl =
-    "https://www.google.com/maps?rlz=1C1RXQR_enIN1141IN1141&biw=1536&bih=730&sca_esv=9700858d11d87a5f&output=search&q=veagle+space+technology,+office+no+207,+kudale+patil+chambers,+heritage,+near+bhairavnath+temple,+jadhav+nagar,+vadgaon+budruk,+pune,+maharashtra+411041&source=lnms&fbs=ADc_l-aN0CWEZBOHjofHoaMMDiKpUrv6YeyJhXfuYqj4Fj6c1U4Z6Yq0xAU8tFlmuJvKXCt2iug6axOV8fORMUDyzql5eftAvM01BCoXXxgyfHuMr6x2ZscPm0fwdyB5VxFc3qiGVCUKfBqOpiOih0-PzFDfuCOWG9-0wSFGakunBowexz4XsLuKcEFLp9zgDBYYBuIaky9uPZZCJfPP0TVu3_LchT-3QA&entry=mc&ved=1t:200715&ictx=111";
 
   return (
     <>
@@ -210,24 +199,44 @@ export default function ContactClient() {
           </p>
         </motion.div>
 
-        <motion.div variants={item} className="mt-10 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-          <div className="grid grid-cols-1 gap-4">
-            <InfoCard icon={Mail} title="Email" value="info@veaglespace.com" hint="Available 24/7" />
-            <InfoCard icon={Phone} title="Call Support" value="+91 8237999101" hint="Mon-Sat, 10am - 7pm" />
-            <InfoCard
-              icon={MapPin}
-              title="Visit Office"
-              value={`Kudale Patil Tower, Office No. 207,\n2nd Floor, Jadhav Nagar,\nNear Shiv Temple,\nVadgaon Budruk,\nPune, Maharashtra 411041,\nIndia`}
-              hint="Open in Google Maps"
-              href={googleMapsUrl}
-            />
+        <motion.div variants={item} className="mt-10 grid grid-cols-1 items-stretch gap-7 lg:grid-cols-2">
+          <div className="flex h-full flex-col rounded-[28px] border border-white/40 bg-white/60 p-8 shadow-[0_22px_60px_rgba(99,102,241,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/70 hover:shadow-[0_28px_70px_rgba(34,211,238,0.16)] dark:border-white/10 dark:bg-slate-900/45 dark:hover:bg-slate-900/55">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.28em] text-indigo-600/80 dark:text-cyan-200/80">Contact</div>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Direct Contact</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-white/65">
+                Talk to the MyReport team for demos, onboarding, and account support.
+              </p>
+            </div>
+
+            <div className="mt-7 grid flex-1 content-start gap-3">
+              <ContactInfoItem icon={Mail} label="Email" value="info@veaglespace.com" />
+              <ContactInfoItem icon={Phone} label="Phone" value="+91 8237999101" />
+              <ContactInfoItem
+                icon={MapPin}
+                label="Office Location"
+                value={`Kudale Patil Tower, Office No. 207\n2nd Floor, Jadhav Nagar\nVadgaon Budruk, Pune 411041`}
+              />
+              <div className="mt-3 border-t border-white/35 pt-6 dark:border-white/10">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">Business Hours</h3>
+                <div className="mt-4 flex flex-col gap-4 sm:flex-row">
+                  <BusinessHourBox label="Monday - Saturday" value="10:00 AM - 6:30 PM" />
+                  <BusinessHourBox label="Sunday" value="Day Off" />
+                </div>
+              </div>
+            </div>
           </div>
 
-          <motion.div
-            variants={item}
-            className="w-full overflow-hidden rounded-3xl border border-white/35 bg-white/55 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.10)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/40"
-          >
-            <form className="grid grid-cols-1 gap-4" onSubmit={handleSubmit}>
+          <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-white/40 bg-white/60 p-8 shadow-[0_22px_60px_rgba(99,102,241,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/70 hover:shadow-[0_28px_70px_rgba(34,211,238,0.16)] dark:border-white/10 dark:bg-slate-900/45">
+            <div className="mb-6">
+              <div className="text-xs font-bold uppercase tracking-[0.28em] text-indigo-600/80 dark:text-cyan-200/80">Inquiry</div>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Send a Message</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-white/65">
+                Share your details and we will route your request to the right team.
+              </p>
+            </div>
+
+            <form className="flex flex-1 flex-col gap-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium text-[var(--foreground)]">Full Name</label>
@@ -259,13 +268,30 @@ export default function ContactClient() {
                     <p className="mt-2 text-xs font-medium text-red-600/90">{errors.email}</p>
                   ) : null}
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-[var(--foreground)]">Phone Number</label>
+                  <input
+                    className={fieldClassName("phone")}
+                    placeholder="10 to 15 digit phone number"
+                    autoComplete="tel"
+                    name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={form.phone}
+                    onChange={handleChange}
+                  />
+                  {touched && errors.phone ? (
+                    <p className="mt-2 text-xs font-medium text-red-600/90">{errors.phone}</p>
+                  ) : null}
+                </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-[var(--foreground)]">Subject</label>
+                <label className="text-sm font-medium text-[var(--foreground)]">Inquiry Subject</label>
                 <input
                   className={fieldClassName("subject")}
-                  placeholder="How can we help?"
+                  placeholder="What do you need help with?"
                   name="subject"
                   type="text"
                   value={form.subject}
@@ -276,11 +302,11 @@ export default function ContactClient() {
                 ) : null}
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-[var(--foreground)]">Message</label>
+              <div className="flex-1">
+                <label className="text-sm font-medium text-[var(--foreground)]">Inquiry Message</label>
                 <textarea
-                  className={`${fieldClassName("message")} min-h-36 resize-none`}
-                  placeholder="Tell us a bit about what you need..."
+                  className={`${fieldClassName("message")} min-h-32 resize-none`}
+                  placeholder="Share the details so SuperAdmin can review and solve it..."
                   name="message"
                   value={form.message}
                   onChange={handleChange}
@@ -294,23 +320,42 @@ export default function ContactClient() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-400 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:brightness-105 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="group inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-3.5 text-sm font-semibold text-white shadow-[0_12px_26px_rgba(99,102,241,0.2)] transition-all duration-300 hover:-translate-y-1 hover:brightness-105 hover:shadow-[0_14px_28px_rgba(99,102,241,0.24)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-white" />
-                      <span>Sending...</span>
+                      <span>Sending Inquiry...</span>
                     </span>
                   ) : (
-                    <span className="transition group-hover:-translate-y-0.5">Send Message</span>
+                    <span className="transition group-hover:-translate-y-0.5">Send Inquiry</span>
                   )}
                 </button>
                 <p className="mt-3 text-center text-xs text-[var(--muted)]">
-                  By sending this, you agree to be contacted about your request.
+                  Your inquiry will appear in the SuperAdmin panel for review and follow-up.
                 </p>
               </div>
             </form>
-          </motion.div>
+          </div>
+
+          <div className="relative flex min-h-[430px] overflow-hidden rounded-[28px] border border-white/40 bg-white/60 p-4 shadow-[0_22px_60px_rgba(99,102,241,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(34,211,238,0.16)] dark:border-white/10 dark:bg-slate-900/45 lg:col-span-2">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute left-7 top-7 z-10 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(99,102,241,0.22)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(99,102,241,0.24)]"
+            >
+              <ExternalLink size={15} />
+              Open in Maps
+            </a>
+            <iframe
+              title="MyReport office location map"
+              src={mapEmbedUrl}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="h-full min-h-[400px] w-full rounded-[22px] border border-white/45 shadow-inner"
+            />
+          </div>
         </motion.div>
       </motion.div>
     </>

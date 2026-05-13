@@ -25,6 +25,30 @@ export const superAdminService = {
     ),
   getPlans: () => fetchWithFallback(() => axiosInstance.get("/super-admin/plans"), mockSuperAdminData.plans),
   getInvoices: () => fetchWithFallback(() => axiosInstance.get("/super-admin/invoices"), mockSuperAdminData.invoices),
+  getEnquiries: ({ status, source, q } = {}) =>
+    fetchWithFallback(
+      () =>
+        axiosInstance.get("/support/enquiries", {
+          params: {
+            status,
+            source,
+            q,
+          },
+        }),
+      { items: [], total: 0, stats: {} }
+    ),
+  replyEnquiry: async (payload) => {
+    const response = await axiosInstance.post("/support/reply", payload);
+    return response.data.data;
+  },
+  updateSupportStatus: async (payload) => {
+    const response = await axiosInstance.put("/support/status", payload);
+    return response.data.data;
+  },
+  deleteSupportEnquiry: async (id) => {
+    const response = await axiosInstance.delete(`/support/delete/${id}`);
+    return response.data.data;
+  },
   getReports: ({ range, startDate, endDate } = {}) =>
     fetchWithFallback(
       () =>

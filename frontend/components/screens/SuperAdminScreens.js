@@ -902,9 +902,8 @@ export function SuperAdminPlansScreen() {
 }
 
 export function SuperAdminInvoicesScreen() {
-  const [refreshTick, setRefreshTick] = useState(0);
   const [exporting, setExporting] = useState(null);
-  const loader = useMemo(() => superAdminService.getInvoices, [refreshTick]);
+  const loader = useMemo(() => superAdminService.getInvoices, []);
   const { data, loading } = useAsyncLoader(loader, { items: [] });
 
   if (loading) {
@@ -922,7 +921,6 @@ export function SuperAdminInvoicesScreen() {
             onRefresh={async () => {
               if (exporting) return;
               setExporting("refresh");
-              startTransition(() => setRefreshTick((value) => value + 1));
               setTimeout(() => setExporting(null), 300);
             }}
             onExportExcel={() => downloadCsv("myreport-superadmin-invoices.csv", data.items || [])}
@@ -947,16 +945,193 @@ export function SuperAdminInvoicesScreen() {
   );
 }
 
+export function SuperAdminEnquiriesScreen() {
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [sourceFilter, setSourceFilter] = useState("ALL");
+  const [query, setQuery] = useState("");
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [replying, setReplying] = useState(false);
+  const [updating, setUpdating] = useState(false);
+
+  const loader = useMemo(
+    () => () =>
+      superAdminService.getEnquiries({
+        status: statusFilter === "ALL" ? undefined : statusFilter,
+        source: sourceFilter === "ALL" ? undefined : sourceFilter,
+        q: query || undefined,
+      }),
+    [statusFilter, sourceFilter, query, refreshTick]
+  );
+  const { data, loading } = useAsyncLoader(loader, { items: [], total: 0, stats: {} });
+  const stats = data.stats || {};
+
+  const refresh = () => setRefreshTick((value) => value + 1);
+
+  const applyReply = async () => {
+    if (!selectedItem || !replyMessage.trim()) return;
+    setReplying(true);
+    try {
+      await superAdminService.replyEnquiry({ id: selectedItem.id, replyMessage });
+      toast.success("Reply saved");
+      setSelectedItem(null);
+      setReplyMessage("");
+      refresh();
+    } catch (error) {
+      toast.error(error?.message || "Unable to save reply");
+    } finally {
+      setReplying(false);
+    }
+  };
+
+  const markResolved = async (item) => {
+    setUpdating(true);
+    try {
+      await superAdminService.updateSupportStatus({ id: item.id, status: "RESOLVED" });
+      toast.success("Marked as resolved");
+      refresh();
+    } catch (error) {
+      toast.error(error?.message || "Unable to update status");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const deleteItem = async (item) => {
+    setUpdating(true);
+    try {
+      await superAdminService.deleteSupportEnquiry(item.id);
+      toast.success("Support enquiry deleted");
+      refresh();
+    } catch (error) {
+      toast.error(error?.message || "Unable to delete enquiry");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return <LoadingSkeleton rows={3} />;
+  }
+
+  return (
+    <div className="grid max-w-full gap-6">
+      <SectionHeading
+        eyebrow="Support"
+        title="Support Enquiries"
+        description="Contact and chatbot routing"
+        action={
+          <ControlButton variant="primary" onClick={refresh}>
+            Refresh
+          </ControlButton>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard item={{ label: "Total Enquiries", value: String(data.total || 0), helper: "Total support requests", accent: "cyan" }} />
+        <MetricCard item={{ label: "New", value: String(stats.newCount || 0), helper: "Waiting for action", accent: "amber" }} />
+        <MetricCard item={{ label: "In Progress", value: String(stats.inProgressCount || 0), helper: "Currently being handled", accent: "violet" }} />
+        <MetricCard item={{ label: "Resolved", value: String(stats.resolvedCount || 0), helper: "Closed successfully", accent: "emerald" }} />
+        <MetricCard item={{ label: "Email Sent", value: String(stats.emailSentCount || 0), helper: "Support replies delivered", accent: "cyan" }} />
+      </div>
+
+      <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
+        <div className="grid gap-4 lg:grid-cols-[1.25fr_0.4fr_0.4fr]">
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-[var(--muted-strong)]">Search</span>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search enquiries..." className="theme-input w-full rounded-2xl px-4 py-3 outline-none" />
+          </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-[var(--muted-strong)]">Status</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="theme-input w-full rounded-2xl px-4 py-3 outline-none">
+              {["ALL", "NEW", "IN_PROGRESS", "RESOLVED"].map((option) => (
+                <option key={option} value={option}>{option.replace("_", " ")}</option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-[var(--muted-strong)]">Source</span>
+            <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="theme-input w-full rounded-2xl px-4 py-3 outline-none">
+              {["ALL", "CONTACT_FORM", "CHATBOT", "WEBSITE", "ADMIN_PANEL"].map((option) => (
+                <option key={option} value={option}>{option.replace("_", " ")}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/10">
+          <div className="grid grid-cols-[1.1fr_1.4fr_0.9fr_1.1fr_0.9fr_0.9fr_0.9fr_1.2fr] gap-0 border-b border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
+            <div>Ticket ID</div>
+            <div>Contact Name</div>
+            <div>Message</div>
+            <div>Status</div>
+            <div>Email</div>
+            <div>Source</div>
+            <div>Date</div>
+            <div>Actions</div>
+          </div>
+
+          <div className="grid gap-2 bg-black/10 p-2">
+            {data.items?.length ? data.items.map((item) => (
+              <div key={item.id} className="grid items-center grid-cols-[1.1fr_1.4fr_0.9fr_1.1fr_0.9fr_0.9fr_0.9fr_1.2fr] gap-0 rounded-[24px] border border-white/8 bg-[linear-gradient(135deg,rgba(28,18,38,0.92),rgba(45,18,28,0.88))] px-4 py-4 transition hover:-translate-y-0.5 hover:border-cyan-300/30">
+                <div className="text-sm font-semibold text-white">{item.ticketId}</div>
+                <div>
+                  <div className="text-sm font-semibold text-white">{item.name}</div>
+                  <div className="text-xs text-white/50">{item.phone || "—"}</div>
+                </div>
+                <div className="max-w-[32ch] text-sm leading-6 text-white/75">{item.message}</div>
+                <div className="text-sm font-semibold text-cyan-200">{String(item.status || "").replace("_", " ")}</div>
+                <div className="text-sm text-white/75">{item.email}</div>
+                <div className="text-sm text-white/75">{String(item.source || "").replace("_", " ")}</div>
+                <div className="text-xs uppercase tracking-[0.14em] text-white/55">{formatDate(item.createdAt)}</div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setSelectedItem(item)} className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/16">View</button>
+                  <button type="button" onClick={() => { setSelectedItem(item); setReplyMessage(item.replyMessage || ""); }} className="rounded-full bg-cyan-400/15 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/25">Reply</button>
+                  <button type="button" onClick={() => markResolved(item)} disabled={updating} className="rounded-full bg-emerald-400/15 px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/25 disabled:opacity-60">Resolved</button>
+                  <button type="button" onClick={() => deleteItem(item)} disabled={updating} className="rounded-full bg-rose-400/15 px-3 py-2 text-xs font-semibold text-rose-100 transition hover:bg-rose-400/25 disabled:opacity-60">Delete</button>
+                </div>
+              </div>
+            )) : (
+              <div className="rounded-[24px] border border-white/8 bg-white/4 p-6 text-sm text-white/55">Nothing to show yet.</div>
+            )}
+          </div>
+        </div>
+      </GlassPanel>
+
+      <Modal open={Boolean(selectedItem)} onClose={() => { setSelectedItem(null); setReplyMessage(""); }} title="Support Ticket">
+        {selectedItem ? (
+          <div className="grid gap-4">
+            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-white/45">{selectedItem.ticketId}</div>
+              <div className="mt-2 text-lg font-semibold text-white">{selectedItem.name}</div>
+              <div className="mt-1 text-sm text-white/55">{selectedItem.email} • {selectedItem.phone || "No phone"}</div>
+              <div className="mt-3 text-sm leading-6 text-white/75">{selectedItem.message}</div>
+            </div>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--muted-strong)]">Reply</span>
+              <textarea value={replyMessage} onChange={(event) => setReplyMessage(event.target.value)} className="theme-input min-h-32 w-full rounded-2xl px-4 py-3 outline-none" placeholder="Type the support reply..." />
+            </label>
+            <div className="flex flex-wrap gap-3">
+              <ControlButton variant="primary" onClick={applyReply} disabled={replying}>{replying ? "Saving..." : "Save Reply"}</ControlButton>
+              <ControlButton onClick={() => markResolved(selectedItem)} disabled={updating}>Mark Resolved</ControlButton>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+    </div>
+  );
+}
+
 export function SuperAdminReportsScreen() {
   const [range, setRange] = useState("monthly");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [refreshTick, setRefreshTick] = useState(0);
   const [exporting, setExporting] = useState(null);
 
   const loader = useMemo(
     () => () => superAdminService.getReports({ range, startDate: startDate || undefined, endDate: endDate || undefined }),
-    [range, startDate, endDate, refreshTick]
+    [range, startDate, endDate]
   );
   const { data, loading } = useAsyncLoader(loader, { summary: {}, series: [], planMix: [] });
 
@@ -975,7 +1150,6 @@ export function SuperAdminReportsScreen() {
             onRefresh={async () => {
               if (exporting) return;
               setExporting("refresh");
-              startTransition(() => setRefreshTick((value) => value + 1));
               setTimeout(() => setExporting(null), 300);
             }}
             onExportExcel={() => downloadCsv("myreport-superadmin-reports.csv", data.series || [])}
@@ -1222,3 +1396,5 @@ export function SuperAdminSettingsScreen() {
     </div>
   );
 }
+
+

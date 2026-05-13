@@ -1,8 +1,8 @@
 const steps = [
-  { label: "Weak", tone: "bg-rose-400" },
-  { label: "Fair", tone: "bg-amber-400" },
-  { label: "Good", tone: "bg-cyan-400" },
-  { label: "Strong", tone: "bg-emerald-400" },
+  { label: "Weak", tone: "bg-red-400", text: "text-red-500" },
+  { label: "Medium", tone: "bg-yellow-400", text: "text-yellow-500" },
+  { label: "Medium", tone: "bg-cyan-400", text: "text-cyan-500" },
+  { label: "Strong", tone: "bg-emerald-400", text: "text-emerald-500" },
 ];
 
 function getPasswordScore(password) {
@@ -23,12 +23,12 @@ export function PasswordStrengthMeter({ password }) {
       <div className="flex gap-2">
         {steps.map((step, index) => (
           <div
-            key={step.label}
-            className={`h-2 flex-1 rounded-full ${index < score ? step.tone : "bg-white/10"}`}
+            key={`${step.label}-${index}`}
+            className={`h-2 flex-1 rounded-full transition-all duration-300 ${index < score ? step.tone : "bg-slate-200/80 dark:bg-white/10"}`}
           />
         ))}
       </div>
-      <div className="text-xs text-white/55">Password strength: {activeStep.label}</div>
+      <div className={`text-xs font-semibold ${activeStep.text}`}>Password strength: {activeStep.label}</div>
     </div>
   );
 }

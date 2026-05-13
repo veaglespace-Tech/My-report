@@ -153,17 +153,20 @@ export function HomeLanding() {
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
             <Link
               href="/admin/login"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-3 text-sm font-bold text-white shadow-md shadow-indigo-500/25 transition hover:brightness-110"
+              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 cursor-pointer transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] hover:brightness-110 hover:shadow-[0_12px_28px_rgba(59,130,246,0.35),0_0_0_1px_rgba(147,197,253,0.32),0_0_28px_rgba(59,130,246,0.28)] active:scale-[0.97]"
             >
+              <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.22),transparent)] transition-transform duration-700 ease-out group-hover:translate-x-full" />
               <ShoppingBag size={16} />
-              Login to your store
+              <span className="relative z-10">Login to your store</span>
             </Link>
             <Link
               href="/admin/signup"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--stroke)] bg-[var(--surface-soft)] px-6 py-3 text-sm font-semibold text-[var(--foreground)] shadow-md shadow-black/10 transition hover:bg-[var(--surface-strong)]"
+              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl border border-[var(--stroke)] bg-[var(--surface-soft)] px-6 py-3 text-sm font-semibold text-[var(--foreground)] shadow-md shadow-black/10 cursor-pointer transition-all duration-300 ease-out hover:-translate-y-0.75 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(236,254,255,0.95))] hover:border-[rgba(59,130,246,0.35)] hover:shadow-[0_10px_24px_rgba(168,85,247,0.18),0_0_0_1px_rgba(255,255,255,0.3)] active:scale-[0.97]"
             >
-              <Sparkles size={16} />
-              Create store account
+              <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[linear-gradient(135deg,rgba(124,140,255,0.06),rgba(79,209,197,0.04))] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <span className="pointer-events-none absolute inset-0 rounded-2xl border border-white/0 transition-all duration-300 group-hover:border-white/60 group-hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]" />
+              <Sparkles className="relative z-10 transition-transform duration-300 group-hover:rotate-12" size={16} />
+              <span className="relative z-10">Create store account</span>
             </Link>
           </div>
         </motion.div>

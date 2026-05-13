@@ -10,7 +10,10 @@ export const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use((config) => {
   const token = getSessionToken();
-  if (token) {
+  const url = String(config.url || "");
+  const isPublicAuthRoute = url.startsWith("/auth/forgot-password") || url.startsWith("/auth/reset-password") || url.startsWith("/auth/login");
+
+  if (token && !isPublicAuthRoute) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
