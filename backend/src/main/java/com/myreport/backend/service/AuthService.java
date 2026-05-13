@@ -217,7 +217,7 @@ public class AuthService {
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
-        String resetLink = frontendOrigin.replaceAll("/$", "") + "/reset-password?token=" + tokenValue;
+        String resetLink = frontendBaseUrl() + "/reset-password?token=" + tokenValue;
         sendResetPasswordEmailSafely(user.getEmail(), resetLink);
 
         return Map.of("message", "Reset link sent to your email.");
@@ -323,7 +323,7 @@ public class AuthService {
 
     private void sendWelcomeEmailSafely(String fullName, String email) {
         try {
-            String loginLink = frontendOrigin.replaceAll("/$", "") + "/login";
+            String loginLink = frontendBaseUrl() + "/login";
             emailService.sendEmail(
                     email,
                     "Welcome to MyReport Store",
@@ -358,6 +358,26 @@ public class AuthService {
 
     private String createAvatarUrl(String fullName) {
         return "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=" + fullName.replace(" ", "+");
+    }
+
+    private String frontendBaseUrl() {
+        if (frontendOrigin == null || frontendOrigin.isBlank()) {
+            return "http://localhost:3000";
+        }
+
+        String[] origins = frontendOrigin.split(",");
+        for (String origin : origins) {
+            String value = origin.trim().replaceAll("/$", "");
+            if (value.equals("http://localhost:3000") || value.equals("http://127.0.0.1:3000")) {
+                return value;
+            }
+        }
+
+        String firstOrigin = origins[0].trim().replaceAll("/$", "");
+        if (firstOrigin.equals("http://localhost:5173") || firstOrigin.equals("http://127.0.0.1:5173")) {
+            return firstOrigin.replace(":5173", ":3000");
+        }
+        return firstOrigin.isBlank() ? "http://localhost:3000" : firstOrigin;
     }
 
     private LocalDate resolvePlanExpiry(Plan plan) {
