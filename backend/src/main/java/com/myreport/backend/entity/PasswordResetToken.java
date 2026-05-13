@@ -1,16 +1,15 @@
 package com.myreport.backend.entity;
 
-import com.myreport.backend.entity.enums.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,27 +22,23 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "notifications")
-public class Notification extends AuditableEntity {
+@Table(name = "password_reset_tokens")
+public class PasswordResetToken extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 80)
+    private String token;
+
     @Column(nullable = false)
-    private String title;
+    private LocalDateTime expiresAt;
 
-    @Column(nullable = false, length = 800)
-    private String message;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NotificationType type;
+    private boolean used;
 
-    @Builder.Default
-    @Column(name = "is_read", nullable = false)
-    private boolean readFlag = false;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private UserAccount user;
 }

@@ -1,8 +1,10 @@
 package com.myreport.backend.controller;
 
 import com.myreport.backend.dto.auth.LoginRequest;
+import com.myreport.backend.dto.auth.ForgotPasswordRequest;
 import com.myreport.backend.dto.auth.OtpVerificationRequest;
 import com.myreport.backend.dto.auth.RegisterRequest;
+import com.myreport.backend.dto.auth.ResetPasswordRequest;
 import com.myreport.backend.dto.auth.SignupRequest;
 import com.myreport.backend.dto.common.ApiResponse;
 import com.myreport.backend.dto.payments.RazorpaySignupOrderRequest;
@@ -55,6 +57,16 @@ public class AuthController {
     @PostMapping("/admin/verify-otp")
     public ApiResponse<Map<String, Object>> verifyOtp(@Valid @RequestBody OtpVerificationRequest request) {
         return new ApiResponse<>(true, "OTP verified", authService.verifyOtp(request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ApiResponse<Map<String, Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return new ApiResponse<>(true, "Reset link sent", authService.forgotPassword(request));
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Map<String, Object>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return new ApiResponse<>(true, "Password reset successful", authService.resetPassword(request));
     }
 
     @GetMapping("/me")

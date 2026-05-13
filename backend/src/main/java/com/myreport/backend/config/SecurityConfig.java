@@ -44,18 +44,28 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/api/health", "/favicon.ico")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/plans")
+                        .permitAll()
                         .requestMatchers("/api/plans", "/api/plans/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/**")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/auth/login",
-                                "/api/auth/register",
-                                "/api/auth/register/razorpay/order",
-                                "/api/auth/register/razorpay/verify",
-                                "/api/auth/admin/signup",
-                                "/api/auth/admin/verify-otp")
+                        .requestMatchers("/api/auth/**")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/contact",
+                                "/api/contact/send",
+                                "/api/enquiry/send",
+                                "/api/support/chatbot")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/support/enquiries")
+                        .hasRole("SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/support/reply")
+                        .hasRole("SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/support/status")
+                        .hasRole("SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/support/delete/**")
+                        .hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/stores/**")
                         .hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/super-admin/**")

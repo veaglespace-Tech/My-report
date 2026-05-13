@@ -31,6 +31,9 @@ public class ContactInquiry extends AuditableEntity {
     @Column(nullable = false, length = 160)
     private String email;
 
+    @Column(nullable = false, length = 15)
+    private String phone;
+
     @Column(nullable = false, length = 160)
     private String subject;
 

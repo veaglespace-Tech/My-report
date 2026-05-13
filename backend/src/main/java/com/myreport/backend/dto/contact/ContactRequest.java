@@ -2,6 +2,7 @@ package com.myreport.backend.dto.contact;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,11 +20,16 @@ public class ContactRequest {
     @Size(max = 160, message = "Email must be at most 160 characters")
     private String email;
 
+    @NotBlank(message = "Phone is required")
+    @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone must be 10 to 15 digits")
+    @Size(max = 15, message = "Phone must be at most 15 characters")
+    private String phone;
+
     @NotBlank(message = "Subject is required")
     @Size(max = 160, message = "Subject must be at most 160 characters")
     private String subject;
 
-    @NotBlank(message = "Message is required")
+    @NotBlank(message = "Inquiry Message is required")
     @Size(max = 4000, message = "Message must be at most 4000 characters")
     private String message;
 }

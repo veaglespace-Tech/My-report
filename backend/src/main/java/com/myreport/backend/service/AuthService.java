@@ -1,10 +1,13 @@
 package com.myreport.backend.service;
 
 import com.myreport.backend.dto.auth.LoginRequest;
+import com.myreport.backend.dto.auth.ForgotPasswordRequest;
 import com.myreport.backend.dto.auth.OtpVerificationRequest;
 import com.myreport.backend.dto.auth.RegisterRequest;
+import com.myreport.backend.dto.auth.ResetPasswordRequest;
 import com.myreport.backend.dto.auth.SignupRequest;
 import com.myreport.backend.entity.Notification;
+import com.myreport.backend.entity.PasswordResetToken;
 import com.myreport.backend.entity.Plan;
 import com.myreport.backend.entity.Store;
 import com.myreport.backend.entity.UserAccount;
@@ -15,15 +18,19 @@ import com.myreport.backend.entity.enums.StoreStatus;
 import com.myreport.backend.entity.enums.UserStatus;
 import com.myreport.backend.exception.ApiException;
 import com.myreport.backend.repository.NotificationRepository;
+import com.myreport.backend.repository.PasswordResetTokenRepository;
 import com.myreport.backend.repository.PlanRepository;
 import com.myreport.backend.repository.StoreRepository;
 import com.myreport.backend.repository.UserAccountRepository;
 import com.myreport.backend.security.JwtService;
+import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.util.UUID;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -40,8 +48,13 @@ public class AuthService {
     private final StoreRepository storeRepository;
     private final PlanRepository planRepository;
     private final NotificationRepository notificationRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    @Value("${app.frontend-origin}")
+    private String frontendOrigin;
 
     @Value("${app.super-admin.email}")
     private String superAdminEmail;
@@ -122,6 +135,7 @@ public class AuthService {
         storeRepository.save(store);
 
         String token = jwtService.generateToken(admin, true);
+        sendWelcomeEmailSafely(admin.getFullName(), admin.getEmail());
         return buildAuthPayload(admin, token);
     }
 
@@ -168,8 +182,8 @@ public class AuthService {
         createSuperAdminNotifications(
                 "New signup request",
                 request.fullName() + " registered " + request.storeName() + " and is waiting for approval",
-                NotificationType.SIGNUP_APPROVAL
-        );
+                NotificationType.SIGNUP_APPROVAL);
+        sendWelcomeEmailSafely(admin.getFullName(), admin.getEmail());
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("email", admin.getEmail());
@@ -182,6 +196,50 @@ public class AuthService {
                         ? "Signup completed. Your account is now waiting for SuperAdmin approval."
                         : "Signup saved. Verify the demo OTP to finish email verification.");
         return data;
+    }
+
+    @Transactional
+    public Map<String, Object> forgotPassword(ForgotPasswordRequest request) {
+        UserAccount user = userAccountRepository.findByEmailIgnoreCase(request.email().trim())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Email not registered"));
+
+        passwordResetTokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
+        passwordResetTokenRepository.deleteAll(passwordResetTokenRepository.findAll().stream()
+                .filter(token -> token.getUser().getId().equals(user.getId()) && !token.isUsed())
+                .toList());
+
+        String tokenValue = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(tokenValue)
+                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .used(false)
+                .user(user)
+                .build();
+        passwordResetTokenRepository.save(resetToken);
+
+        String resetLink = frontendOrigin.replaceAll("/$", "") + "/reset-password?token=" + tokenValue;
+        sendResetPasswordEmailSafely(user.getEmail(), resetLink);
+
+        return Map.of("message", "Reset link sent to your email.");
+    }
+
+    @Transactional
+    public Map<String, Object> resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.token())
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token"));
+
+        if (resetToken.isUsed() || resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token");
+        }
+
+        UserAccount user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(request.password()));
+        userAccountRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        return Map.of("message", "Password updated successfully");
     }
 
     @Transactional
@@ -199,8 +257,7 @@ public class AuthService {
         return Map.of(
                 "email", user.getEmail(),
                 "verified", true,
-                "message", "OTP verified successfully. Your account now awaits approval."
-        );
+                "message", "OTP verified successfully. Your account now awaits approval.");
     }
 
     @Transactional(readOnly = true)
@@ -226,8 +283,7 @@ public class AuthService {
                 "lowStockAlerts", user.isLowStockAlerts(),
                 "planExpiryAlerts", user.isPlanExpiryAlerts(),
                 "paymentAlerts", user.isPaymentAlerts(),
-                "darkMode", user.isDarkMode()
-        ));
+                "darkMode", user.isDarkMode()));
 
         if (store != null) {
             Map<String, Object> storeData = new LinkedHashMap<>();
@@ -262,6 +318,41 @@ public class AuthService {
                     .type(type)
                     .user(superAdmin)
                     .build());
+        }
+    }
+
+    private void sendWelcomeEmailSafely(String fullName, String email) {
+        try {
+            String loginLink = frontendOrigin.replaceAll("/$", "") + "/login";
+            emailService.sendEmail(
+                    email,
+                    "Welcome to MyReport Store",
+                    "Hello " + fullName + ",\n\n"
+                            + "Your account has been successfully registered with MyReport Store.\n\n"
+                            + "You can now:\n"
+                            + "- Manage billing\n"
+                            + "- Track inventory\n"
+                            + "- Generate invoices\n"
+                            + "- View reports\n"
+                            + "- Manage customers\n\n"
+                            + "Login:\n" + loginLink + "\n\n"
+                            + "Thank you,\nMyReport Team");
+        } catch (Exception exception) {
+            log.warn("Welcome email could not be sent to {}: {}", email, exception.getMessage());
+        }
+    }
+
+    private void sendResetPasswordEmailSafely(String email, String resetLink) {
+        try {
+            emailService.sendEmail(
+                    email,
+                    "Reset Your MyReport Password",
+                    "Click below link to reset password:\n"
+                            + resetLink
+                            + "\n\nThis link expires in 15 minutes.");
+            System.out.println("Mail Method Called ... ");
+        } catch (Exception exception) {
+            log.warn("Reset password email could not be sent to {}: {}", email, exception.getMessage());
         }
     }
 

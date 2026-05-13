@@ -13,10 +13,10 @@ import lombok.Setter;
 @MappedSuperclass
 public abstract class AuditableEntity {
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, columnDefinition = "datetime")
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "datetime")
     private LocalDateTime updatedAt;
 
     @PrePersist
