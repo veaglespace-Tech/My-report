@@ -1111,10 +1111,10 @@ export function AdminSignupScreen() {
                   required
                   placeholder="Enter your password"
                   autoComplete="new-password"
-                  status={attemptedNext ? (getStepErrors.password ? "error" : form.admin.password ? "success" : "idle") : "idle"}
+                  status={getStepErrors.password ? "error" : form.admin.password ? "success" : "idle"}
                 />
                 <PasswordStrengthMeter password={form.admin.password} />
-                {attemptedNext && getStepErrors.password ? (
+                {getStepErrors.password && form.admin.password ? (
                   <div className="text-sm text-red-500/90">{getStepErrors.password}</div>
                 ) : null}
               </div>
@@ -1127,14 +1127,14 @@ export function AdminSignupScreen() {
                   required
                   placeholder="Confirm your password"
                   autoComplete="new-password"
-                  status={attemptedNext ? (getStepErrors.confirmPassword ? "error" : form.admin.confirmPassword ? "success" : "idle") : "idle"}
+                  status={getStepErrors.confirmPassword ? "error" : form.admin.confirmPassword ? "success" : "idle"}
                   inputProps={{
                     onPaste: (event) => event.preventDefault(),
                     onCopy: (event) => event.preventDefault(),
                     onCut: (event) => event.preventDefault(),
                   }}
                 />
-                {attemptedNext && getStepErrors.confirmPassword ? (
+                {getStepErrors.confirmPassword && form.admin.confirmPassword ? (
                   <div className="text-sm text-red-500/90">{getStepErrors.confirmPassword}</div>
                 ) : null}
               </div>
@@ -1238,14 +1238,14 @@ export function AdminSignupScreen() {
             <div className="plan-summary-card flex min-w-0 flex-col justify-between overflow-hidden rounded-[32px] border border-white/12 bg-white/70 p-6 pb-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600">Your plan summary</div>
-                <div className="mt-5 grid gap-5">
-                  <div className="rounded-[24px] border border-cyan-200/50 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(236,245,255,0.94))] p-5 shadow-[0_14px_34px_rgba(34,211,238,0.12),0_0_0_1px_rgba(139,92,246,0.08)]">
-                    <div className="flex min-w-0 flex-col gap-3">
+                <div className="mt-5 overflow-hidden rounded-[24px] border border-cyan-200/50 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(236,245,255,0.94))] shadow-[0_14px_34px_rgba(34,211,238,0.12),0_0_0_1px_rgba(139,92,246,0.08)]">
+                  <div className="p-5">
+                    <div className="flex min-w-0 flex-col gap-3 text-center">
                       <div className="min-w-0">
                         <div className="min-w-0 truncate text-[34px] font-bold leading-tight text-slate-900">{selectedPlan?.title || "Loading..."}</div>
                       </div>
                       <div className="flex min-w-0 items-baseline justify-center gap-2 whitespace-nowrap">
-                        <span className="text-[clamp(2.1rem,7.2vw,2.75rem)] font-extrabold leading-none tracking-tight text-slate-900">
+                        <span className="text-[clamp(1.9rem,6.4vw,2.45rem)] font-extrabold leading-none tracking-tight text-slate-900">
                           {selectedPlan?.price || "-"}
                         </span>
                         <span className="text-sm font-semibold text-slate-500">per cycle</span>
@@ -1256,7 +1256,9 @@ export function AdminSignupScreen() {
                     </div>
                   </div>
 
-                  <div className="grid min-w-0 gap-3 rounded-[24px] border border-slate-100 bg-slate-50/80 p-5 text-sm text-slate-600">
+                  <div className="h-px bg-gradient-to-r from-transparent via-cyan-200/80 to-transparent" />
+
+                  <div className="grid min-w-0 gap-3 bg-slate-50/70 p-5 text-sm text-slate-600">
                     {[
                       ["Store", form.organization.organizationName],
                       ["Store type", form.organization.storeType],
@@ -1268,9 +1270,9 @@ export function AdminSignupScreen() {
                       ["Mobile", form.admin.mobile],
                       ["Gender", form.admin.gender],
                     ].map(([label, value]) => (
-                      <div key={label} className="grid min-w-0 gap-1 sm:grid-cols-[120px_minmax(0,1fr)]">
+                      <div key={label} className="grid min-w-0 items-start gap-1 sm:grid-cols-[124px_minmax(0,1fr)]">
                         <span className="font-semibold text-slate-900">{label}:</span>
-                        <span className="min-w-0 break-words">{value}</span>
+                        <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={String(value || "")}>{value}</span>
                       </div>
                     ))}
                   </div>
