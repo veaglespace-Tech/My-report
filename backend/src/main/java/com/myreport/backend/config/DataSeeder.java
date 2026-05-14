@@ -51,13 +51,16 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${app.super-admin.password}")
     private String superAdminPassword;
 
+    @Value("${app.seed.demo-workspaces:false}")
+    private boolean seedDemoWorkspaces;
+
     @Override
     public void run(String... args) {
         seedSuperAdmin();
         if (planRepository.count() == 0) {
             seedPlans();
         }
-        if (userAccountRepository.countByRole(Role.ADMIN) == 0) {
+        if (seedDemoWorkspaces && userAccountRepository.countByRole(Role.ADMIN) == 0) {
             seedAdminWorkspaces();
         }
     }

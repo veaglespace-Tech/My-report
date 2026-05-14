@@ -62,7 +62,9 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> login(LoginRequest request) {
-        UserAccount user = userAccountRepository.findByEmailIgnoreCase(request.email())
+        String normalizedEmail = request.email().trim().toLowerCase();
+
+        UserAccount user = userAccountRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
 
         if (user.getRole() != request.role()) {

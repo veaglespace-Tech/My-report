@@ -3,10 +3,10 @@ package com.myreport.backend.controller;
 import com.myreport.backend.dto.common.ApiResponse;
 import com.myreport.backend.dto.admin.ChangePasswordRequest;
 import com.myreport.backend.dto.admin.NotificationPreferenceRequest;
-import com.myreport.backend.dto.admin.ProfileUpdateRequest;
 import com.myreport.backend.dto.superadmin.AdminRequest;
 import com.myreport.backend.dto.superadmin.PlanRequest;
 import com.myreport.backend.dto.superadmin.StoreCreateRequest;
+import com.myreport.backend.dto.superadmin.SuperAdminProfileUpdateRequest;
 import com.myreport.backend.service.SuperAdminService;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/super-admin")
@@ -123,6 +124,10 @@ public class SuperAdminController {
                     startDate = today;
                     endDate = today;
                 }
+                case "weekly" -> {
+                    startDate = today.minusDays(6);
+                    endDate = today;
+                }
                 case "monthly" -> {
                     startDate = today.withDayOfMonth(1);
                     endDate = today;
@@ -145,8 +150,18 @@ public class SuperAdminController {
     }
 
     @PutMapping("/settings/profile")
-    public ApiResponse<Map<String, Object>> updateProfile(Principal principal, @Valid @RequestBody ProfileUpdateRequest request) {
+    public ApiResponse<Map<String, Object>> updateProfile(Principal principal, @Valid @RequestBody SuperAdminProfileUpdateRequest request) {
         return new ApiResponse<>(true, "Profile updated", superAdminService.updateProfile(principal.getName(), request));
+    }
+
+    @PostMapping("/settings/profile-photo")
+    public ApiResponse<Map<String, Object>> uploadProfilePhoto(Principal principal, @RequestParam("file") MultipartFile file) {
+        return new ApiResponse<>(true, "Profile photo updated", superAdminService.uploadProfilePhoto(principal.getName(), file));
+    }
+
+    @DeleteMapping("/settings/profile-photo")
+    public ApiResponse<Map<String, Object>> removeProfilePhoto(Principal principal) {
+        return new ApiResponse<>(true, "Profile photo removed", superAdminService.removeProfilePhoto(principal.getName()));
     }
 
     @PutMapping("/settings/password")

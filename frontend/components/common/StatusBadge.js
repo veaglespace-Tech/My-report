@@ -11,7 +11,13 @@ const toneMap = {
 
 const toneStyleMap = {
   ACTIVE: { backgroundColor: "rgba(16,185,129,0.14)" },
+  PENDING: { backgroundColor: "rgba(245,158,11,0.16)", color: "#b45309" },
+  PENDING_APPROVAL: { backgroundColor: "rgba(245,158,11,0.16)", color: "#b45309" },
   BLOCKED: { backgroundColor: "rgba(239,68,68,0.14)" },
+};
+
+const labelMap = {
+  PENDING_APPROVAL: "Pending",
 };
 
 export function StatusBadge({ value }) {
@@ -23,7 +29,7 @@ export function StatusBadge({ value }) {
       )}
       style={toneStyleMap[value]}
     >
-      {String(value).replaceAll("_", " ")}
+      {labelMap[value] || String(value).replaceAll("_", " ")}
     </span>
   );
 }

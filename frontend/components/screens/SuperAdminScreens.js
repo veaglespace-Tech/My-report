@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Area,
@@ -13,8 +14,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Ban, CheckCircle2, Pencil, Plus, Printer, Search } from "lucide-react";
+import { Ban, CheckCircle2, Pencil, Plus, Printer, RefreshCw, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useDispatch } from "react-redux";
 import { DataTable } from "@/components/common/DataTable";
 import { DownloadToolbar } from "@/components/common/DownloadToolbar";
 import { GlassPanel } from "@/components/common/GlassPanel";
@@ -23,7 +25,10 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { Modal } from "@/components/common/Modal";
 import { SectionHeading } from "@/components/common/SectionHeading";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { downloadCsv, formatCurrency, formatDate, printPage } from "@/lib/format";
+import { downloadCsv, formatCurrency, formatDate } from "@/lib/format";
+import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
+import { updateStoredProfile } from "@/lib/session";
+import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
 import { superAdminService } from "@/services/superAdminService";
 
 function useAsyncLoader(loader, initialState) {
@@ -77,9 +82,9 @@ function ControlButton({ children, variant = "default", className = "", ...props
   );
 }
 
-function FormField({ label, name, value, onChange, placeholder, type = "text", required = false }) {
+function FormField({ label, name, value, onChange, placeholder, type = "text", required = false, disabled = false, className = "", inputClassName = "" }) {
   return (
-    <label className="grid gap-2 text-sm">
+    <label className={`grid gap-2 text-sm ${className}`}>
       <span className="font-medium text-[var(--muted-strong)]">{label}</span>
       <input
         required={required}
@@ -88,7 +93,8 @@ function FormField({ label, name, value, onChange, placeholder, type = "text", r
         onChange={onChange}
         type={type}
         placeholder={placeholder}
-        className="theme-input w-full rounded-2xl px-4 py-3 outline-none transition"
+        disabled={disabled}
+        className={`theme-input w-full rounded-2xl px-4 py-3 outline-none transition ${disabled ? "cursor-not-allowed opacity-70" : ""} ${inputClassName}`}
       />
     </label>
   );
@@ -160,98 +166,145 @@ export function SuperAdminDashboardScreen() {
     return <LoadingSkeleton rows={4} />;
   }
 
+  const extendedMetrics = [
+    ...data.metrics,
+    { label: "Total Invoices", value: "2.4k", helper: "Platform wide", accent: "violet" },
+    { label: "Total Enquiries", value: "148", helper: "Support queue", accent: "amber" },
+  ];
+
   return (
-    <div className="grid max-w-full gap-6">
+    <div className="grid max-w-full gap-8">
       <SectionHeading
-        eyebrow="Overview"
-        title="Platform Pulse"
-        description="Track platform growth, approval health, and renewal risk from one premium command layer."
+        eyebrow="Platform Executive"
+        title="Command Central"
+        description="Monitor platform health, track store growth, and manage renewal risks in real-time."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {data.metrics.map((item, index) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {extendedMetrics.map((item, index) => (
           <MetricCard key={item.label} item={item} index={index} />
         ))}
       </div>
 
-      <div className="grid max-w-full gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <ChartCard title="Revenue Graph" description="Monthly platform revenue across all stores.">
-          <div className="h-72 w-full max-w-full sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.revenueSeries}>
-                <defs>
-                  <linearGradient id="revenueGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="5%" stopColor="#4fd1c5" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#4fd1c5" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }}
-                />
-                <Area type="monotone" dataKey="value" stroke="#4fd1c5" strokeWidth={2.5} fill="url(#revenueGradient)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
+      <div className="grid max-w-full gap-6 lg:grid-cols-[1fr_0.4fr]">
+        <div className="grid gap-6">
+          <ChartCard title="Revenue Performance" description="Monthly platform revenue trajectory across all active subscriptions.">
+            <div className="h-72 w-full max-w-full sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.revenueSeries}>
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="5%" stopColor="#4fd1c5" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#4fd1c5" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                  <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                  <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="#4fd1c5" strokeWidth={2.5} fill="url(#revenueGradient)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
 
-        <ChartCard title="Growth Chart" description="Admin and store additions month over month.">
-          <div className="h-72 w-full max-w-full sm:h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.growthSeries}>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
-                <Bar dataKey="admins" fill="#7c8cff" radius={[10, 10, 0, 0]} />
-                <Bar dataKey="stores" fill="#4fd1c5" radius={[10, 10, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
-      </div>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <GlassPanel className="p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Expiry Plan Alerts</h3>
+                  <p className="text-sm text-white/50">Subscription risks requiring attention</p>
+                </div>
+                <div className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                  {data.expiringPlans?.length || 0} Alerts
+                </div>
+              </div>
+              <div className="grid gap-3">
+                {data.expiringPlans?.map((item, index) => (
+                  <div key={index} className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-4 transition-all hover:bg-white/6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+                          <span className="truncate font-semibold">{item.storeName}</span>
+                        </div>
+                        <div className="mt-1 text-xs text-white/50">{item.owner} • {item.plan} Plan</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80">
+                          Expires {formatDate(item.planExpiresAt)}
+                        </div>
+                        <button className="mt-2 text-xs font-semibold text-cyan-400 hover:underline">Renew Now</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassPanel>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-        <ActivityList
-          title="Recent Activities"
-          items={data.recentActivities}
-          render={(item) => (
-            <>
-              <div className="text-sm font-semibold">{item.title}</div>
-              <div className="mt-1 text-sm text-white/55">{item.subtitle}</div>
-              <div className="mt-3 text-xs uppercase tracking-[0.18em] text-cyan-200/70">{formatDate(item.timestamp)}</div>
-            </>
-          )}
-        />
-        <ActivityList
-          title="Expiring Plans"
-          items={data.expiringPlans}
-          render={(item) => (
-            <>
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold">{item.storeName}</div>
-                <StatusBadge value="PENDING" />
+            <GlassPanel className="p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold">Growth Analytics</h3>
+                <p className="text-sm text-white/50">Admin and store onboarding velocity</p>
               </div>
-              <div className="mt-2 text-sm text-white/55">
-                {item.owner} on {item.plan}
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.growthSeries}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                    <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
+                    <Bar dataKey="admins" fill="#7c8cff" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="stores" fill="#4fd1c5" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <div className="mt-3 text-xs uppercase tracking-[0.18em] text-amber-200/80">Expires {formatDate(item.planExpiresAt)}</div>
-            </>
-          )}
-        />
-        <ActivityList
-          title="Alerts Feed"
-          items={data.notifications}
-          render={(item) => (
-            <>
-              <div className="text-sm font-semibold">{item.title}</div>
-              <div className="mt-1 text-sm text-white/55">{item.message}</div>
-              <div className="mt-3 text-xs uppercase tracking-[0.18em] text-violet-200/75">{formatDate(item.createdAt)}</div>
-            </>
-          )}
-        />
+            </GlassPanel>
+          </div>
+        </div>
+
+        <GlassPanel className="flex flex-col p-6">
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold">Live Activity Feed</h3>
+            <p className="text-sm text-white/50">Real-time platform events</p>
+          </div>
+          
+          <div className="relative flex flex-1 flex-col gap-8 pl-4">
+            <div className="absolute left-[19px] top-2 bottom-2 w-px bg-gradient-to-b from-cyan-400/50 via-white/10 to-transparent" />
+            
+            {data.recentActivities?.map((item, index) => (
+              <div key={index} className="relative flex gap-4 transition-all duration-300 hover:translate-x-1">
+                <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 ring-4 ring-white/5">
+                  <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.6)]" />
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="text-sm font-bold text-white/90">{item.title}</div>
+                  <div className="mt-1 text-xs text-white/50 leading-relaxed">{item.subtitle}</div>
+                  <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-cyan-400/60">
+                    {formatDate(item.timestamp)}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {data.notifications?.map((item, index) => (
+              <div key={`notif-${index}`} className="relative flex gap-4 transition-all duration-300 hover:translate-x-1">
+                <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 ring-4 ring-white/5">
+                  <div className="h-2.5 w-2.5 rounded-full bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.6)]" />
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="text-sm font-bold text-white/90">{item.title}</div>
+                  <div className="mt-1 text-xs text-white/50 leading-relaxed">{item.message}</div>
+                  <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-violet-400/60">
+                    {formatDate(item.createdAt)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassPanel>
       </div>
     </div>
   );
@@ -410,28 +463,48 @@ export function SuperAdminAdminsScreen() {
           {
             key: "actions",
             label: "Actions",
-            render: (_, row) => (
-              <div className="flex flex-wrap gap-2">
-                {row.status === "PENDING_APPROVAL" ? (
-                  <button type="button" onClick={() => handleApprove(row.id)} className="rounded-xl bg-emerald-500/14 px-3 py-2 text-xs font-semibold text-emerald-100">
-                    Approve
+            headerClassName: "min-w-[240px]",
+            cellClassName: "min-w-[240px]",
+            render: (_, row) => {
+              const isPending = row.status === "PENDING_APPROVAL";
+
+              return (
+                <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
+                  {isPending ? (
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(row.id)}
+                      className="shrink-0 rounded-xl bg-emerald-500/14 px-3 py-2 text-xs font-semibold text-emerald-100"
+                    >
+                      Approve
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => openEdit(row)}
+                    className="shrink-0 rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75"
+                  >
+                    <span className="inline-flex items-center gap-1"><Pencil size={12} /> Edit</span>
                   </button>
-                ) : null}
-                <button type="button" onClick={() => openEdit(row)} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75">
-                  <span className="inline-flex items-center gap-1"><Pencil size={12} /> Edit</span>
-                </button>
-                <button type="button" onClick={() => handleToggleStatus(row.id)} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75">
-                  <span className="inline-flex items-center gap-1"><Ban size={12} /> {row.status === "BLOCKED" ? "Unblock" : "Block"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(row.id)}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
-                >
-                  Delete
-                </button>
-              </div>
-            ),
+                  {!isPending ? (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(row.id)}
+                      className="shrink-0 rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75"
+                    >
+                      <span className="inline-flex items-center gap-1"><Ban size={12} /> {row.status === "BLOCKED" ? "Unblock" : "Block"}</span>
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(row.id)}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
+                  >
+                    Delete
+                  </button>
+                </div>
+              );
+            },
           },
         ]}
         rows={filteredAdmins}
@@ -904,7 +977,44 @@ export function SuperAdminPlansScreen() {
 export function SuperAdminInvoicesScreen() {
   const [exporting, setExporting] = useState(null);
   const loader = useMemo(() => superAdminService.getInvoices, []);
-  const { data, loading } = useAsyncLoader(loader, { items: [] });
+  const { data, setData, loading } = useAsyncLoader(loader, { items: [] });
+
+  const reloadInvoices = async () => {
+    setExporting("refresh");
+    try {
+      const response = await superAdminService.getInvoices();
+      setData(response);
+      toast.success("Invoices refreshed");
+    } catch (error) {
+      toast.error(error?.message || "Failed to refresh invoices");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportInvoicesPdf = async () => {
+    setExporting("pdf");
+    try {
+      await exportTablePdf({
+        fileName: "myreport-superadmin-invoices.pdf",
+        reportTitle: "Platform Invoices Report",
+        rows: data.items || [],
+        columns: [
+          { key: "invoiceNumber", label: "Invoice", width: 170 },
+          { key: "store", label: "Store", width: 130 },
+          { key: "customerName", label: "Customer", width: 130 },
+          { key: "totalAmount", label: "Amount", value: (row) => formatCurrency(row.totalAmount), width: 110 },
+          { key: "status", label: "Status", value: (row) => row.status, width: 100 },
+          { key: "createdAt", label: "Date", type: "date", width: 120 },
+        ],
+      });
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export PDF");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   if (loading) {
     return <LoadingSkeleton rows={3} />;
@@ -918,13 +1028,9 @@ export function SuperAdminInvoicesScreen() {
         description="Review transaction volume across the platform in a single premium ledger."
         action={
           <DownloadToolbar
-            onRefresh={async () => {
-              if (exporting) return;
-              setExporting("refresh");
-              setTimeout(() => setExporting(null), 300);
-            }}
+            onRefresh={reloadInvoices}
             onExportExcel={() => downloadCsv("myreport-superadmin-invoices.csv", data.items || [])}
-            onExportPdf={printPage}
+            onExportPdf={exportInvoicesPdf}
             exporting={exporting}
             downloadDisabled={!data?.items?.length}
           />
@@ -1020,7 +1126,7 @@ export function SuperAdminEnquiriesScreen() {
   return (
     <div className="grid max-w-full gap-6">
       <SectionHeading
-        eyebrow="Support"
+        eyebrow="Customer Care"
         title="Support Enquiries"
         description="Contact and chatbot routing"
         action={
@@ -1135,7 +1241,92 @@ export function SuperAdminReportsScreen() {
     () => () => superAdminService.getReports({ range, startDate: startDate || undefined, endDate: endDate || undefined }),
     [range, startDate, endDate]
   );
-  const { data, loading } = useAsyncLoader(loader, { summary: {}, series: [], planMix: [] });
+  const { data, setData, loading } = useAsyncLoader(loader, { summary: {}, series: [], planMix: [] });
+
+  const reportRows = useMemo(
+    () =>
+      (data.series || []).map((item) => ({
+        period: item.label,
+        revenue: formatCurrency(item.value),
+        range: range.charAt(0).toUpperCase() + range.slice(1),
+        startDate: startDate || "",
+        endDate: endDate || "",
+      })),
+    [data.series, endDate, range, startDate]
+  );
+
+  const reportColumns = useMemo(
+    () => [
+      { key: "period", label: "Period", width: 160 },
+      { key: "revenue", label: "Revenue", width: 150 },
+      { key: "range", label: "Range", width: 120 },
+      { key: "startDate", label: "Start Date", type: "date", width: 120 },
+      { key: "endDate", label: "End Date", type: "date", width: 120 },
+    ],
+    []
+  );
+
+  const reloadReports = async () => {
+    if (exporting) return;
+    setExporting("refresh");
+    try {
+      const response = await superAdminService.getReports({
+        range,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
+      setData(response);
+      toast.success("Reports refreshed");
+    } catch (error) {
+      toast.error(error?.message || "Failed to refresh reports");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportReportsPdf = async () => {
+    if (!reportRows.length) {
+      toast.error("No report data available");
+      return;
+    }
+
+    setExporting("pdf");
+    try {
+      await exportTablePdf({
+        fileName: "myreport-superadmin-reports.pdf",
+        reportTitle: "Platform Reports",
+        rows: reportRows,
+        columns: reportColumns,
+      });
+      toast.success("PDF downloaded successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export PDF");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportReportsExcel = async () => {
+    if (!reportRows.length) {
+      toast.error("No report data available");
+      return;
+    }
+
+    setExporting("excel");
+    try {
+      await exportTableExcel({
+        fileName: "myreport-superadmin-reports.xlsx",
+        sheetName: "Reports",
+        rows: reportRows,
+        columns: reportColumns,
+      });
+      toast.success("Excel downloaded successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export Excel");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   if (loading) {
     return <LoadingSkeleton rows={3} />;
@@ -1149,13 +1340,9 @@ export function SuperAdminReportsScreen() {
         description="Deep-dive into revenue performance, store mix, and platform expansion."
         action={
           <DownloadToolbar
-            onRefresh={async () => {
-              if (exporting) return;
-              setExporting("refresh");
-              setTimeout(() => setExporting(null), 300);
-            }}
-            onExportExcel={() => downloadCsv("myreport-superadmin-reports.csv", data.series || [])}
-            onExportPdf={printPage}
+            onRefresh={reloadReports}
+            onExportExcel={exportReportsExcel}
+            onExportPdf={exportReportsPdf}
             exporting={exporting}
             downloadDisabled={!data?.series?.length}
           />
@@ -1187,6 +1374,7 @@ export function SuperAdminReportsScreen() {
               <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Quick Range</div>
               <div className="flex flex-wrap gap-2">
                 <ControlButton variant={range === "daily" ? "primary" : "default"} onClick={() => setRange("daily")}>Daily</ControlButton>
+                <ControlButton variant={range === "weekly" ? "primary" : "default"} onClick={() => setRange("weekly")}>Weekly</ControlButton>
                 <ControlButton variant={range === "monthly" ? "primary" : "default"} onClick={() => setRange("monthly")}>Monthly</ControlButton>
                 <ControlButton variant={range === "yearly" ? "primary" : "default"} onClick={() => setRange("yearly")}>Yearly</ControlButton>
               </div>
@@ -1214,7 +1402,7 @@ export function SuperAdminReportsScreen() {
       </div>
 
       <div className="grid max-w-full gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <ChartCard title="Monthly Revenue" description="Performance trend over recent months.">
+        <ChartCard title="Revenue Trend" description="Performance trend for the selected report range.">
           <div className="h-72 w-full max-w-full sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.series}>
@@ -1253,28 +1441,135 @@ export function SuperAdminReportsScreen() {
 }
 
 export function SuperAdminSettingsScreen() {
+  const dispatch = useDispatch();
   const loader = useMemo(() => superAdminService.getSettings, []);
   const { data, setData, loading } = useAsyncLoader(loader, { profile: {}, preferences: {} });
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftProfile, setDraftProfile] = useState({
+    fullName: "",
+    mobileNumber: "",
+    city: "",
+    address: "",
+    email: "",
+    avatarUrl: "",
+  });
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef(null);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  if (loading) {
-    return <LoadingSkeleton rows={3} />;
-  }
+  const syncLiveProfile = (profile) => {
+    if (!profile) return;
+    dispatch(syncProfile(profile));
+    updateStoredProfile(profile);
+  };
+
+  const handleEditProfile = () => {
+    setDraftProfile({
+      fullName: data.profile?.fullName || "",
+      mobileNumber: data.profile?.mobileNumber || "",
+      city: data.profile?.city || "",
+      address: data.profile?.address || "",
+      email: data.profile?.email || "",
+      avatarUrl: data.profile?.avatarUrl || "",
+    });
+    setIsEditing(true);
+  };
+
+  const handleCancelProfile = () => {
+    setDraftProfile({
+      fullName: data.profile?.fullName || "",
+      mobileNumber: data.profile?.mobileNumber || "",
+      city: data.profile?.city || "",
+      address: data.profile?.address || "",
+      email: data.profile?.email || "",
+      avatarUrl: data.profile?.avatarUrl || "",
+    });
+    setIsEditing(false);
+  };
 
   const handleProfileSave = async (event) => {
     event.preventDefault();
-    const response = await superAdminService.updateProfile({
-      fullName: data.profile.fullName,
-      mobileNumber: data.profile.mobileNumber,
-      city: data.profile.city,
-      address: data.profile.address,
-    });
-    setData(response);
-    toast.success("Profile updated");
+    try {
+      const response = await superAdminService.updateProfile({
+        fullName: draftProfile.fullName,
+        mobileNumber: draftProfile.mobileNumber,
+        city: draftProfile.city,
+        address: draftProfile.address,
+      });
+      setData(response);
+      setDraftProfile({
+        fullName: response.profile?.fullName || "",
+        mobileNumber: response.profile?.mobileNumber || "",
+        city: response.profile?.city || "",
+        address: response.profile?.address || "",
+        email: response.profile?.email || "",
+        avatarUrl: response.profile?.avatarUrl || "",
+      });
+      syncLiveProfile(response.profile);
+      setIsEditing(false);
+      toast.success("Profile updated");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update profile");
+    }
+  };
+
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const response = await superAdminService.uploadProfilePhoto(file);
+      setData(response);
+      setDraftProfile({
+        fullName: response.profile?.fullName || "",
+        mobileNumber: response.profile?.mobileNumber || "",
+        city: response.profile?.city || "",
+        address: response.profile?.address || "",
+        email: response.profile?.email || "",
+        avatarUrl: response.profile?.avatarUrl || "",
+      });
+      syncLiveProfile(response.profile);
+      toast.success("Profile photo updated");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to upload profile photo");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!data.profile?.avatarUrl) {
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const response = await superAdminService.removeProfilePhoto();
+      setData(response);
+      setDraftProfile({
+        fullName: response.profile?.fullName || "",
+        mobileNumber: response.profile?.mobileNumber || "",
+        city: response.profile?.city || "",
+        address: response.profile?.address || "",
+        email: response.profile?.email || "",
+        avatarUrl: response.profile?.avatarUrl || "",
+      });
+      syncLiveProfile(response.profile);
+      toast.success("Profile photo removed");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to remove profile photo");
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handlePreferenceToggle = async (key) => {
@@ -1282,34 +1577,100 @@ export function SuperAdminSettingsScreen() {
       ...(data.preferences || {}),
       [key]: !(data.preferences || {})[key],
     };
-    const response = await superAdminService.updatePreferences(nextPreferences);
-    setData(response);
-    toast.success("Preferences updated");
+    try {
+      const response = await superAdminService.updatePreferences(nextPreferences);
+      setData(response);
+      toast.success("Preferences updated");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update preferences");
+    }
   };
 
   const handlePasswordSave = async (event) => {
     event.preventDefault();
-    await superAdminService.updatePassword(passwordForm);
-    toast.success("Password updated");
-    setPasswordForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    try {
+      await superAdminService.updatePassword(passwordForm);
+      toast.success("Password updated");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update password");
+    }
   };
+
+  const profileView = isEditing ? draftProfile : data.profile;
+  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "");
+  const avatarUrl = profileView?.avatarUrl
+    ? (String(profileView.avatarUrl).startsWith("http") ? profileView.avatarUrl : `${apiBase}${profileView.avatarUrl}`)
+    : null;
+
+  if (loading) {
+    return <LoadingSkeleton rows={3} />;
+  }
 
   return (
     <div className="grid max-w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <GlassPanel className="p-5 sm:p-6">
         <SectionHeading eyebrow="Profile" title="Super Admin settings" description="Keep your profile, password, and notification preferences in sync." />
         <form className="mt-6 grid gap-4" onSubmit={handleProfileSave}>
+          <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/70 bg-gradient-to-br from-cyan-100 via-white to-violet-100 shadow-[0_0_0_4px_rgba(34,211,238,0.08)]">
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt="Profile avatar" fill sizes="80px" className="object-cover" unoptimized />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xl font-bold text-teal-800">
+                    {String(profileView?.fullName || data.profile?.fullName || "MR")
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((part) => part[0] || "")
+                      .join("")
+                      .toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                {avatarUrl ? (
+                  <>
+                    <div className="truncate text-lg font-semibold text-gray-900">{profileView?.fullName || "Super Admin"}</div>
+                    <div className="mt-1 truncate text-sm text-gray-500">{data.profile?.email || ""}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm font-semibold text-gray-900">Profile Photo</div>
+                    <div className="mt-1 text-xs text-gray-500">JPG, PNG, WEBP up to 5MB</div>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+              <ControlButton className="h-11 px-4" onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}>
+                <span className="inline-flex items-center gap-2"><Upload size={14} /> {uploadingPhoto ? "Uploading..." : "Upload"}</span>
+              </ControlButton>
+              <ControlButton className="h-11 px-4" onClick={handleRemovePhoto} disabled={uploadingPhoto || !data.profile?.avatarUrl}>
+                <span className="inline-flex items-center gap-2"><Trash2 size={14} /> Remove</span>
+              </ControlButton>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               label="Full Name"
               name="fullName"
-              value={data.profile.fullName || ""}
-              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, fullName: event.target.value } }))}
+              value={profileView?.fullName || ""}
+              onChange={(event) => setDraftProfile((previous) => ({ ...previous, fullName: event.target.value }))}
               required
+              disabled={!isEditing}
             />
             <div className="grid gap-2 text-sm">
               <span className="font-medium text-white/72">Email</span>
@@ -1323,28 +1684,38 @@ export function SuperAdminSettingsScreen() {
             <FormField
               label="Mobile Number"
               name="mobileNumber"
-              value={data.profile.mobileNumber || ""}
-              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, mobileNumber: event.target.value } }))}
+              value={profileView?.mobileNumber || ""}
+              onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value }))}
               required
+              disabled={!isEditing}
             />
             <FormField
               label="City"
               name="city"
-              value={data.profile.city || ""}
-              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, city: event.target.value } }))}
+              value={profileView?.city || ""}
+              onChange={(event) => setDraftProfile((previous) => ({ ...previous, city: event.target.value }))}
               required
+              disabled={!isEditing}
             />
             <FormField
               className="sm:col-span-2"
               label="Address"
               name="address"
-              value={data.profile.address || ""}
-              onChange={(event) => setData((previous) => ({ ...previous, profile: { ...previous.profile, address: event.target.value } }))}
+              value={profileView?.address || ""}
+              onChange={(event) => setDraftProfile((previous) => ({ ...previous, address: event.target.value }))}
               required
+              disabled={!isEditing}
             />
           </div>
           <div className="flex justify-start sm:justify-end">
-            <ControlButton type="submit" variant="primary">Save Profile</ControlButton>
+            {!isEditing ? (
+              <ControlButton type="button" variant="primary" onClick={handleEditProfile}>Edit</ControlButton>
+            ) : (
+              <div className="flex items-center gap-3">
+                <ControlButton type="button" onClick={handleCancelProfile}>Cancel</ControlButton>
+                <ControlButton type="submit" variant="primary">Save Profile</ControlButton>
+              </div>
+            )}
           </div>
         </form>
 

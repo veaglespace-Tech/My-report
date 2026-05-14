@@ -1,7 +1,13 @@
+import { Outfit } from "next/font/google";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { RootChrome } from "@/components/layout/RootChrome";
 import { FloatingChatbot } from "@/components/chat/FloatingChatbot";
 import "./globals.css";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+});
 
 export const metadata = {
   title: "MyReport",
@@ -13,8 +19,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+    <html lang="en" data-scroll-behavior="smooth" className={`${outfit.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)] font-outfit">
         <AppProviders>
           <RootChrome>{children}</RootChrome>
           <FloatingChatbot />

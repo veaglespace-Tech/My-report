@@ -73,7 +73,7 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout, mounted
         </div>
       </div>
 
-      <nav className="relative grid gap-2">
+      <nav className="relative grid gap-1.5">
         {items.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
@@ -83,7 +83,11 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout, mounted
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`relative group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all ${active ? "text-white" : "text-white/60 hover:bg-white/5 hover:text-white"}`}
+              className={`relative group flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-300 ${
+                active 
+                  ? "text-white" 
+                  : "text-white/50 hover:bg-white/8 hover:text-white"
+              }`}
             >
               {active && (
                 <motion.div
@@ -93,8 +97,15 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout, mounted
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
-              <Icon size={18} className={`relative z-10 transition-transform duration-300 ${active ? "scale-110 text-cyan-300 drop-shadow-[0_0_8px_rgba(103,232,249,0.5)]" : "group-hover:scale-110"}`} />
-              <span className="relative z-10">{item.label}</span>
+              <Icon 
+                size={20} 
+                className={`relative z-10 shrink-0 transition-transform duration-300 ${
+                  active 
+                    ? "scale-110 text-cyan-300 drop-shadow-[0_0_8px_rgba(103,232,249,0.5)]" 
+                    : "group-hover:scale-110"
+                }`} 
+              />
+              <span className="relative z-10 truncate">{item.label}</span>
             </Link>
           );
         })}

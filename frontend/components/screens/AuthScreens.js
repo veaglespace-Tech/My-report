@@ -20,8 +20,62 @@ import { clearAuth, setCredentials } from "@/redux/slices/authSlice";
 import { setThemeMode } from "@/redux/slices/uiSlice";
 import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
-const ADMIN_SIGNUP_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ADMIN_SIGNUP_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const EMAIL_LOCAL_PART_REGEX = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
+const EMAIL_DOMAIN_LABEL_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
+
+function getEmailValidationError(value, label = "Email") {
+  const email = String(value ?? "").trim();
+
+  if (!email) {
+    return `${label} is required.`;
+  }
+
+  if (email.length > 254 || /\s/.test(email)) {
+    return "Enter a valid email address.";
+  }
+
+  const parts = email.split("@");
+  if (parts.length !== 2) {
+    return "Enter a valid email address.";
+  }
+
+  const [localPart, domain] = parts;
+  if (!localPart || !domain) {
+    return "Enter a valid email address.";
+  }
+
+  if (
+    localPart.length > 64 ||
+    localPart.startsWith(".") ||
+    localPart.endsWith(".") ||
+    localPart.includes("..") ||
+    !EMAIL_LOCAL_PART_REGEX.test(localPart)
+  ) {
+    return "Enter a valid email address.";
+  }
+
+  if (domain.length > 253 || domain.startsWith(".") || domain.endsWith(".") || domain.includes("..")) {
+    return "Enter a valid email address.";
+  }
+
+  const domainLabels = domain.split(".");
+  const topLevelDomain = domainLabels[domainLabels.length - 1] || "";
+
+  if (domainLabels.length < 2 || !/^[A-Za-z]{2,}$/.test(topLevelDomain)) {
+    return "Enter a valid email address.";
+  }
+
+  if (!domainLabels.every((labelPart) => EMAIL_DOMAIN_LABEL_REGEX.test(labelPart))) {
+    return "Enter a valid email address.";
+  }
+
+  return null;
+}
+
+function isValidEmailAddress(value) {
+  return !getEmailValidationError(value);
+}
 
 function AuthBackdrop() {
   return (
@@ -245,12 +299,10 @@ export function LoginScreen({ role }) {
 
   const errors = useMemo(() => {
     const nextErrors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailError = getEmailValidationError(form.email);
 
-    if (!form.email.trim()) {
-      nextErrors.email = "Email is required.";
-    } else if (!emailRegex.test(form.email.trim())) {
-      nextErrors.email = "Enter a valid email address.";
+    if (emailError) {
+      nextErrors.email = emailError;
     }
 
     if (!form.password) {
@@ -275,8 +327,9 @@ export function LoginScreen({ role }) {
     startTransition(async () => {
       try {
         clearSession();
+        const normalizedEmail = form.email.trim().toLowerCase();
         const payload = await login({
-          email: form.email,
+          email: normalizedEmail,
           password: form.password,
           role,
           rememberMe: form.rememberMe,
@@ -388,7 +441,9 @@ export function LoginScreen({ role }) {
           whileTap={{ scale: 0.99 }}
           disabled={loading || !isValid}
           type="submit"
-          className="theme-primary-button rounded-2xl px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+          className={`theme-primary-button rounded-2xl px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed ${
+            role === "SUPER_ADMIN" ? "disabled:opacity-100 disabled:brightness-95" : "disabled:opacity-60"
+          }`}
         >
           {loading ? "Authenticating..." : role === "SUPER_ADMIN" ? "Login to SuperAdmin" : "Login to Admin"}
         </motion.button>
@@ -509,8 +564,7 @@ export function AdminSignupScreen() {
       form.organization.organizationName.trim().length >= 3 &&
       storeNameRegex.test(form.organization.organizationName.trim()) &&
       Boolean(form.organization.storeType.trim()) &&
-      Boolean(form.organization.businessEmail.trim()) &&
-      ADMIN_SIGNUP_EMAIL_REGEX.test(form.organization.businessEmail.trim()) &&
+      isValidEmailAddress(form.organization.businessEmail) &&
       placeRegex.test(form.organization.city.trim()) &&
       placeRegex.test(form.organization.state.trim()) &&
       placeRegex.test(form.organization.country.trim()) &&
@@ -530,7 +584,7 @@ export function AdminSignupScreen() {
     return (
       fullNameRegex.test(form.admin.fullName.trim()) &&
       Boolean(email) &&
-      ADMIN_SIGNUP_EMAIL_REGEX.test(email) &&
+      isValidEmailAddress(email) &&
       Boolean(form.admin.gender.trim()) &&
       ADMIN_SIGNUP_PASSWORD_REGEX.test(form.admin.password) &&
       form.admin.password === form.admin.confirmPassword &&
@@ -590,10 +644,11 @@ export function AdminSignupScreen() {
       if (!form.organization.storeType.trim()) {
         errors.storeType = "Store type is required.";
       }
-      if (!form.organization.businessEmail.trim()) {
-        errors.businessEmail = "Business email is required.";
-      } else if (!ADMIN_SIGNUP_EMAIL_REGEX.test(form.organization.businessEmail.trim())) {
-        errors.businessEmail = "Please enter a valid email address.";
+      const businessEmailError = getEmailValidationError(form.organization.businessEmail, "Business email");
+      if (businessEmailError) {
+        errors.businessEmail = businessEmailError === "Enter a valid email address."
+          ? "Please enter a valid email address."
+          : businessEmailError;
       }
       if (!city || !placeRegex.test(city)) {
         errors.city = "Please enter a valid city/state/country.";
@@ -625,10 +680,11 @@ export function AdminSignupScreen() {
       if (!fullName || fullName.length < 3 || !fullNameRegex.test(fullName)) {
         errors.fullName = "Please enter a valid full name.";
       }
-      if (!email) {
-        errors.adminEmail = "Admin email is required.";
-      } else if (!ADMIN_SIGNUP_EMAIL_REGEX.test(email)) {
-        errors.adminEmail = "Please enter a valid email address.";
+      const adminEmailError = getEmailValidationError(email, "Admin email");
+      if (adminEmailError) {
+        errors.adminEmail = adminEmailError === "Enter a valid email address."
+          ? "Please enter a valid email address."
+          : adminEmailError;
       }
       if (!gender) {
         errors.gender = "Please select gender.";
@@ -717,7 +773,7 @@ export function AdminSignupScreen() {
         return false;
       }
 
-      if (!ADMIN_SIGNUP_EMAIL_REGEX.test(form.admin.email.trim())) {
+      if (!isValidEmailAddress(form.admin.email.trim())) {
         toast.error("Please enter a valid email address.");
         return false;
       }

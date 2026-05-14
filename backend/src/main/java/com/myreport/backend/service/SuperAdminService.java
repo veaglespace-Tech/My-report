@@ -2,10 +2,10 @@ package com.myreport.backend.service;
 
 import com.myreport.backend.dto.admin.ChangePasswordRequest;
 import com.myreport.backend.dto.admin.NotificationPreferenceRequest;
-import com.myreport.backend.dto.admin.ProfileUpdateRequest;
 import com.myreport.backend.dto.superadmin.AdminRequest;
 import com.myreport.backend.dto.superadmin.PlanRequest;
 import com.myreport.backend.dto.superadmin.StoreCreateRequest;
+import com.myreport.backend.dto.superadmin.SuperAdminProfileUpdateRequest;
 import com.myreport.backend.entity.Invoice;
 import com.myreport.backend.entity.Notification;
 import com.myreport.backend.entity.Plan;
@@ -24,6 +24,10 @@ import com.myreport.backend.repository.StoreRepository;
 import com.myreport.backend.repository.UserAccountRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -34,16 +38,19 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class SuperAdminService {
+    private static final long MAX_PROFILE_PHOTO_SIZE = 5L * 1024L * 1024L;
 
     private final UserAccountRepository userAccountRepository;
     private final StoreRepository storeRepository;
@@ -409,29 +416,55 @@ public class SuperAdminService {
     @Transactional(readOnly = true)
     public Map<String, Object> getSettings(String email) {
         UserAccount user = getUser(email, Role.SUPER_ADMIN);
-        return Map.of(
-                "profile", Map.of(
-                        "fullName", user.getFullName(),
-                        "email", user.getEmail(),
-                        "mobileNumber", user.getMobileNumber(),
-                        "avatarUrl", user.getAvatarUrl()
-                ),
-                "preferences", Map.of(
-                        "lowStockAlerts", user.isLowStockAlerts(),
-                        "planExpiryAlerts", user.isPlanExpiryAlerts(),
-                        "paymentAlerts", user.isPaymentAlerts(),
-                        "darkMode", user.isDarkMode()
-                )
-        );
+        return settingsPayload(user);
     }
 
     @Transactional
-    public Map<String, Object> updateProfile(String email, ProfileUpdateRequest request) {
+    public Map<String, Object> updateProfile(String email, SuperAdminProfileUpdateRequest request) {
         UserAccount user = getUser(email, Role.SUPER_ADMIN);
         user.setFullName(request.fullName());
         user.setMobileNumber(request.mobileNumber());
         user.setCity(request.city());
         user.setAddress(request.address());
+        userAccountRepository.save(user);
+        return getSettings(email);
+    }
+
+    @Transactional
+    public Map<String, Object> uploadProfilePhoto(String email, MultipartFile file) {
+        UserAccount user = getUser(email, Role.SUPER_ADMIN);
+        if (file == null || file.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Please select an image file");
+        }
+        if (file.getSize() > MAX_PROFILE_PHOTO_SIZE) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Image size must be 5MB or less");
+        }
+
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+        if (!contentType.equals("image/jpeg") && !contentType.equals("image/jpg")
+                && !contentType.equals("image/png") && !contentType.equals("image/webp")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Only JPG, PNG, and WEBP images are allowed");
+        }
+
+        String extension = extensionForContentType(contentType);
+        Path uploadDir = Paths.get("uploads", "profile").toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(uploadDir);
+            String fileName = "avatar-super-admin-" + user.getId() + "-" + UUID.randomUUID() + extension;
+            Path target = uploadDir.resolve(fileName).normalize();
+            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            user.setAvatarUrl("/uploads/profile/" + fileName);
+            userAccountRepository.save(user);
+            return getSettings(email);
+        } catch (Exception exception) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload profile photo");
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> removeProfilePhoto(String email) {
+        UserAccount user = getUser(email, Role.SUPER_ADMIN);
+        user.setAvatarUrl(null);
         userAccountRepository.save(user);
         return getSettings(email);
     }
@@ -522,6 +555,28 @@ public class SuperAdminService {
         data.put("buttonText", plan.getButtonText());
         data.put("themeColor", plan.getThemeColor());
         data.put("status", plan.getStatus());
+        return data;
+    }
+
+    private Map<String, Object> settingsPayload(UserAccount user) {
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("fullName", user.getFullName());
+        profile.put("email", user.getEmail());
+        profile.put("mobileNumber", user.getMobileNumber());
+        profile.put("city", user.getCity());
+        profile.put("address", user.getAddress());
+        profile.put("avatarUrl", user.getAvatarUrl());
+
+        Map<String, Object> preferences = Map.of(
+                "lowStockAlerts", user.isLowStockAlerts(),
+                "planExpiryAlerts", user.isPlanExpiryAlerts(),
+                "paymentAlerts", user.isPaymentAlerts(),
+                "darkMode", user.isDarkMode()
+        );
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("profile", profile);
+        data.put("preferences", preferences);
         return data;
     }
 
@@ -696,6 +751,14 @@ public class SuperAdminService {
 
     private Map<String, Object> metric(String label, String value, String helper, String accent) {
         return Map.of("label", label, "value", value, "helper", helper, "accent", accent);
+    }
+
+    private String extensionForContentType(String contentType) {
+        return switch (contentType) {
+            case "image/png" -> ".png";
+            case "image/webp" -> ".webp";
+            default -> ".jpg";
+        };
     }
 
     private String createAvatarUrl(String fullName) {

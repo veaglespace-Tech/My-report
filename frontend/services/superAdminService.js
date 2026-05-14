@@ -24,7 +24,10 @@ export const superAdminService = {
         : mockSuperAdminData.stores
     ),
   getPlans: () => fetchWithFallback(() => axiosInstance.get("/super-admin/plans"), mockSuperAdminData.plans),
-  getInvoices: () => fetchWithFallback(() => axiosInstance.get("/super-admin/invoices"), mockSuperAdminData.invoices),
+  getInvoices: async () => {
+    const response = await axiosInstance.get("/super-admin/invoices");
+    return response.data.data;
+  },
   getEnquiries: ({ status, source, q } = {}) =>
     fetchWithFallback(
       () =>
@@ -64,6 +67,18 @@ export const superAdminService = {
   getSettings: () => fetchWithFallback(() => axiosInstance.get("/super-admin/settings"), { profile: {}, preferences: {} }),
   updateProfile: async (payload) => {
     const response = await axiosInstance.put("/super-admin/settings/profile", payload);
+    return response.data.data;
+  },
+  uploadProfilePhoto: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await axiosInstance.post("/super-admin/settings/profile-photo", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data.data;
+  },
+  removeProfilePhoto: async () => {
+    const response = await axiosInstance.delete("/super-admin/settings/profile-photo");
     return response.data.data;
   },
   updatePassword: async (payload) => {

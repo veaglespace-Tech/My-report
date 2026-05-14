@@ -97,44 +97,51 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
         </div>
       </div>
       {shouldPaginate ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 border-t border-white/8 px-4 py-4 sm:justify-between">
-          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-            Page {currentPage} of {totalPages}
+        <div className="flex flex-col items-center justify-center gap-4 border-t border-white/8 px-4 py-6 sm:flex-row sm:justify-between">
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
+            Showing <span className="text-white/70">{visibleRows.length}</span> of <span className="text-white/70">{rows.length}</span> items
           </div>
-          <button
-            type="button"
-            disabled={currentPage <= 1}
-            onClick={() => setPage((previous) => Math.max(1, previous - 1))}
-            className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-cyan-200 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Previous
-          </button>
-          <div className="max-w-full overflow-x-auto px-1 py-1 scrollbar-thin">
-            <div className="flex min-w-max items-center justify-center gap-1">
-            {pageNumbers.map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                onClick={() => setPage(pageNumber)}
-                className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition ${
-                  currentPage === pageNumber
-                    ? "bg-slate-950 text-white shadow-lg shadow-slate-900/20"
-                    : "bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-950"
-                }`}
-              >
-                {pageNumber}
-              </button>
-            ))}
+          
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((previous) => Math.max(1, previous - 1))}
+              className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              Prev
+            </button>
+            
+            <div className="flex items-center gap-1.5 px-2">
+              {pageNumbers.map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => setPage(pageNumber)}
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300 ${
+                    currentPage === pageNumber
+                      ? "bg-white text-slate-950 shadow-xl shadow-white/10 scale-105"
+                      : "text-white/50 hover:bg-white/8 hover:text-white"
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
             </div>
+
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
+              className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              Next
+            </button>
           </div>
-          <button
-            type="button"
-            disabled={currentPage >= totalPages}
-            onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
-            className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-cyan-200 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Next
-          </button>
+
+          <div className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-white/40 sm:block">
+            Page {currentPage} / {totalPages}
+          </div>
         </div>
       ) : null}
     </GlassPanel>
