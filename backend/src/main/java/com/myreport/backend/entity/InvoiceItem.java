@@ -24,30 +24,32 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "products")
-public class Product extends AuditableEntity {
+@Table(name = "invoice_items")
+public class InvoiceItem extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Invoice invoice;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Product product;
+
+    @Column(nullable = false)
+    private String productName;
 
     @Column(nullable = false)
     private Double quantity;
 
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal rate;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalAmount;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(length = 40)
     private ProductUnit unit;
-
-    @Builder.Default
-    @Column(nullable = false)
-    private boolean active = true;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Store store;
 }

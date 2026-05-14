@@ -4,9 +4,13 @@ import com.myreport.backend.dto.payments.RazorpayOrderRequest;
 import com.myreport.backend.dto.payments.RazorpaySignupOrderRequest;
 import com.myreport.backend.dto.payments.RazorpayVerifyRequest;
 import com.myreport.backend.entity.PaymentOrder;
+import com.myreport.backend.entity.Plan;
+import com.myreport.backend.entity.Store;
 import com.myreport.backend.entity.UserAccount;
 import com.myreport.backend.exception.ApiException;
 import com.myreport.backend.repository.PaymentOrderRepository;
+import com.myreport.backend.repository.PlanRepository;
+import com.myreport.backend.repository.StoreRepository;
 import com.myreport.backend.repository.UserAccountRepository;
 import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
@@ -14,6 +18,7 @@ import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.time.LocalDate;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +36,9 @@ public class PaymentService {
 
     private final UserAccountRepository userAccountRepository;
     private final PaymentOrderRepository paymentOrderRepository;
+    private final PlanRepository planRepository;
+    private final StoreRepository storeRepository;
+    private final PlanDateService planDateService;
 
     @Value("${razorpay.key-id}")
     private String razorpayKeyId;
@@ -163,9 +171,13 @@ public class PaymentService {
 
     @Transactional
     public Map<String, Object> verifyRazorpayPayment(String email, RazorpayVerifyRequest request) {
-        userAccountRepository.findByEmailIgnoreCase(email)
+        UserAccount admin = userAccountRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Admin not found"));
-        return verifyRazorpayPayment(request);
+        Map<String, Object> result = verifyRazorpayPayment(request);
+        if (Boolean.TRUE.equals(result.get("verified"))) {
+            applyPlanFromPaymentOrder(admin, request.razorpayOrderId());
+        }
+        return result;
     }
 
     @Transactional
@@ -254,4 +266,49 @@ public class PaymentService {
         mock.put("mode", "demo");
         return mock;
     }
+
+    private void applyPlanFromPaymentOrder(UserAccount admin, String gatewayOrderId) {
+        PaymentOrder order = paymentOrderRepository.findByGatewayOrderId(gatewayOrderId).orElse(null);
+        if (order == null || order.getAdmin() == null || !order.getAdmin().getId().equals(admin.getId())) {
+            return;
+        }
+
+        String planName = extractPlanName(order.getMetadataJson());
+        if (!hasText(planName)) {
+            return;
+        }
+
+        Plan plan = planRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(item -> item.getName() != null && item.getName().equalsIgnoreCase(planName))
+                .findFirst()
+                .orElse(null);
+        if (plan == null) {
+            return;
+        }
+
+        Store store = storeRepository.findByOwnerId(admin.getId()).orElse(null);
+        if (store == null) {
+            return;
+        }
+
+        LocalDate planStartedAt = LocalDate.now();
+        store.setPlan(plan);
+        store.setPlanStartedAt(planStartedAt);
+        store.setPlanExpiresAt(planDateService.calculateExpiry(plan, planStartedAt));
+        storeRepository.save(store);
+    }
+
+    private String extractPlanName(String metadataJson) {
+        if (!hasText(metadataJson)) {
+            return null;
+        }
+        for (String part : metadataJson.split(";")) {
+            String trimmed = part.trim();
+            if (trimmed.toLowerCase().startsWith("plan=")) {
+                return trimmed.substring(5).trim();
+            }
+        }
+        return null;
+    }
+
 }

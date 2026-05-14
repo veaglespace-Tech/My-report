@@ -9,10 +9,8 @@ import java.math.BigDecimal;
 
 public record ProductRequest(
         @NotBlank String name,
-        @NotBlank String sku,
         @NotNull @DecimalMin("0.0") BigDecimal price,
         @NotNull @Positive Double quantity,
-        @NotNull @Positive Double reorderThreshold,
         @NotNull ProductUnit unit,
         Boolean active
 ) {

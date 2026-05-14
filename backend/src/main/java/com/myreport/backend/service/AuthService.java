@@ -52,6 +52,7 @@ public class AuthService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final PlanDateService planDateService;
 
     @Value("${app.frontend-origin}")
     private String frontendOrigin;
@@ -118,6 +119,7 @@ public class AuthService {
                 .build();
         userAccountRepository.save(admin);
 
+        LocalDate planStartedAt = LocalDate.now();
         Store store = Store.builder()
                 .name(request.organization().organizationName())
                 .storeType(request.organization().storeType())
@@ -129,7 +131,8 @@ public class AuthService {
                 .address(request.organization().address())
                 .status(StoreStatus.ACTIVE)
                 .plan(assignedPlan)
-                .planExpiresAt(resolvePlanExpiry(assignedPlan))
+                .planStartedAt(planStartedAt)
+                .planExpiresAt(planDateService.calculateExpiry(assignedPlan, planStartedAt))
                 .owner(admin)
                 .build();
         storeRepository.save(store);
@@ -167,6 +170,7 @@ public class AuthService {
                 .build();
         userAccountRepository.save(admin);
 
+        LocalDate planStartedAt = LocalDate.now();
         Store store = Store.builder()
                 .name(request.storeName())
                 .storeType("Grocery Shop")
@@ -174,7 +178,8 @@ public class AuthService {
                 .address(request.address())
                 .status(StoreStatus.PENDING)
                 .plan(defaultPlan)
-                .planExpiresAt(LocalDate.now().plusDays(30))
+                .planStartedAt(planStartedAt)
+                .planExpiresAt(planDateService.calculateExpiry(defaultPlan, planStartedAt))
                 .owner(admin)
                 .build();
         storeRepository.save(store);
@@ -380,31 +385,4 @@ public class AuthService {
         return firstOrigin.isBlank() ? "http://localhost:3000" : firstOrigin;
     }
 
-    private LocalDate resolvePlanExpiry(Plan plan) {
-        LocalDate now = LocalDate.now();
-        if (plan != null && plan.isTrialAvailable()) {
-            return now.plusDays(7);
-        }
-        String duration = plan != null ? plan.getDuration() : null;
-        if (duration != null && !duration.isBlank()) {
-            String normalized = duration.toLowerCase().trim();
-            try {
-                if (normalized.contains("year")) {
-                    int years = Integer.parseInt(normalized.replaceAll("[^0-9]", ""));
-                    return years > 0 ? now.plusYears(years) : now.plusMonths(12);
-                }
-                if (normalized.contains("month")) {
-                    int months = Integer.parseInt(normalized.replaceAll("[^0-9]", ""));
-                    return months > 0 ? now.plusMonths(months) : now.plusMonths(1);
-                }
-                if (normalized.contains("day")) {
-                    int days = Integer.parseInt(normalized.replaceAll("[^0-9]", ""));
-                    return days > 0 ? now.plusDays(days) : now.plusDays(30);
-                }
-            } catch (Exception ignored) {
-                // fall back
-            }
-        }
-        return now.plusDays(30);
-    }
 }

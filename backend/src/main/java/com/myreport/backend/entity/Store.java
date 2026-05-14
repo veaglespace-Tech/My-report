@@ -61,6 +61,8 @@ public class Store extends AuditableEntity {
     @Column(nullable = false)
     private LocalDate planExpiresAt;
 
+    private LocalDate planStartedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     private UserAccount owner;
 

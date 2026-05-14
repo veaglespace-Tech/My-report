@@ -3,56 +3,65 @@ package com.myreport.backend.service;
 import com.myreport.backend.dto.admin.BillingRequest;
 import com.myreport.backend.dto.admin.ChangePasswordRequest;
 import com.myreport.backend.dto.admin.CustomerRequest;
-import com.myreport.backend.dto.admin.NotificationPreferenceRequest;
 import com.myreport.backend.dto.admin.ProductRequest;
 import com.myreport.backend.dto.admin.ProfileUpdateRequest;
 import com.myreport.backend.entity.Customer;
 import com.myreport.backend.entity.Invoice;
-import com.myreport.backend.entity.Notification;
+import com.myreport.backend.entity.InvoiceItem;
 import com.myreport.backend.entity.Order;
 import com.myreport.backend.entity.Product;
 import com.myreport.backend.entity.Store;
 import com.myreport.backend.entity.UserAccount;
 import com.myreport.backend.entity.enums.InvoiceStatus;
-import com.myreport.backend.entity.enums.NotificationType;
 import com.myreport.backend.entity.enums.Role;
 import com.myreport.backend.exception.ApiException;
 import com.myreport.backend.repository.CustomerRepository;
+import com.myreport.backend.repository.InvoiceItemRepository;
 import com.myreport.backend.repository.InvoiceRepository;
-import com.myreport.backend.repository.NotificationRepository;
 import com.myreport.backend.repository.OrderRepository;
 import com.myreport.backend.repository.ProductRepository;
 import com.myreport.backend.repository.StoreRepository;
 import com.myreport.backend.repository.UserAccountRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class AdminService {
+    private static final double LOW_STOCK_QUANTITY = 10d;
+    private static final long MAX_PROFILE_PHOTO_SIZE = 5L * 1024L * 1024L;
+    private static final String STRONG_PASSWORD_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$";
 
     private final UserAccountRepository userAccountRepository;
     private final StoreRepository storeRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final InvoiceRepository invoiceRepository;
-    private final NotificationRepository notificationRepository;
+    private final InvoiceItemRepository invoiceItemRepository;
     private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PlanDateService planDateService;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDashboard(String email) {
@@ -62,16 +71,14 @@ public class AdminService {
         List<Customer> customers = customerRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId());
         List<Invoice> invoices = invoiceRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId());
 
-        BigDecimal todaysSales = invoices.stream()
-                .filter(invoice -> invoice.getCreatedAt().toLocalDate().isEqual(LocalDate.now()))
-                .map(Invoice::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal monthlySales = invoices.stream()
-                .filter(invoice -> YearMonth.from(invoice.getCreatedAt()).equals(YearMonth.now()))
-                .map(Invoice::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime monthStart = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime nextMonthStart = currentMonth.plusMonths(1).atDay(1).atStartOfDay();
+
+        BigDecimal todaysSales = calculateTodaySales(admin.getId());
+        BigDecimal monthlySales = invoiceRepository.sumTotalAmountByOwnerIdAndCreatedAtBetween(admin.getId(), monthStart, nextMonthStart);
         long lowStockCount = products.stream()
-                .filter(product -> product.getQuantity() <= product.getReorderThreshold())
+                .filter(product -> product.getQuantity() <= LOW_STOCK_QUANTITY)
                 .count();
 
         Map<String, Object> data = new LinkedHashMap<>();
@@ -82,13 +89,13 @@ public class AdminService {
                 metric("Low Stock", String.valueOf(lowStockCount), "Needs immediate attention", "amber")
         ));
         data.put("revenueSeries", buildRevenueSeries(invoices));
-        data.put("topSales", buildTopSales(products));
-        data.put("notifications", mapNotifications(notificationRepository.findTop8ByUserIdOrderByCreatedAtDesc(admin.getId())));
+        data.put("topSales", buildTopSales(admin.getId()));
+        LocalDate planExpiresAt = calculatePlanExpiry(store);
         data.put("store", Map.of(
                 "name", store.getName(),
                 "city", store.getCity(),
                 "plan", store.getPlan() != null ? store.getPlan().getName() : null,
-                "planExpiresAt", store.getPlanExpiresAt()
+                "planExpiresAt", planExpiresAt
         ));
         data.put("highlights", List.of(
                 "Customer base: " + customers.size(),
@@ -96,6 +103,17 @@ public class AdminService {
                 "Available products: " + products.stream().filter(Product::isActive).count()
         ));
         return data;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTodaySales(String email) {
+        UserAccount admin = getAdmin(email);
+        BigDecimal todaysSales = calculateTodaySales(admin.getId());
+        return Map.of(
+                "amount", todaysSales,
+                "displayAmount", "Rs. " + todaysSales.setScale(0, RoundingMode.HALF_UP),
+                "date", LocalDate.now()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -167,18 +185,13 @@ public class AdminService {
         Store store = getStore(admin.getId());
         Product product = Product.builder()
                 .name(request.name())
-                .sku(request.sku())
                 .price(request.price())
                 .quantity(request.quantity())
-                .reorderThreshold(request.reorderThreshold())
                 .unit(request.unit())
                 .active(request.active() == null || request.active())
                 .store(store)
                 .build();
         productRepository.save(product);
-        if (product.getQuantity() <= product.getReorderThreshold()) {
-            createNotification(admin, "Low stock alert", product.getName() + " is below the 35% safety threshold.", NotificationType.LOW_STOCK);
-        }
         return mapProduct(product);
     }
 
@@ -187,10 +200,8 @@ public class AdminService {
         UserAccount admin = getAdmin(email);
         Product product = getProduct(admin.getId(), productId);
         product.setName(request.name());
-        product.setSku(request.sku());
         product.setPrice(request.price());
         product.setQuantity(request.quantity());
-        product.setReorderThreshold(request.reorderThreshold());
         product.setUnit(request.unit());
         product.setActive(request.active() == null || request.active());
         productRepository.save(product);
@@ -268,36 +279,53 @@ public class AdminService {
         }
 
         List<Product> products = productRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId());
+        Map<String, Product> productsByName = new HashMap<>();
+        products.forEach(product -> productsByName.put(product.getName().trim().toLowerCase(), product));
+
+        request.items().forEach(item -> {
+            Product product = productsByName.get(item.productName().trim().toLowerCase());
+            if (product == null) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Product not found in store: " + item.productName());
+            }
+        });
+
         List<Order> orders = new ArrayList<>();
+        List<InvoiceItem> invoiceItems = new ArrayList<>();
 
-        request.items().forEach(item -> products.stream()
-                .filter(product -> product.getName().equalsIgnoreCase(item.productName()))
-                .findFirst()
-                .ifPresent(product -> {
-                    product.setQuantity(Math.max(0, product.getQuantity() - item.quantity()));
-                    productRepository.save(product);
-                    if (product.getQuantity() <= product.getReorderThreshold()) {
-                        createNotification(admin, "Low stock alert", product.getName() + " needs replenishment soon.", NotificationType.LOW_STOCK);
-                    }
+        request.items().forEach(item -> {
+            Product product = productsByName.get(item.productName().trim().toLowerCase());
+            BigDecimal lineTotal = item.rate().multiply(BigDecimal.valueOf(item.quantity()));
+            product.setQuantity(Math.max(0, product.getQuantity() - item.quantity()));
+            productRepository.save(product);
+            invoiceItems.add(InvoiceItem.builder()
+                    .invoice(invoice)
+                    .product(product)
+                    .productName(product.getName())
+                    .quantity(item.quantity())
+                    .rate(item.rate())
+                    .totalAmount(lineTotal)
+                    .unit(product.getUnit())
+                    .build());
 
-                    if (matchedCustomer != null) {
-                        BigDecimal lineTotal = item.rate().multiply(BigDecimal.valueOf(item.quantity()));
-                        orders.add(Order.builder()
-                                .customer(matchedCustomer)
-                                .product(product)
-                                .store(store)
-                                .quantity(item.quantity())
-                                .price(item.rate())
-                                .totalAmount(lineTotal)
-                                .build());
-                    }
-                }));
+            if (matchedCustomer != null) {
+                orders.add(Order.builder()
+                        .customer(matchedCustomer)
+                        .product(product)
+                        .store(store)
+                        .quantity(item.quantity())
+                        .price(item.rate())
+                        .totalAmount(lineTotal)
+                        .build());
+            }
+        });
+
+        invoiceItemRepository.saveAll(invoiceItems);
 
         if (!orders.isEmpty()) {
             orderRepository.saveAll(orders);
         }
 
-        createNotification(admin, "Payment success", "Invoice " + invoice.getInvoiceNumber() + " was generated successfully.", NotificationType.PAYMENT_SUCCESS);
+        BigDecimal todaysSales = calculateTodaySales(admin.getId());
 
         return Map.of(
                 "invoiceNumber", invoice.getInvoiceNumber(),
@@ -305,30 +333,48 @@ public class AdminService {
                 "taxAmount", taxAmount,
                 "discountAmount", discountAmount,
                 "totalAmount", totalAmount,
+                "todaySales", todaysSales,
+                "todaySalesDisplay", "Rs. " + todaysSales.setScale(0, RoundingMode.HALF_UP),
                 "createdAt", invoice.getCreatedAt()
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> getPlan(String email) {
         UserAccount admin = getAdmin(email);
         Store store = getStore(admin.getId());
         if (store.getPlan() == null) {
             return Map.of("plan", null);
         }
-        return Map.of(
-                "plan", Map.of(
-                        "name", store.getPlan().getName(),
-                        "description", store.getPlan().getDescription(),
-                        "monthlyPrice", store.getPlan().getMonthlyPrice(),
-                        "yearlyPrice", store.getPlan().getYearlyPrice(),
-                        "maxProducts", store.getPlan().getMaxProducts(),
-                        "maxCustomers", store.getPlan().getMaxCustomers(),
-                        "features", store.getPlan().getFeatures(),
-                        "expiresAt", store.getPlanExpiresAt(),
-                        "daysLeft", ChronoUnit.DAYS.between(LocalDate.now(), store.getPlanExpiresAt())
-                )
-        );
+        String planName = store.getPlan().getName() == null ? "" : store.getPlan().getName();
+        boolean freeTrial = planDateService.isFreeTrial(store.getPlan());
+        BigDecimal monthlyPrice = store.getPlan().getMonthlyPrice() == null ? BigDecimal.ZERO : store.getPlan().getMonthlyPrice();
+        String duration = planDateService.displayDuration(store.getPlan());
+        LocalDate planStartedAt = resolvePlanStartDate(store);
+        LocalDate planExpiresAt = planDateService.calculateExpiry(store.getPlan(), planStartedAt);
+        if (store.getPlanStartedAt() == null || !planExpiresAt.equals(store.getPlanExpiresAt())) {
+            store.setPlanStartedAt(planStartedAt);
+            store.setPlanExpiresAt(planExpiresAt);
+            storeRepository.save(store);
+        }
+
+        Map<String, Object> plan = new LinkedHashMap<>();
+        plan.put("name", planName);
+        plan.put("description", store.getPlan().getDescription());
+        plan.put("monthlyPrice", monthlyPrice);
+        plan.put("yearlyPrice", store.getPlan().getYearlyPrice());
+        plan.put("maxProducts", store.getPlan().getMaxProducts());
+        plan.put("maxCustomers", store.getPlan().getMaxCustomers());
+        plan.put("features", store.getPlan().getFeatures());
+        plan.put("duration", duration);
+        plan.put("freeTrial", freeTrial);
+        plan.put("displayPrice", freeTrial ? "Rs. 0 / 7 Days" : ("Rs. " + monthlyPrice.setScale(0, RoundingMode.HALF_UP) + " / month"));
+        plan.put("actionLabel", freeTrial ? "Upgrade Plan" : "Renew with Razorpay");
+        plan.put("startedAt", planStartedAt);
+        plan.put("expiresAt", planExpiresAt);
+        plan.put("daysLeft", ChronoUnit.DAYS.between(LocalDate.now(), planExpiresAt));
+
+        return Map.of("plan", plan);
     }
 
     @Transactional(readOnly = true)
@@ -361,22 +407,15 @@ public class AdminService {
     public Map<String, Object> getSettings(String email) {
         UserAccount admin = getAdmin(email);
         Store store = getStore(admin.getId());
-        return Map.of(
-                "profile", Map.of(
-                        "fullName", admin.getFullName(),
-                        "email", admin.getEmail(),
-                        "mobileNumber", admin.getMobileNumber(),
-                        "city", admin.getCity(),
-                        "address", admin.getAddress(),
-                        "storeName", store.getName()
-                ),
-                "preferences", Map.of(
-                        "lowStockAlerts", admin.isLowStockAlerts(),
-                        "planExpiryAlerts", admin.isPlanExpiryAlerts(),
-                        "paymentAlerts", admin.isPaymentAlerts(),
-                        "darkMode", admin.isDarkMode()
-                )
-        );
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("fullName", admin.getFullName());
+        profile.put("email", admin.getEmail());
+        profile.put("mobileNumber", admin.getMobileNumber());
+        profile.put("city", admin.getCity());
+        profile.put("address", admin.getAddress());
+        profile.put("storeName", store.getName());
+        profile.put("avatarUrl", admin.getAvatarUrl());
+        return Map.of("profile", profile);
     }
 
     @Transactional
@@ -397,10 +436,52 @@ public class AdminService {
     }
 
     @Transactional
+    public Map<String, Object> uploadProfilePhoto(String email, MultipartFile file) {
+        UserAccount admin = getAdmin(email);
+        if (file == null || file.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Please select an image file");
+        }
+        if (file.getSize() > MAX_PROFILE_PHOTO_SIZE) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Image size must be 5MB or less");
+        }
+
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+        if (!contentType.equals("image/jpeg") && !contentType.equals("image/jpg")
+                && !contentType.equals("image/png") && !contentType.equals("image/webp")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Only JPG, PNG, and WEBP images are allowed");
+        }
+
+        String extension = extensionForContentType(contentType);
+        Path uploadDir = Paths.get("uploads", "profile").toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(uploadDir);
+            String fileName = "avatar-" + admin.getId() + "-" + UUID.randomUUID() + extension;
+            Path target = uploadDir.resolve(fileName).normalize();
+            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            admin.setAvatarUrl("/uploads/profile/" + fileName);
+            userAccountRepository.save(admin);
+            return getSettings(email);
+        } catch (Exception exception) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload profile photo");
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> removeProfilePhoto(String email) {
+        UserAccount admin = getAdmin(email);
+        admin.setAvatarUrl(null);
+        userAccountRepository.save(admin);
+        return getSettings(email);
+    }
+
+    @Transactional
     public Map<String, Object> changePassword(String email, ChangePasswordRequest request) {
         UserAccount admin = getAdmin(email);
         if (!passwordEncoder.matches(request.currentPassword(), admin.getPassword())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        if (request.newPassword() == null || !request.newPassword().matches(STRONG_PASSWORD_REGEX)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "New password must be at least 8 characters and include uppercase, lowercase, number, and special character");
         }
         if (!request.newPassword().equals(request.confirmPassword())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "New password and confirm password must match");
@@ -408,31 +489,6 @@ public class AdminService {
         admin.setPassword(passwordEncoder.encode(request.newPassword()));
         userAccountRepository.save(admin);
         return Map.of("changed", true);
-    }
-
-    @Transactional
-    public Map<String, Object> updatePreferences(String email, NotificationPreferenceRequest request) {
-        UserAccount admin = getAdmin(email);
-        if (request.lowStockAlerts() != null) {
-            admin.setLowStockAlerts(request.lowStockAlerts());
-        }
-        if (request.planExpiryAlerts() != null) {
-            admin.setPlanExpiryAlerts(request.planExpiryAlerts());
-        }
-        if (request.paymentAlerts() != null) {
-            admin.setPaymentAlerts(request.paymentAlerts());
-        }
-        if (request.darkMode() != null) {
-            admin.setDarkMode(request.darkMode());
-        }
-        userAccountRepository.save(admin);
-        return getSettings(email);
-    }
-
-    @Transactional(readOnly = true)
-    public Map<String, Object> getNotifications(String email) {
-        UserAccount admin = getAdmin(email);
-        return Map.of("items", mapNotifications(notificationRepository.findTop8ByUserIdOrderByCreatedAtDesc(admin.getId())));
     }
 
     private UserAccount getAdmin(String email) {
@@ -463,6 +519,32 @@ public class AdminService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Product not found"));
     }
 
+    private LocalDate calculatePlanExpiry(Store store) {
+        if (store == null || store.getPlan() == null) {
+            return store != null ? store.getPlanExpiresAt() : null;
+        }
+        return planDateService.calculateExpiry(store.getPlan(), resolvePlanStartDate(store));
+    }
+
+    private LocalDate resolvePlanStartDate(Store store) {
+        if (store.getPlanStartedAt() != null) {
+            return store.getPlanStartedAt();
+        }
+        if (store.getCreatedAt() != null) {
+            return store.getCreatedAt().toLocalDate();
+        }
+        return LocalDate.now();
+    }
+
+    private BigDecimal calculateTodaySales(Long ownerId) {
+        LocalDate today = LocalDate.now();
+        return invoiceRepository.sumTotalAmountByOwnerIdAndCreatedAtBetween(
+                ownerId,
+                today.atStartOfDay(),
+                today.plusDays(1).atStartOfDay()
+        );
+    }
+
     private Map<String, Object> mapCustomer(Customer customer) {
         return Map.of(
                 "id", customer.getId(),
@@ -478,18 +560,14 @@ public class AdminService {
     }
 
     private Map<String, Object> mapProduct(Product product) {
-        double stockRatio = product.getReorderThreshold() == 0 ? 100 : (product.getQuantity() / product.getReorderThreshold()) * 100;
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("id", product.getId());
         data.put("name", product.getName());
-        data.put("sku", product.getSku());
         data.put("price", product.getPrice());
         data.put("quantity", product.getQuantity());
-        data.put("reorderThreshold", product.getReorderThreshold());
         data.put("unit", product.getUnit());
         data.put("active", product.isActive());
-        data.put("stockHealth", Math.round(stockRatio));
-        data.put("lowStock", product.getQuantity() <= product.getReorderThreshold());
+        data.put("lowStock", product.getQuantity() <= LOW_STOCK_QUANTITY);
         data.put("createdAt", product.getCreatedAt());
         return data;
     }
@@ -509,17 +587,17 @@ public class AdminService {
         return series;
     }
 
-    private List<Map<String, Object>> buildTopSales(List<Product> products) {
-        return products.stream()
-                .sorted(Comparator.comparing(Product::getPrice).reversed())
+    private List<Map<String, Object>> buildTopSales(Long ownerId) {
+        List<Map<String, Object>> invoiceSales = invoiceItemRepository.findTopSalesByOwnerId(ownerId).stream()
                 .limit(5)
                 .map(this::topSaleItem)
                 .toList();
-    }
-
-    private List<Map<String, Object>> mapNotifications(List<Notification> notifications) {
-        return notifications.stream()
-                .map(this::notificationItem)
+        if (!invoiceSales.isEmpty()) {
+            return invoiceSales;
+        }
+        return orderRepository.findTopSalesByOwnerId(ownerId).stream()
+                .limit(5)
+                .map(this::topSaleItem)
                 .toList();
     }
 
@@ -545,21 +623,23 @@ public class AdminService {
         return data;
     }
 
-    private Map<String, Object> topSaleItem(Product product) {
+    private Map<String, Object> topSaleItem(InvoiceItemRepository.TopSaleProjection item) {
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("name", product.getName());
-        data.put("value", Math.max(10, Math.round(product.getPrice().doubleValue() * 2)));
-        data.put("unit", product.getUnit());
+        data.put("name", item.getName());
+        data.put("value", item.getQuantity());
+        data.put("quantity", item.getQuantity());
+        data.put("revenue", item.getRevenue());
+        data.put("unit", item.getUnit());
         return data;
     }
 
-    private Map<String, Object> notificationItem(Notification notification) {
+    private Map<String, Object> topSaleItem(OrderRepository.TopSaleProjection item) {
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("id", notification.getId());
-        data.put("title", notification.getTitle());
-        data.put("message", notification.getMessage());
-        data.put("type", notification.getType());
-        data.put("createdAt", notification.getCreatedAt());
+        data.put("name", item.getName());
+        data.put("value", item.getQuantity());
+        data.put("quantity", item.getQuantity());
+        data.put("revenue", item.getRevenue());
+        data.put("unit", item.getUnit());
         return data;
     }
 
@@ -567,12 +647,12 @@ public class AdminService {
         return Map.of("label", label, "value", value, "helper", helper, "accent", accent);
     }
 
-    private void createNotification(UserAccount admin, String title, String message, NotificationType type) {
-        notificationRepository.save(Notification.builder()
-                .title(title)
-                .message(message)
-                .type(type)
-                .user(admin)
-                .build());
+    private String extensionForContentType(String contentType) {
+        return switch (contentType) {
+            case "image/png" -> ".png";
+            case "image/webp" -> ".webp";
+            default -> ".jpg";
+        };
     }
+
 }

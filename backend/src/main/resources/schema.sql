@@ -18,6 +18,23 @@ CREATE TABLE IF NOT EXISTS orders (
   INDEX idx_orders_created_at (created_at)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS invoice_items (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  invoice_id BIGINT NOT NULL,
+  product_id BIGINT NOT NULL,
+  product_name VARCHAR(255) NOT NULL,
+  quantity DOUBLE NOT NULL,
+  rate DECIMAL(10,2) NOT NULL,
+  total_amount DECIMAL(12,2) NOT NULL,
+  unit VARCHAR(40) DEFAULT NULL,
+  PRIMARY KEY (id),
+  INDEX idx_invoice_items_invoice_id (invoice_id),
+  INDEX idx_invoice_items_product_id (product_id),
+  INDEX idx_invoice_items_created_at (created_at)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id BIGINT NOT NULL AUTO_INCREMENT,
   created_at DATETIME NOT NULL,

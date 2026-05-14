@@ -1,6 +1,8 @@
 package com.myreport.backend.repository;
 
 import com.myreport.backend.entity.Order;
+import com.myreport.backend.entity.enums.ProductUnit;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +10,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    interface TopSaleProjection {
+        String getName();
+
+        Double getQuantity();
+
+        BigDecimal getRevenue();
+
+        ProductUnit getUnit();
+    }
 
     @Query("""
             select o from Order o
@@ -56,5 +68,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("""
+            select
+              o.product.name as name,
+              sum(o.quantity) as quantity,
+              sum(o.totalAmount) as revenue,
+              o.product.unit as unit
+            from Order o
+            where o.store.owner.id = :ownerId
+            group by o.product.name, o.product.unit
+            order by sum(o.quantity) desc, sum(o.totalAmount) desc
+            """)
+    List<TopSaleProjection> findTopSalesByOwnerId(@Param("ownerId") Long ownerId);
 }
 

@@ -34,13 +34,14 @@ export function DownloadToolbar({
       <button
         type="button"
         onClick={onRefresh}
+        disabled={exporting !== null}
         className={[
           baseButton,
-          "bg-black/40 text-white/85 backdrop-blur-md ring-1 ring-white/10 hover:bg-black/55",
+          "bg-black/40 text-white/85 backdrop-blur-md ring-1 ring-white/10 hover:scale-[1.02] hover:bg-black/55 hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)]",
         ].join(" ")}
       >
         <RefreshCw size={16} className={exporting === "refresh" ? "animate-spin" : ""} />
-        Refresh
+        {exporting === "refresh" ? "Refreshing..." : "Refresh"}
       </button>
 
       <div ref={menuRef} className="relative">

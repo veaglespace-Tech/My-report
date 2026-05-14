@@ -16,7 +16,7 @@ import { clearSession, persistSession } from "@/lib/session";
 import { persistThemeMode } from "@/lib/theme";
 import { createSignupRazorpayOrder, login, register, verifySignupRazorpayPayment } from "@/services/authService";
 import { publicPlanService } from "@/services/publicPlanService";
-import { setCredentials } from "@/redux/slices/authSlice";
+import { clearAuth, setCredentials } from "@/redux/slices/authSlice";
 import { setThemeMode } from "@/redux/slices/uiSlice";
 import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
 
@@ -441,57 +441,32 @@ export function AdminSignupScreen() {
       mobile: "",
       gender: "",
     },
-    plan: preselectPlan || "3_MONTHS",
     planId: preselectPlan,
   }));
+  const normalizedPlans = useMemo(
+    () =>
+      availablePlans.map((plan) => {
+        const monthly = Number(plan.monthlyPrice ?? plan.price ?? 0);
+        const duration = String(plan.duration || "").trim();
+        const isFreeTrial = String(plan.name || "").toUpperCase() === "FREE TRIAL" || (plan.trialAvailable && monthly === 0);
+        return {
+          id: String(plan.id),
+          title: plan.planName || plan.name || "Plan",
+          chip: duration || (isFreeTrial ? "7 Days" : "1 Month"),
+          price: isFreeTrial ? "Rs. 0" : `Rs. ${monthly.toLocaleString("en-IN")}`,
+          amount: isFreeTrial ? 0 : monthly,
+          note: plan.description || "Flexible subscription for your store.",
+          features: String(plan.features || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        };
+      }),
+    [availablePlans]
+  );
 
-  const planCards = [
-    {
-      value: "TRIAL",
-      chip: "7 Days Trial",
-      title: "Free Trial",
-      price: "Rs. 0",
-      amount: 0,
-      note: "Explore the dashboard before committing.",
-      features: ["Starter workspace", "Up to 250 products", "7-day access"],
-    },
-    {
-      value: "3_MONTHS",
-      chip: "3 Months",
-      title: "Launch",
-      price: "Rs. 3,000",
-      amount: 3000,
-      note: "Best for new stores getting started fast.",
-      features: ["Starter workspace", "Priority setup", "Quarterly plan cycle"],
-    },
-    {
-      value: "6_MONTHS",
-      chip: "6 Months",
-      title: "Growth",
-      price: "Rs. 5,500",
-      amount: 5500,
-      note: "More runway for teams building momentum.",
-      features: ["Starter workspace", "Longer runway", "Biannual plan cycle"],
-    },
-    {
-      value: "12_MONTHS",
-      chip: "12 Months",
-      title: "Scale",
-      price: "Rs. 10,500",
-      amount: 10500,
-      note: "Lowest cost for serious long-term operators.",
-      features: ["Starter workspace", "Annual cycle", "Best value"],
-    },
-  ];
-
-  const selectedPlan = planCards.find((item) => item.value === form.plan) ?? planCards[1];
-  const selectedPlanIndex = Math.max(0, planCards.findIndex((item) => item.value === form.plan));
-  const selectedPlanId =
-    form.planId ||
-    availablePlans.find((plan) => String(plan.id) === String(preselectPlan))?.id ||
-    availablePlans[selectedPlanIndex]?.id ||
-    availablePlans[0]?.id ||
-    "";
+  const selectedPlanId = form.planId || (preselectPlan ? String(preselectPlan) : "") || normalizedPlans[0]?.id || "";
+  const selectedPlan = normalizedPlans.find((item) => item.id === String(selectedPlanId)) || normalizedPlans[0] || null;
 
   useEffect(() => {
     let active = true;
@@ -564,7 +539,7 @@ export function AdminSignupScreen() {
     );
   }, [form.admin]);
 
-  const isPlanSelected = Boolean(form.plan);
+  const isPlanSelected = Boolean(selectedPlanId);
 
   useEffect(() => {
     if (preselectStep && preselectStep >= 3 && preselectStep <= 4) {
@@ -768,7 +743,7 @@ export function AdminSignupScreen() {
       }
     }
 
-    if (currentStep === 3 && !form.plan) {
+    if (currentStep === 3 && !selectedPlanId) {
       toast.error("Please select a plan");
       return false;
     }
@@ -795,8 +770,6 @@ export function AdminSignupScreen() {
       try {
         clearSession();
 
-        const selectedPlan = planCards.find((item) => item.value === form.plan) ?? planCards[1];
-
         if (!selectedPlan) {
           throw new Error("Please select a plan");
         }
@@ -807,17 +780,16 @@ export function AdminSignupScreen() {
         }
 
         if (!amount) {
-          const payload = await register({
+          await register({
             ...form,
             planId: Number(selectedPlanId),
           });
-          persistSession(payload);
-          dispatch(setCredentials(payload));
-          const nextTheme = payload.profile?.preferences?.darkMode ? "dark" : "light";
-          persistThemeMode(nextTheme);
-          dispatch(setThemeMode(nextTheme));
+          clearSession();
+          dispatch(clearAuth());
+          persistThemeMode("light");
+          dispatch(setThemeMode("light"));
           toast.success("Registration completed successfully");
-          router.push("/admin/dashboard");
+          router.push("/admin/login");
           return;
         }
 
@@ -854,17 +826,16 @@ export function AdminSignupScreen() {
               throw new Error("Payment verification failed");
             }
 
-            const payload = await register({
+            await register({
               ...form,
               planId: Number(selectedPlanId),
             });
-            persistSession(payload);
-            dispatch(setCredentials(payload));
-            const nextTheme = payload.profile?.preferences?.darkMode ? "dark" : "light";
-            persistThemeMode(nextTheme);
-            dispatch(setThemeMode(nextTheme));
+            clearSession();
+            dispatch(clearAuth());
+            persistThemeMode("light");
+            dispatch(setThemeMode("light"));
             toast.success("Registration completed successfully");
-            router.push("/admin/dashboard");
+            router.push("/admin/login");
           },
           onDismiss: () => {
             toast.message("Payment cancelled");
@@ -1101,8 +1072,8 @@ export function AdminSignupScreen() {
                 attemptedNext ? getStepErrors.gender : null
               )}
             </div>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="grid gap-3">
+            <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2">
+              <div className="grid content-start gap-3">
                 <PasswordField
                   label="Password"
                   name="password"
@@ -1118,7 +1089,7 @@ export function AdminSignupScreen() {
                   <div className="text-sm text-red-500/90">{getStepErrors.password}</div>
                 ) : null}
               </div>
-              <div className="grid gap-3">
+              <div className="grid content-start gap-3">
                 <PasswordField
                   label="Confirm Password"
                   name="confirmPassword"
@@ -1149,20 +1120,18 @@ export function AdminSignupScreen() {
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Choose the onboarding cycle that best matches your rollout speed.</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              {planCards.map((plan, index) => (
+              {normalizedPlans.map((plan) => (
                 <button
-                  key={plan.value}
+                  key={plan.id}
                   type="button"
                   onClick={() => {
-                    const nextPlanId = availablePlans[index]?.id || form.planId || "";
                     setForm((previous) => ({
                       ...previous,
-                      plan: plan.value,
-                      planId: nextPlanId ? String(nextPlanId) : previous.planId,
+                      planId: String(plan.id),
                     }));
                   }}
                   className={`group rounded-[30px] border p-6 text-left transition-all duration-300 ${
-                    String(form.plan) === String(plan.value)
+                    String(selectedPlanId) === String(plan.id)
                       ? "border-cyan-300/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(232,244,255,0.92))] shadow-[0_20px_50px_rgba(59,130,246,0.16),0_0_0_1px_rgba(34,211,238,0.16),0_0_24px_rgba(139,92,246,0.16)]"
                       : "border-white/12 bg-white/55 hover:-translate-y-0.5 hover:scale-[1.01] hover:border-cyan-200/50 hover:shadow-[0_16px_36px_rgba(59,130,246,0.1)]"
                   }`}
@@ -1173,7 +1142,7 @@ export function AdminSignupScreen() {
                   <div className="mt-5 flex items-baseline justify-between gap-4">
                     <div className="min-w-0 text-2xl font-semibold text-slate-900 sm:text-3xl">{plan.title}</div>
                     <div className="shrink-0 rounded-full bg-white/65 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      {plan.value === "3_MONTHS" ? "Launch Plan" : "Plan"}
+                      Plan
                     </div>
                   </div>
                   <div className="mt-3 flex items-start justify-between gap-4">
@@ -1203,19 +1172,19 @@ export function AdminSignupScreen() {
               <div>
                 <h3 className="text-3xl font-semibold tracking-tight">Secure and complete your registration</h3>
                 <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                  Review the organization, admin, and plan details below. We’ll create the account, issue a JWT, and take you straight into the dashboard.
+                  Review the organization, admin, and plan details below. We will create the account and then send you to admin login.
                 </p>
               </div>
               {[
                 {
                   icon: <LockKeyhole size={20} />,
                   title: "Enterprise-grade security",
-                  text: "Credentials are encrypted and the session token is saved after registration.",
+                  text: "Credentials are encrypted, and login starts after registration is complete.",
                 },
                 {
                   icon: <Sparkles size={20} />,
                   title: "Instant activation",
-                  text: "You’ll land directly on `/admin/dashboard` after success.",
+                  text: "You will land on the admin login page after success.",
                 },
                 {
                   icon: <Store size={20} />,

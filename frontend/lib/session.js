@@ -52,6 +52,19 @@ export function getSessionToken() {
   return getStoredSession().token;
 }
 
+export function updateStoredProfile(profile) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const current = getStoredSession();
+  const nextProfile = {
+    ...(current.profile || {}),
+    ...(profile || {}),
+  };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(nextProfile));
+}
+
 export function clearSession() {
   if (typeof window !== "undefined") {
     localStorage.removeItem(TOKEN_KEY);

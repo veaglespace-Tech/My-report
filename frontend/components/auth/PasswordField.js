@@ -25,7 +25,7 @@ export function PasswordField({
         : "border-transparent focus:border-cyan-300 focus:ring-2 focus:ring-violet-300/60 focus:shadow-[0_0_24px_rgba(34,211,238,0.22)]";
 
   return (
-    <label className="grid gap-2 text-sm">
+    <label className="grid w-full content-start gap-2 text-sm">
       <span className="font-medium text-[var(--muted-strong)]">{label}</span>
       <div className="relative">
         <input
@@ -44,7 +44,7 @@ export function PasswordField({
           suppressHydrationWarning
           type="button"
           onClick={() => setVisible((previous) => !previous)}
-          className="theme-action-button absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 transition"
+          className="theme-action-button absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full transition"
           aria-label={visible ? "Hide password" : "Show password"}
         >
           {visible ? <EyeOff size={16} /> : <Eye size={16} />}

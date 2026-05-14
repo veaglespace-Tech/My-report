@@ -51,6 +51,7 @@ public class SuperAdminService {
     private final InvoiceRepository invoiceRepository;
     private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PlanDateService planDateService;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDashboard(String email) {
@@ -116,6 +117,7 @@ public class SuperAdminService {
                 .build();
         userAccountRepository.save(admin);
 
+        LocalDate planStartedAt = LocalDate.now();
         Store store = Store.builder()
                 .name(request.storeName())
                 .storeType("Grocery Shop")
@@ -124,7 +126,8 @@ public class SuperAdminService {
                 .status(StoreStatus.ACTIVE)
                 .owner(admin)
                 .plan(plan)
-                .planExpiresAt(LocalDate.now().plusDays(30))
+                .planStartedAt(planStartedAt)
+                .planExpiresAt(planDateService.calculateExpiry(plan, planStartedAt))
                 .build();
         storeRepository.save(store);
 
@@ -164,7 +167,13 @@ public class SuperAdminService {
         store.setName(request.storeName());
         store.setCity(request.city());
         store.setAddress(request.address());
+        boolean planChanged = store.getPlan() == null || !store.getPlan().getId().equals(plan.getId());
         store.setPlan(plan);
+        if (planChanged || store.getPlanStartedAt() == null) {
+            LocalDate planStartedAt = LocalDate.now();
+            store.setPlanStartedAt(planStartedAt);
+            store.setPlanExpiresAt(planDateService.calculateExpiry(plan, planStartedAt));
+        }
         storeRepository.save(store);
         userAccountRepository.save(admin);
         return mapAdmin(admin);

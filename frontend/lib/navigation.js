@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  BellRing,
   Boxes,
   CreditCard,
   FileBarChart2,
@@ -47,6 +46,6 @@ export function resolvePageMeta(pathname, role) {
       role === "SUPER_ADMIN"
         ? "Control pricing, onboarding, revenue visibility, and platform health."
         : "Operate your store, sales, stock, and reporting from one workspace.",
-    icon: current?.icon ?? BellRing,
+    icon: current?.icon ?? LayoutDashboard,
   };
 }

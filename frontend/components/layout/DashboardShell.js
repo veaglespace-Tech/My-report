@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -12,7 +12,11 @@ import { clearAuth } from "@/redux/slices/authSlice";
 import { setSidebarOpen } from "@/redux/slices/uiSlice";
 import { Store } from "lucide-react";
 
-function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
+const subscribeToClientSnapshot = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+function SidebarContent({ role, pathname, profile, onNavigate, onLogout, mounted = false }) {
   const items = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
   const profileName = profile?.fullName || "MyReport User";
   const profileInitials = profile?.fullName
@@ -23,6 +27,10 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
         .join("")
     : "MR";
   const profileEmail = profile?.email || "Workspace ready";
+  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "");
+  const avatarUrl = profile?.avatarUrl
+    ? (String(profile.avatarUrl).startsWith("http") ? profile.avatarUrl : `${apiBase}${profile.avatarUrl}`)
+    : null;
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
@@ -44,10 +52,14 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout }) {
       <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-white/70 px-4 py-3 shadow-lg backdrop-blur-xl sm:mb-8">
         <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl" />
         <div className="relative z-10 flex w-full items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70">
-            <span suppressHydrationWarning className="text-sm font-semibold">
-              {profileInitials}
-            </span>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70">
+            {mounted && avatarUrl ? (
+              <img src={avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
+            ) : (
+              <span suppressHydrationWarning className="text-sm font-semibold">
+                {profileInitials}
+              </span>
+            )}
           </div>
           <div className="min-w-0">
             <div suppressHydrationWarning className="truncate text-base font-semibold text-slate-900">
@@ -105,6 +117,7 @@ export function DashboardShell({ role, children }) {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useDispatch();
+  const mounted = useSyncExternalStore(subscribeToClientSnapshot, getClientSnapshot, getServerSnapshot);
   const profile = useSelector((state) => state.auth.profile);
   const sidebarOpen = useSelector((state) => state.ui.sidebarOpen);
   const navItems = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
@@ -134,7 +147,7 @@ export function DashboardShell({ role, children }) {
       </div>
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
         <aside className="theme-sidebar hidden w-[280px] shrink-0 p-6 backdrop-blur-2xl lg:block xl:w-[300px]">
-          <SidebarContent role={role} pathname={pathname} profile={profile} onLogout={handleLogout} />
+          <SidebarContent role={role} pathname={pathname} profile={profile} mounted={mounted} onLogout={handleLogout} />
         </aside>
 
         <AnimatePresence>
@@ -158,6 +171,7 @@ export function DashboardShell({ role, children }) {
                   role={role}
                   pathname={pathname}
                   profile={profile}
+                  mounted={mounted}
                   onNavigate={closeSidebar}
                   onLogout={handleLogout}
                 />
@@ -206,11 +220,33 @@ export function DashboardShell({ role, children }) {
                     </div>
                     <div className="hidden min-w-0 items-center gap-3 sm:flex">
                       <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2 text-right">
-                        <div suppressHydrationWarning className="truncate text-sm font-semibold">
-                          {profile?.fullName || "MyReport User"}
-                        </div>
-                        <div suppressHydrationWarning className="truncate text-xs text-[var(--muted)]">
-                          {profile?.email || "Workspace ready"}
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
+                            {mounted && profile?.avatarUrl ? (
+                              <img
+                                src={String(profile.avatarUrl).startsWith("http") ? profile.avatarUrl : `${(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "")}${profile.avatarUrl}`}
+                                alt="Profile avatar"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-xs font-semibold">
+                                {String(profile?.fullName || "MR")
+                                  .split(" ")
+                                  .slice(0, 2)
+                                  .map((part) => part[0] || "")
+                                  .join("")
+                                  .toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div suppressHydrationWarning className="truncate text-sm font-semibold">
+                              {profile?.fullName || "MyReport User"}
+                            </div>
+                            <div suppressHydrationWarning className="truncate text-xs text-[var(--muted)]">
+                              {profile?.email || "Workspace ready"}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

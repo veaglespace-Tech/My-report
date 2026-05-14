@@ -84,6 +84,19 @@ public class DataSeeder implements CommandLineRunner {
     private void seedPlans() {
         planRepository.saveAll(List.of(
                 Plan.builder()
+                        .name("FREE TRIAL")
+                        .description("7-day free trial to explore MyReport.")
+                        .monthlyPrice(BigDecimal.ZERO)
+                        .yearlyPrice(BigDecimal.ZERO)
+                        .maxProducts(250)
+                        .maxCustomers(1000)
+                        .features("Starter workspace, Billing, Reports, Trial support")
+                        .duration("7 Days")
+                        .price(BigDecimal.ZERO)
+                        .trialAvailable(true)
+                        .status(PlanStatus.ACTIVE)
+                        .build(),
+                Plan.builder()
                         .name("Starter")
                         .description("Essential billing, customers, and sales reporting for growing stores.")
                         .monthlyPrice(new BigDecimal("1499"))
@@ -91,6 +104,8 @@ public class DataSeeder implements CommandLineRunner {
                         .maxProducts(250)
                         .maxCustomers(1000)
                         .features("POS Billing, GST invoices, Weekly reports, Email support")
+                        .duration("1 Month")
+                        .price(new BigDecimal("1499"))
                         .status(PlanStatus.ACTIVE)
                         .build(),
                 Plan.builder()
@@ -101,6 +116,8 @@ public class DataSeeder implements CommandLineRunner {
                         .maxProducts(2000)
                         .maxCustomers(10000)
                         .features("Animated dashboards, Teams, Multi-export, Priority support")
+                        .duration("6 Months")
+                        .price(new BigDecimal("3499"))
                         .status(PlanStatus.ACTIVE)
                         .build(),
                 Plan.builder()
@@ -111,6 +128,8 @@ public class DataSeeder implements CommandLineRunner {
                         .maxProducts(10000)
                         .maxCustomers(50000)
                         .features("Dedicated success, Custom roles, API access, SLA support")
+                        .duration("12 Months")
+                        .price(new BigDecimal("6999"))
                         .status(PlanStatus.ACTIVE)
                         .build()
         ));
@@ -233,10 +252,10 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedProducts(Store store) {
         List<Product> products = List.of(
-                product(store, "Arabica Beans", "SKU-AB-01", "720", 18d, 30d, ProductUnit.KG, 5),
-                product(store, "Cold Brew Bottles", "SKU-CB-04", "160", 44d, 35d, ProductUnit.PIECE, 4),
-                product(store, "Signature Syrup", "SKU-SS-08", "540", 12d, 30d, ProductUnit.LITRE, 3),
-                product(store, "Dessert Boxes", "SKU-DB-10", "220", 19d, 35d, ProductUnit.BOX, 2)
+                product(store, "Arabica Beans", "720", 18d, ProductUnit.KG, 5),
+                product(store, "Cold Brew Bottles", "160", 44d, ProductUnit.PIECE, 4),
+                product(store, "Signature Syrup", "540", 12d, ProductUnit.LITRE, 3),
+                product(store, "Dessert Boxes", "220", 19d, ProductUnit.BOX, 2)
         );
         productRepository.saveAll(products);
     }
@@ -262,13 +281,11 @@ public class DataSeeder implements CommandLineRunner {
         invoiceRepository.saveAll(invoices);
     }
 
-    private Product product(Store store, String name, String sku, String price, double quantity, double threshold, ProductUnit unit, int daysAgo) {
+    private Product product(Store store, String name, String price, double quantity, ProductUnit unit, int daysAgo) {
         Product product = Product.builder()
                 .name(name)
-                .sku(sku)
                 .price(new BigDecimal(price))
                 .quantity(quantity)
-                .reorderThreshold(threshold)
                 .unit(unit)
                 .active(true)
                 .store(store)

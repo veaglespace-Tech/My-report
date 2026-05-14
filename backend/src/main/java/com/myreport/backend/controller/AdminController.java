@@ -3,7 +3,6 @@ package com.myreport.backend.controller;
 import com.myreport.backend.dto.admin.BillingRequest;
 import com.myreport.backend.dto.admin.ChangePasswordRequest;
 import com.myreport.backend.dto.admin.CustomerRequest;
-import com.myreport.backend.dto.admin.NotificationPreferenceRequest;
 import com.myreport.backend.dto.admin.ProductRequest;
 import com.myreport.backend.dto.admin.ProfileUpdateRequest;
 import com.myreport.backend.dto.common.ApiResponse;
@@ -25,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -37,6 +37,11 @@ public class AdminController {
     @GetMapping("/dashboard")
     public ApiResponse<Map<String, Object>> dashboard(Principal principal) {
         return new ApiResponse<>(true, "Admin dashboard loaded", adminService.getDashboard(principal.getName()));
+    }
+
+    @GetMapping("/dashboard/today-sales")
+    public ApiResponse<Map<String, Object>> todaySales(Principal principal) {
+        return new ApiResponse<>(true, "Today sales loaded", adminService.getTodaySales(principal.getName()));
     }
 
     @GetMapping("/customers")
@@ -118,6 +123,10 @@ public class AdminController {
                     startDate = today;
                     endDate = today;
                 }
+                case "weekly" -> {
+                    startDate = today.minusDays(6);
+                    endDate = today;
+                }
                 case "monthly" -> {
                     startDate = today.withDayOfMonth(1);
                     endDate = today;
@@ -134,11 +143,6 @@ public class AdminController {
         return new ApiResponse<>(true, "Reports loaded", adminService.getReports(principal.getName(), startDate, endDate));
     }
 
-    @GetMapping("/notifications")
-    public ApiResponse<Map<String, Object>> notifications(Principal principal) {
-        return new ApiResponse<>(true, "Notifications loaded", adminService.getNotifications(principal.getName()));
-    }
-
     @GetMapping("/settings")
     public ApiResponse<Map<String, Object>> settings(Principal principal) {
         return new ApiResponse<>(true, "Settings loaded", adminService.getSettings(principal.getName()));
@@ -149,13 +153,19 @@ public class AdminController {
         return new ApiResponse<>(true, "Profile updated", adminService.updateProfile(principal.getName(), request));
     }
 
+    @PostMapping("/settings/profile-photo")
+    public ApiResponse<Map<String, Object>> uploadProfilePhoto(Principal principal, @RequestParam("file") MultipartFile file) {
+        return new ApiResponse<>(true, "Profile photo updated", adminService.uploadProfilePhoto(principal.getName(), file));
+    }
+
+    @DeleteMapping("/settings/profile-photo")
+    public ApiResponse<Map<String, Object>> removeProfilePhoto(Principal principal) {
+        return new ApiResponse<>(true, "Profile photo removed", adminService.removeProfilePhoto(principal.getName()));
+    }
+
     @PutMapping("/settings/password")
     public ApiResponse<Map<String, Object>> updatePassword(Principal principal, @Valid @RequestBody ChangePasswordRequest request) {
         return new ApiResponse<>(true, "Password updated", adminService.changePassword(principal.getName(), request));
     }
 
-    @PutMapping("/settings/preferences")
-    public ApiResponse<Map<String, Object>> updatePreferences(Principal principal, @RequestBody NotificationPreferenceRequest request) {
-        return new ApiResponse<>(true, "Preferences updated", adminService.updatePreferences(principal.getName(), request));
-    }
 }

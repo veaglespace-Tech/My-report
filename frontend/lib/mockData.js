@@ -154,9 +154,9 @@ export const mockAdminData = {
   },
   products: {
     items: [
-      { id: 1, name: "Arabica Beans", sku: "SKU-AB-01", price: 720, quantity: 18, reorderThreshold: 30, unit: "KG", active: true, stockHealth: 60, lowStock: true, createdAt: "2026-04-20T08:00:00Z" },
-      { id: 2, name: "Cold Brew Bottles", sku: "SKU-CB-04", price: 160, quantity: 44, reorderThreshold: 35, unit: "PIECE", active: true, stockHealth: 126, lowStock: false, createdAt: "2026-04-18T08:00:00Z" },
-      { id: 3, name: "Dessert Boxes", sku: "SKU-DB-10", price: 220, quantity: 19, reorderThreshold: 35, unit: "BOX", active: true, stockHealth: 54, lowStock: true, createdAt: "2026-04-15T08:00:00Z" },
+      { id: 1, name: "Arabica Beans", price: 720, quantity: 18, unit: "KG", active: true, lowStock: false, createdAt: "2026-04-20T08:00:00Z" },
+      { id: 2, name: "Cold Brew Bottles", price: 160, quantity: 44, unit: "PIECE", active: true, lowStock: false, createdAt: "2026-04-18T08:00:00Z" },
+      { id: 3, name: "Dessert Boxes", price: 220, quantity: 9, unit: "BOX", active: true, lowStock: true, createdAt: "2026-04-15T08:00:00Z" },
     ],
   },
   invoices: {

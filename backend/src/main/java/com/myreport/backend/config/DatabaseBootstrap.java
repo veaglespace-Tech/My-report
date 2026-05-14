@@ -40,5 +40,23 @@ public class DatabaseBootstrap implements ApplicationRunner {
         } catch (Exception e) {
             logger.warn("Orders table bootstrap skipped: {}", e.getMessage());
         }
+
+        try {
+            jdbcTemplate.execute("ALTER TABLE products DROP COLUMN sku");
+        } catch (Exception e) {
+            logger.warn("SKU column cleanup skipped: {}", e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("ALTER TABLE products DROP COLUMN reorder_threshold");
+        } catch (Exception e) {
+            logger.warn("Reorder threshold cleanup skipped: {}", e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("ALTER TABLE stores ADD COLUMN plan_started_at DATE");
+        } catch (Exception e) {
+            logger.warn("Plan start date column bootstrap skipped: {}", e.getMessage());
+        }
     }
 }

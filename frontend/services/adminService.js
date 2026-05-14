@@ -5,6 +5,10 @@ export const adminService = {
     const response = await axiosInstance.get("/admin/dashboard");
     return response.data.data;
   },
+  getTodaySales: async () => {
+    const response = await axiosInstance.get("/admin/dashboard/today-sales");
+    return response.data.data;
+  },
   getCustomers: async () => {
     const response = await axiosInstance.get("/admin/customers");
     return response.data.data;
@@ -25,24 +29,6 @@ export const adminService = {
     const response = await axiosInstance.get("/admin/reports", {
       params: { startDate, endDate, range },
     });
-    return response.data.data;
-  },
-  exportReportsExcel: async (startDate, endDate) => {
-    const response = await axiosInstance.get("/reports/export/excel", {
-      params: { startDate, endDate },
-      responseType: "blob",
-    });
-    return response.data;
-  },
-  exportReportsPdf: async (startDate, endDate) => {
-    const response = await axiosInstance.get("/reports/export/pdf", {
-      params: { startDate, endDate },
-      responseType: "blob",
-    });
-    return response.data;
-  },
-  getNotifications: async () => {
-    const response = await axiosInstance.get("/admin/notifications");
     return response.data.data;
   },
   getSettings: async () => {
@@ -88,39 +74,23 @@ export const adminService = {
     } catch (error) {
       return {
         profile: payload,
-        preferences: {
-          lowStockAlerts: true,
-          planExpiryAlerts: true,
-          paymentAlerts: true,
-          darkMode: false,
-        },
       };
     }
+  },
+  uploadProfilePhoto: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await axiosInstance.post("/admin/settings/profile-photo", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data.data;
+  },
+  removeProfilePhoto: async () => {
+    const response = await axiosInstance.delete("/admin/settings/profile-photo");
+    return response.data.data;
   },
   updatePassword: async (payload) => {
-    try {
-      const response = await axiosInstance.put("/admin/settings/password", payload);
-      return response.data.data;
-    } catch (error) {
-      return { changed: true };
-    }
-  },
-  updatePreferences: async (payload) => {
-    try {
-      const response = await axiosInstance.put("/admin/settings/preferences", payload);
-      return response.data.data;
-    } catch (error) {
-      return {
-        profile: {
-          fullName: "Neha Sharma",
-          email: "admin@myreport.com",
-          mobileNumber: "9876543210",
-          city: "Mumbai",
-          address: "Bandra West, Mumbai",
-          storeName: "GlowMart",
-        },
-        preferences: payload,
-      };
-    }
+    const response = await axiosInstance.put("/admin/settings/password", payload);
+    return response.data.data;
   },
 };
