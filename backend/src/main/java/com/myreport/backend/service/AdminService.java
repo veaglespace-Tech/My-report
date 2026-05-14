@@ -287,6 +287,12 @@ public class AdminService {
             if (product == null) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Product not found in store: " + item.productName());
             }
+            if (product.getQuantity() < item.quantity()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "Insufficient stock for " + product.getName() + ". Available quantity: " + product.getQuantity()
+                );
+            }
         });
 
         List<Order> orders = new ArrayList<>();

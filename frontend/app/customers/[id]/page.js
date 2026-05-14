@@ -77,14 +77,10 @@ export default function CustomerDetailsPage() {
     setLoading(true);
     setError(null);
     try {
-      // eslint-disable-next-line no-console
-      console.log("CustomerDetails: loading", { customerId });
       const [customer, customerOrders] = await Promise.all([
         customerService.getCustomer(customerId),
         customerService.getCustomerOrders(customerId),
       ]);
-      // eslint-disable-next-line no-console
-      console.log("CustomerDetails: loaded", { customer, orders: customerOrders });
       setDetails(customer);
       setOrders(customerOrders || []);
     } catch (e) {

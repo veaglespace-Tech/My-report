@@ -105,10 +105,11 @@ public class SecurityConfig {
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .toList();
-        configuration.setAllowedOriginPatterns(origins.isEmpty() || origins.contains("*") ? List.of("*") : origins);
+        boolean wildcardOrigin = origins.isEmpty() || origins.contains("*");
+        configuration.setAllowedOriginPatterns(wildcardOrigin ? List.of("*") : origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(!wildcardOrigin);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

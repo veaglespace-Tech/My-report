@@ -1,5 +1,8 @@
 HELP.md
 target/
+.env
+.m2repo/
+uploads/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

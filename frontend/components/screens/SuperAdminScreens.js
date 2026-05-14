@@ -955,15 +955,17 @@ export function SuperAdminEnquiriesScreen() {
   const [replying, setReplying] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  const loader = useMemo(
-    () => () =>
-      superAdminService.getEnquiries({
+  const loader = useMemo(() => {
+    const tick = refreshTick;
+    return () => {
+      void tick;
+      return superAdminService.getEnquiries({
         status: statusFilter === "ALL" ? undefined : statusFilter,
         source: sourceFilter === "ALL" ? undefined : sourceFilter,
         q: query || undefined,
-      }),
-    [statusFilter, sourceFilter, query, refreshTick]
-  );
+      });
+    };
+  }, [statusFilter, sourceFilter, query, refreshTick]);
   const { data, loading } = useAsyncLoader(loader, { items: [], total: 0, stats: {} });
   const stats = data.stats || {};
 

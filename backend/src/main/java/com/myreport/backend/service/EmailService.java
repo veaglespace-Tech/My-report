@@ -17,11 +17,14 @@ public class EmailService {
 
     public void sendEmail(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("mg@info.veaglespace.com".equalsIgnoreCase(fromEmail) ? fromEmail : "mg@info.veaglespace.com");
+        message.setFrom(hasText(fromEmail) ? fromEmail : "no-reply@myreport.local");
         message.setTo(to);
         message.setSubject(subject);
         message.setText(body);
         mailSender.send(message);
-        System.out.println("Mail Sended ...");
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

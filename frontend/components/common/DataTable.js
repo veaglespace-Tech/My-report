@@ -14,10 +14,12 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
   const pageNumbers = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
 
   const rowKey = (row, index) => row.id ?? row.invoiceNumber ?? row.name ?? `${currentPage}-${index}`;
+  const isScrollable = shouldPaginate || rows.length > 8;
+  const scrollClass = isScrollable ? "max-h-[62vh] overflow-y-auto pr-1 scrollbar-thin" : "";
 
   return (
     <GlassPanel className="max-w-full overflow-hidden">
-      <div className="grid gap-3 p-4 md:hidden">
+      <div className={`grid gap-3 p-4 md:hidden ${scrollClass}`}>
         {visibleRows.length ? (
           visibleRows.map((row, index) => {
             const key = rowKey(row, index);
@@ -25,14 +27,14 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
             const visibleColumns = columns.filter((column) => column.key !== "actions");
 
             return (
-              <div key={key} className="rounded-3xl border border-white/10 bg-white/5 p-4">
+              <div key={key} className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-sm transition hover:border-cyan-300/30">
                 <div className="grid gap-3">
                   {visibleColumns.map((column) => (
                     <div key={column.key} className="grid gap-1.5 sm:grid-cols-[120px_1fr] sm:gap-3">
-                      <div className="pt-0.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                      <div className="pt-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                         {column.label}
                       </div>
-                      <div className="text-sm text-white/82">
+                      <div className="min-w-0 break-words text-sm leading-6 text-[var(--muted-strong)]">
                         {column.render ? column.render(row[column.key], row) : row[column.key]}
                       </div>
                     </div>
@@ -48,21 +50,21 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
             );
           })
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-8 text-center text-sm text-white/55">
+          <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-8 text-center text-sm text-[var(--muted)]">
             {emptyMessage}
           </div>
         )}
       </div>
 
       <div className="hidden w-full overflow-x-auto md:block">
-        <div className="overflow-x-auto scrollbar-thin">
+        <div className={`${isScrollable ? "max-h-[68vh]" : ""} overflow-auto scrollbar-thin`}>
           <table className="min-w-[760px] lg:min-w-full">
           <thead>
-            <tr className="border-b border-white/8 bg-white/4">
+            <tr className="sticky top-0 z-10 border-b border-white/8 bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-xl">
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.24em] text-white/45 ${column.headerClassName || ""}`}
+                  className={`px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)] ${column.headerClassName || ""}`}
                 >
                   {column.label}
                 </th>
@@ -76,7 +78,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={`px-5 py-4 text-sm text-white/82 ${column.cellClassName || ""}`}
+                      className={`min-w-0 px-5 py-4 text-sm leading-6 text-[var(--muted-strong)] ${column.cellClassName || ""}`}
                     >
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </td>
@@ -85,7 +87,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
               ))
             ) : (
               <tr>
-                <td className="px-5 py-8 text-center text-sm text-white/55" colSpan={columns.length}>
+                <td className="px-5 py-8 text-center text-sm text-[var(--muted)]" colSpan={columns.length}>
                   {emptyMessage}
                 </td>
               </tr>
@@ -95,7 +97,10 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
         </div>
       </div>
       {shouldPaginate ? (
-        <div className="flex flex-wrap items-center justify-center gap-2 border-t border-white/8 px-4 py-4">
+        <div className="flex flex-wrap items-center justify-center gap-3 border-t border-white/8 px-4 py-4 sm:justify-between">
+          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+            Page {currentPage} of {totalPages}
+          </div>
           <button
             type="button"
             disabled={currentPage <= 1}
@@ -104,7 +109,8 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
           >
             Previous
           </button>
-          <div className="flex flex-wrap items-center justify-center gap-1">
+          <div className="max-w-full overflow-x-auto px-1 py-1 scrollbar-thin">
+            <div className="flex min-w-max items-center justify-center gap-1">
             {pageNumbers.map((pageNumber) => (
               <button
                 key={pageNumber}
@@ -119,6 +125,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
                 {pageNumber}
               </button>
             ))}
+            </div>
           </div>
           <button
             type="button"

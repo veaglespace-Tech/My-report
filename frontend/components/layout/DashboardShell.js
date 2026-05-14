@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -52,9 +53,9 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout, mounted
       <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-white/70 px-4 py-3 shadow-lg backdrop-blur-xl sm:mb-8">
         <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl" />
         <div className="relative z-10 flex w-full items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70">
             {mounted && avatarUrl ? (
-              <img src={avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
+              <Image src={avatarUrl} alt="Profile avatar" fill sizes="40px" className="object-cover" unoptimized />
             ) : (
               <span suppressHydrationWarning className="text-sm font-semibold">
                 {profileInitials}
@@ -221,12 +222,15 @@ export function DashboardShell({ role, children }) {
                     <div className="hidden min-w-0 items-center gap-3 sm:flex">
                       <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2 text-right">
                         <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
+                          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
                             {mounted && profile?.avatarUrl ? (
-                              <img
+                              <Image
                                 src={String(profile.avatarUrl).startsWith("http") ? profile.avatarUrl : `${(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "")}${profile.avatarUrl}`}
                                 alt="Profile avatar"
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="32px"
+                                className="object-cover"
+                                unoptimized
                               />
                             ) : (
                               <span className="text-xs font-semibold">

@@ -374,7 +374,10 @@ html[data-theme="light"] .text-white\/72,
 html[data-theme="light"] .text-white\/75,
 html[data-theme="light"] .text-white\/78,
 html[data-theme="light"] .text-white\/80,
-html[data-theme="light"] .text-white\/82 {
+html[data-theme="light"] .text-white\/82,
+html[data-theme="light"] .text-white\/85,
+html[data-theme="light"] .text-white\/90,
+html[data-theme="light"] .text-white\/95 {
   color: rgba(8, 18, 33, 0.72) !important;
 }
 
@@ -386,10 +389,31 @@ html[data-theme="light"] .bg-white\/10 {
   background: rgba(255, 255, 255, 0.75) !important;
 }
 
+html[data-theme="light"] .bg-black\/10,
+html[data-theme="light"] .bg-black\/20,
+html[data-theme="light"] .bg-black\/30,
+html[data-theme="light"] .bg-black\/40 {
+  background: rgba(255, 255, 255, 0.78) !important;
+}
+
 html[data-theme="light"] .border-white\/8,
+html[data-theme="light"] .border-white\/6,
 html[data-theme="light"] .border-white\/10,
-html[data-theme="light"] .border-white\/12 {
+html[data-theme="light"] .border-white\/12,
+html[data-theme="light"] .border-white\/15,
+html[data-theme="light"] .border-white\/20 {
   border-color: rgba(8, 18, 33, 0.12) !important;
+}
+
+html[data-theme="light"] .placeholder\:text-white\/35::placeholder,
+html[data-theme="light"] .placeholder\:text-white\/45::placeholder,
+html[data-theme="light"] .placeholder\:text-white\/55::placeholder {
+  color: rgba(8, 18, 33, 0.45) !important;
+}
+
+select option {
+  background: #ffffff;
+  color: #081221;
 }
 
 html[data-theme="light"] .bg-black\/55 {

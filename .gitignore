@@ -31,3 +31,12 @@ frontend/.next-build/
 # Backend build artifacts
 backend/.m2/
 backend/target/
+
+# Local dependency caches and generated runtime files
+.m2repo/
+backend/.m2repo/
+backend/uploads/
+
+# Local environment files
+backend/.env
+frontend/.env*

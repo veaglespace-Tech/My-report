@@ -47,7 +47,6 @@ export async function openRazorpayCheckout({
     },
   };
 
-  // eslint-disable-next-line no-undef
   const rzp = new window.Razorpay(options);
   rzp.open();
   return rzp;

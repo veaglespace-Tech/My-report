@@ -355,7 +355,6 @@ public class AuthService {
                     "Click below link to reset password:\n"
                             + resetLink
                             + "\n\nThis link expires in 15 minutes.");
-            System.out.println("Mail Method Called ... ");
         } catch (Exception exception) {
             log.warn("Reset password email could not be sent to {}: {}", email, exception.getMessage());
         }

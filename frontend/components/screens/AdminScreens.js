@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Area,
@@ -2105,7 +2106,7 @@ export function AdminSettingsScreen() {
             <div className="flex min-w-0 items-center gap-4">
               <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/70 bg-gradient-to-br from-cyan-100 via-white to-violet-100 shadow-[0_0_0_4px_rgba(34,211,238,0.08)]">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
+                  <Image src={avatarUrl} alt="Profile avatar" fill sizes="80px" className="object-cover" unoptimized />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-xl font-bold text-teal-800">
                     {String(profileView?.fullName || data.profile.fullName || "MR")

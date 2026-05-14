@@ -1,22 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { forgotPassword } from "@/services/authService";
 
 export default function ForgotPasswordClient() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
