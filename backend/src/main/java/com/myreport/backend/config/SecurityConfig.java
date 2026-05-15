@@ -3,11 +3,11 @@ package com.myreport.backend.config;
 import com.myreport.backend.security.CustomUserDetailsService;
 import com.myreport.backend.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -16,10 +16,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -29,14 +25,11 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
 
-    @Value("${app.frontend-origin}")
-    private String frontendOrigin;
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
@@ -53,6 +46,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/public/**")
                         .permitAll()
                         .requestMatchers("/api/auth/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/payments/payu/success",
+                                "/api/payments/payu/failure")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/payments/payu/success",
+                                "/api/payments/payu/failure")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/contact",
@@ -95,24 +96,5 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = List.of(frontendOrigin.split(","))
-                .stream()
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
-                .toList();
-        boolean wildcardOrigin = origins.isEmpty() || origins.contains("*");
-        configuration.setAllowedOriginPatterns(wildcardOrigin ? List.of("*") : origins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(!wildcardOrigin);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
     }
 }

@@ -10,8 +10,8 @@ public record LoginRequest(
         @NotBlank
         @Email
         @Pattern(
-                regexp = "^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,}$",
-                message = "Email must be a valid address"
+                regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.com$",
+                message = "Email must be a valid .com address"
         )
         String email,
         @NotBlank String password,

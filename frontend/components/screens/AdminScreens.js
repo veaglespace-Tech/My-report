@@ -43,18 +43,19 @@ import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { downloadCsv, formatCurrency, formatDate, printPage } from "@/lib/format";
 import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
 import { printInvoice } from "@/lib/printInvoice";
-import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
+import { submitPayUCheckout } from "@/lib/payuCheckout";
 import { updateStoredProfile } from "@/lib/session";
 import { adminService } from "@/services/adminService";
-import { createRazorpayOrder, verifyRazorpayPayment } from "@/services/paymentService";
+import { createPayUOrder } from "@/services/paymentService";
 import { publicPlanService } from "@/services/publicPlanService";
 import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
 
 const CUSTOMER_NAME_REGEX = /^[A-Za-z ]{3,40}$/;
 const CUSTOMER_CITY_REGEX = /^[A-Za-z ]{3,30}$/;
-const STRONG_EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const STRONG_EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.com$/;
 const MOBILE_REGEX = /^[0-9]{10}$/;
 const REPEATED_DIGIT_MOBILE_REGEX = /^(\d)\1{9}$/;
+const FULL_ADDRESS_REGEX = /^(?=.*[A-Za-z])(?=.*\s).{10,}$/;
 const DUMMY_TEXT_VALUES = new Set(["aaa", "test", "testtest", "dummy", "random", "abc"]);
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
@@ -167,6 +168,66 @@ function SelectField({ label, name, value, onChange, options }) {
   );
 }
 
+function ProductSearchField({
+  label,
+  value,
+  placeholder,
+  options,
+  open,
+  activeIndex,
+  onChange,
+  onFocus,
+  onBlur,
+  onKeyDown,
+  onSelect,
+}) {
+  return (
+    <label className="grid gap-2 text-sm">
+      <span className="font-medium text-[var(--muted-strong)]">{label}</span>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          value={value}
+          onChange={onChange}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          className="theme-input w-full rounded-2xl px-10 py-3 outline-none transition duration-300 focus:border-cyan-300/70 focus:ring-2 focus:ring-cyan-300/40"
+        />
+        {open ? (
+          <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-cyan-200/70 bg-white p-1 shadow-[0_16px_34px_rgba(15,23,42,0.14)]">
+            {options.length ? (
+              options.map((product, index) => (
+                <button
+                  key={product.id}
+                  type="button"
+                  onMouseDown={() => onSelect(product)}
+                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                    index === activeIndex
+                      ? "bg-cyan-50 text-teal-800 ring-1 ring-cyan-200/70"
+                      : "text-slate-800 hover:bg-slate-100"
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{product.name}</span>
+                    <span className="block text-xs text-slate-500">{formatCurrency(product.price)} / {product.unit}</span>
+                  </span>
+                  <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                    Stock {Number(product.quantity || 0).toLocaleString("en-IN")}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2.5 text-sm font-medium text-slate-500">No matching products</div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </label>
+  );
+}
+
 function ChartCard({ title, description, children }) {
   return (
     <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
@@ -220,13 +281,39 @@ function StockHealthBadge({ quantity }) {
 
 export function AdminDashboardScreen() {
   const loader = useMemo(() => adminService.getDashboard, []);
-  const { data, loading } = useAsyncLoader(loader, {
+  const { data, setData, loading } = useAsyncLoader(loader, {
     metrics: [],
     revenueSeries: [],
     topSales: [],
     store: {},
     highlights: [],
   });
+
+  useEffect(() => {
+    let active = true;
+    const refreshDashboard = async () => {
+      try {
+        const response = await adminService.getDashboard();
+        if (active) {
+          setData(response);
+          sessionStorage.removeItem("myreport:billing-updated-at");
+        }
+      } catch {
+        // Keep the currently displayed dashboard data if a background refresh fails.
+      }
+    };
+
+    const handleBillingUpdated = () => refreshDashboard();
+    window.addEventListener("myreport:billing-updated", handleBillingUpdated);
+    if (sessionStorage.getItem("myreport:billing-updated-at")) {
+      refreshDashboard();
+    }
+
+    return () => {
+      active = false;
+      window.removeEventListener("myreport:billing-updated", handleBillingUpdated);
+    };
+  }, [setData]);
 
   if (loading) {
     return <LoadingSkeleton rows={4} />;
@@ -378,9 +465,25 @@ export function AdminCustomersScreen() {
     blocked: false,
   });
 
-  const reloadCustomers = async () => {
-    const response = await adminService.getCustomers();
-    setData(response);
+  const reloadCustomers = async (options = {}) => {
+    const silent = options?.silent === true;
+    if (exporting && !silent) return;
+    if (!silent) {
+      setExporting("refresh");
+    }
+    try {
+      const response = await adminService.getCustomers();
+      setData(response);
+      if (!silent) {
+        toast.success("Customers refreshed");
+      }
+    } catch (error) {
+      toast.error(error?.message || "Failed to refresh customers");
+    } finally {
+      if (!silent) {
+        setExporting(null);
+      }
+    }
   };
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -414,9 +517,9 @@ export function AdminCustomersScreen() {
     }
 
     if (!email) {
-      errors.email = "Please enter a valid email address.";
+      errors.email = "Please enter a valid .com email address.";
     } else if (!STRONG_EMAIL_REGEX.test(email) || email.includes("..")) {
-      errors.email = "Please enter a valid email address.";
+      errors.email = "Please enter a valid .com email address.";
     }
 
     if (!mobileNumber) {
@@ -524,7 +627,7 @@ export function AdminCustomersScreen() {
         city: form.city.trim().replace(/\s+/g, " "),
       };
       await (editingItem ? adminService.updateCustomer(editingItem.id, payload) : adminService.createCustomer(payload));
-      await reloadCustomers();
+      await reloadCustomers({ silent: true });
       toast.success(editingItem ? "Customer updated" : "Customer created");
       setModalOpen(false);
     } catch (error) {
@@ -535,7 +638,7 @@ export function AdminCustomersScreen() {
   const handleToggleBlock = async (customerId) => {
     try {
       await adminService.toggleCustomerBlock(customerId);
-      await reloadCustomers();
+      await reloadCustomers({ silent: true });
     } catch (error) {
       toast.error(error?.message || "Failed to update customer status.");
     }
@@ -544,7 +647,7 @@ export function AdminCustomersScreen() {
   const handleDelete = async (customerId) => {
     try {
       await adminService.deleteCustomer(customerId);
-      await reloadCustomers();
+      await reloadCustomers({ silent: true });
       toast.success("Customer deleted");
     } catch (error) {
       toast.error(error?.message || "Failed to delete customer.");
@@ -773,9 +876,25 @@ export function AdminProductsScreen() {
     active: true,
   });
 
-  const reloadProducts = async () => {
-    const response = await adminService.getProducts();
-    setData(response);
+  const reloadProducts = async (options = {}) => {
+    const silent = options?.silent === true;
+    if (exporting && !silent) return;
+    if (!silent) {
+      setExporting("refresh");
+    }
+    try {
+      const response = await adminService.getProducts();
+      setData(response);
+      if (!silent) {
+        toast.success("Products refreshed");
+      }
+    } catch (error) {
+      toast.error(error?.message || "Failed to refresh products");
+    } finally {
+      if (!silent) {
+        setExporting(null);
+      }
+    }
   };
 
   const filteredItems = data.items.filter((item) =>
@@ -864,7 +983,7 @@ export function AdminProductsScreen() {
 
     try {
       await (editingItem ? adminService.updateProduct(editingItem.id, payload) : adminService.createProduct(payload));
-      await reloadProducts();
+      await reloadProducts({ silent: true });
       toast.success(editingItem ? "Product updated" : "Product created");
       setModalOpen(false);
     } catch (error) {
@@ -875,7 +994,7 @@ export function AdminProductsScreen() {
   const handleDelete = async (productId) => {
     try {
       await adminService.deleteProduct(productId);
-      await reloadProducts();
+      await reloadProducts({ silent: true });
       toast.success("Product deleted");
     } catch (error) {
       toast.error(error?.message || "Failed to delete product.");
@@ -989,11 +1108,13 @@ export function AdminBillingScreen() {
   const productsLoader = useMemo(() => adminService.getProducts, []);
   const { data: customersData, setData: setCustomersData, loading: customersLoading } = useAsyncLoader(customersLoader, { items: [] });
   const { data: productsData, setData: setProductsData, loading: productsLoading } = useAsyncLoader(productsLoader, { items: [] });
-  const [rows, setRows] = useState([{ id: 1, productId: "", quantity: 1 }]);
+  const [rows, setRows] = useState([{ id: 1, productId: "", productSearch: "", quantity: 1 }]);
   const [customerName, setCustomerName] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
   const [activeCustomerIndex, setActiveCustomerIndex] = useState(0);
+  const [openProductRowId, setOpenProductRowId] = useState(null);
+  const [activeProductIndex, setActiveProductIndex] = useState(0);
   const [gstPercentage, setGstPercentage] = useState(18);
   const [discountType, setDiscountType] = useState("PERCENTAGE");
   const [discountValue, setDiscountValue] = useState(0);
@@ -1004,16 +1125,22 @@ export function AdminBillingScreen() {
   const [pdfGenerating, setPdfGenerating] = useState(false);
 
   const loading = customersLoading || productsLoading;
+  const productItems = productsData.items || [];
+  const activeProducts = productItems.filter((item) => item.active !== false);
+  const productLabel = (product) => product ? `${product.name} (${product.unit})` : "";
 
   const lineItems = rows
     .map((row) => {
-      const product = productsData.items.find((item) => String(item.id) === row.productId);
+      const product = productItems.find((item) => String(item.id) === row.productId);
       if (!product) {
         return null;
       }
       return {
         ...row,
+        productId: String(product.id),
         productName: product.name,
+        unit: product.unit,
+        availableQuantity: Number(product.quantity || 0),
         rate: Number(product.price),
         total: Number(product.price) * Number(row.quantity || 0),
       };
@@ -1034,6 +1161,60 @@ export function AdminBillingScreen() {
   const filteredCustomers = customersData.items.filter((item) =>
     String(item.fullName || "").toLowerCase().includes(normalizedCustomerSearch)
   );
+  const requestedQuantityByProduct = rows.reduce((accumulator, row) => {
+    if (!row.productId) return accumulator;
+    const quantity = Number(row.quantity || 0);
+    accumulator[row.productId] = (accumulator[row.productId] || 0) + (Number.isFinite(quantity) ? quantity : 0);
+    return accumulator;
+  }, {});
+
+  const filteredProductsForRow = (row) => {
+    const query = String(row.productSearch || "").trim().toLowerCase();
+    if (!query) return activeProducts;
+    return activeProducts.filter((product) =>
+      `${product.name} ${product.unit} ${product.price}`.toLowerCase().includes(query)
+    );
+  };
+
+  const getRowStockWarning = (row) => {
+    const product = productItems.find((item) => String(item.id) === row.productId);
+    if (!product) return "";
+    const requestedQuantity = Number(requestedQuantityByProduct[row.productId] || 0);
+    const availableQuantity = Number(product.quantity || 0);
+    if (requestedQuantity > availableQuantity) {
+      return `Only ${availableQuantity.toLocaleString("en-IN")} ${product.unit} available.`;
+    }
+    return "";
+  };
+
+  const validateBillBeforeSubmit = () => {
+    if (!customerName || !lineItems.length) {
+      return "Select a customer and at least one product";
+    }
+
+    for (const [index, row] of rows.entries()) {
+      if (!row.productId) {
+        return `Select a product for Product ${index + 1}.`;
+      }
+      const quantity = Number(row.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        return `Enter a valid quantity for Product ${index + 1}.`;
+      }
+    }
+
+    for (const [productId, requestedQuantity] of Object.entries(requestedQuantityByProduct)) {
+      const product = productItems.find((item) => String(item.id) === productId);
+      if (!product) {
+        return "Selected product is no longer available. Refresh the billing workspace.";
+      }
+      const availableQuantity = Number(product.quantity || 0);
+      if (requestedQuantity > availableQuantity) {
+        return `Insufficient stock for ${product.name}. Available: ${availableQuantity.toLocaleString("en-IN")} ${product.unit}, requested: ${requestedQuantity.toLocaleString("en-IN")} ${product.unit}.`;
+      }
+    }
+
+    return "";
+  };
 
   const refreshWorkspace = async () => {
     setExporting("refresh");
@@ -1105,8 +1286,9 @@ export function AdminBillingScreen() {
   };
 
   const handleGenerate = async () => {
-    if (!customerName || !lineItems.length) {
-      toast.error("Select a customer and at least one product");
+    const billingError = validateBillBeforeSubmit();
+    if (billingError) {
+      toast.error(billingError);
       return;
     }
     if (discountType === "PERCENTAGE" && (Number(discountValue) < 0 || Number(discountValue) > 100)) {
@@ -1124,6 +1306,7 @@ export function AdminBillingScreen() {
       discountAmount: Number(discountAmount),
       notes,
       items: lineItems.map((item) => ({
+        productId: Number(item.productId),
         productName: item.productName,
         quantity: Number(item.quantity),
         rate: Number(item.rate),
@@ -1133,6 +1316,14 @@ export function AdminBillingScreen() {
     try {
       const response = await adminService.createInvoice(payload);
       setInvoiceResult({ ...response, totalAmount: response.totalAmount || totalAmount });
+      try {
+        const productsResponse = await adminService.getProducts();
+        setProductsData(productsResponse);
+      } catch {
+        toast.error("Invoice generated, but stock refresh failed. Refresh the workspace to see latest stock.");
+      }
+      sessionStorage.setItem("myreport:billing-updated-at", String(Date.now()));
+      window.dispatchEvent(new Event("myreport:billing-updated"));
       toast.success("Invoice generated successfully");
     } catch (error) {
       toast.error(error?.message || "Failed to generate invoice.");
@@ -1225,38 +1416,95 @@ export function AdminBillingScreen() {
 
           {rows.map((row, index) => (
             <div key={row.id} className="grid gap-4 rounded-3xl border border-slate-200/80 bg-slate-50/80 p-4 lg:grid-cols-[1.4fr_0.6fr_auto]">
-              <SelectField
+              <ProductSearchField
                 label={`Product ${index + 1}`}
-                name="productId"
-                value={row.productId}
-                onChange={(event) =>
+                value={row.productSearch || productLabel(productItems.find((item) => String(item.id) === row.productId))}
+                placeholder="Search product name..."
+                options={filteredProductsForRow(row)}
+                open={openProductRowId === row.id}
+                activeIndex={activeProductIndex}
+                onChange={(event) => {
+                  const searchValue = event.target.value;
                   setRows((previous) =>
-                    previous.map((entry) => (entry.id === row.id ? { ...entry, productId: event.target.value } : entry))
-                  )
-                }
-                options={[
-                  { label: "Select product", value: "" },
-                  ...productsData.items.map((item) => ({ label: `${item.name} (${item.unit})`, value: String(item.id) })),
-                ]}
+                    previous.map((entry) =>
+                      entry.id === row.id ? { ...entry, productId: "", productSearch: searchValue } : entry
+                    )
+                  );
+                  setOpenProductRowId(row.id);
+                  setActiveProductIndex(0);
+                  setInvoiceResult(null);
+                }}
+                onFocus={() => {
+                  setOpenProductRowId(row.id);
+                  setActiveProductIndex(0);
+                }}
+                onBlur={() => {
+                  setTimeout(() => setOpenProductRowId(null), 120);
+                }}
+                onKeyDown={(event) => {
+                  const filteredProducts = filteredProductsForRow(row);
+                  if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    setOpenProductRowId(row.id);
+                    setActiveProductIndex((previous) => Math.min(previous + 1, Math.max(filteredProducts.length - 1, 0)));
+                  }
+                  if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    setOpenProductRowId(row.id);
+                    setActiveProductIndex((previous) => Math.max(previous - 1, 0));
+                  }
+                  if (event.key === "Enter" && filteredProducts[activeProductIndex]) {
+                    event.preventDefault();
+                    const selectedProduct = filteredProducts[activeProductIndex];
+                    setRows((previous) =>
+                      previous.map((entry) =>
+                        entry.id === row.id
+                          ? { ...entry, productId: String(selectedProduct.id), productSearch: productLabel(selectedProduct) }
+                          : entry
+                      )
+                    );
+                    setOpenProductRowId(null);
+                    setInvoiceResult(null);
+                  }
+                  if (event.key === "Escape") {
+                    setOpenProductRowId(null);
+                  }
+                }}
+                onSelect={(product) => {
+                  setRows((previous) =>
+                    previous.map((entry) =>
+                      entry.id === row.id
+                        ? { ...entry, productId: String(product.id), productSearch: productLabel(product) }
+                        : entry
+                    )
+                  );
+                  setOpenProductRowId(null);
+                  setInvoiceResult(null);
+                }}
               />
               <FormField
                 label="Quantity"
                 name="quantity"
                 type="number"
                 value={row.quantity}
-                onChange={(event) =>
+                onChange={(event) => {
                   setRows((previous) =>
                     previous.map((entry) => (entry.id === row.id ? { ...entry, quantity: event.target.value } : entry))
-                  )
-                }
+                  );
+                  setInvoiceResult(null);
+                }}
                 required
+                min={0.01}
+                step="any"
+                helper={getRowStockWarning(row)}
               />
               <div className="self-end">
                 <button
                   type="button"
-                  onClick={() =>
-                    setRows((previous) => (previous.length === 1 ? previous : previous.filter((entry) => entry.id !== row.id)))
-                  }
+                  onClick={() => {
+                    setRows((previous) => (previous.length === 1 ? previous : previous.filter((entry) => entry.id !== row.id)));
+                    setInvoiceResult(null);
+                  }}
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/10 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
                 >
                   Remove
@@ -1269,8 +1517,9 @@ export function AdminBillingScreen() {
             <ControlButton
               className="w-full sm:w-auto"
               onClick={() => {
-                setRows((previous) => [...previous, { id: nextRowId, productId: "", quantity: 1 }]);
+                setRows((previous) => [...previous, { id: nextRowId, productId: "", productSearch: "", quantity: 1 }]);
                 setNextRowId((previous) => previous + 1);
+                setInvoiceResult(null);
               }}
             >
               <span className="inline-flex items-center gap-2"><Plus size={16} /> Add Product</span>
@@ -1402,9 +1651,25 @@ export function AdminInvoicesScreen() {
   const { data, setData, loading } = useAsyncLoader(loader, { items: [] });
   const [exporting, setExporting] = useState(null);
 
-  const reloadInvoices = async () => {
-    const response = await adminService.getInvoices();
-    setData(response);
+  const reloadInvoices = async (options = {}) => {
+    const silent = options?.silent === true;
+    if (exporting && !silent) return;
+    if (!silent) {
+      setExporting("refresh");
+    }
+    try {
+      const response = await adminService.getInvoices();
+      setData(response);
+      if (!silent) {
+        toast.success("Invoices refreshed");
+      }
+    } catch (error) {
+      toast.error(error?.message || "Failed to refresh invoices");
+    } finally {
+      if (!silent) {
+        setExporting(null);
+      }
+    }
   };
 
   const exportInvoicesPdf = async () => {
@@ -1551,50 +1816,22 @@ export function AdminPlanScreen() {
     setPaying(true);
     try {
       const amount = Number(selectedPlan.monthlyPrice ?? selectedPlan.price ?? 0);
-      const response = await createRazorpayOrder({
+      const response = await createPayUOrder({
         planName: selectedPlan.planName || selectedPlan.name,
         amount,
       });
 
       setOrderState(response);
 
-      if (!response?.configured || !response?.orderId) {
-        toast.error("Razorpay is not configured on server. Add valid Razorpay keys in backend.");
+      if (!response?.configured || !response?.paymentUrl || !response?.formFields) {
+        toast.error("PayU is not configured on server. Add valid PayU keys in backend.");
         return;
       }
 
-      await openRazorpayCheckout({
-        key: response.keyId,
-        orderId: response.orderId,
-        amount: response.amount,
-        currency: response.currency || "INR",
-        name: "MyReport",
-        description: `Renew ${response.planName || data.plan.name}`,
-        onSuccess: async (rzpResponse) => {
-          try {
-            const verification = await verifyRazorpayPayment({
-              razorpayOrderId: rzpResponse.razorpay_order_id,
-              razorpayPaymentId: rzpResponse.razorpay_payment_id,
-              razorpaySignature: rzpResponse.razorpay_signature,
-            });
-            if (verification?.verified) {
-              toast.success("Payment verified (Razorpay)");
-              const refreshed = await adminService.getPlan();
-              setData(refreshed);
-              setPlansModalOpen(false);
-            } else {
-              toast.error("Payment verification failed (signature mismatch)");
-            }
-          } catch (error) {
-            toast.error(error?.message || "Failed to verify payment");
-          }
-        },
-        onDismiss: () => {
-          toast.message("Payment cancelled");
-        },
-      });
+      toast.message("Redirecting to PayU checkout...");
+      submitPayUCheckout(response);
     } catch (e) {
-      toast.error(e?.message || "Failed to open Razorpay checkout");
+      toast.error(e?.message || "Failed to open PayU checkout");
     } finally {
       setPaying(false);
     }
@@ -1646,19 +1883,19 @@ export function AdminPlanScreen() {
       </GlassPanel>
 
       <GlassPanel className="p-5 sm:p-6">
-        <SectionHeading eyebrow="Razorpay" title="Renew or upgrade" description="The backend creates a live order when keys are configured, and falls back to demo mode otherwise." />
+        <SectionHeading eyebrow="PayU" title="Renew or upgrade" description="The backend creates a secure PayU checkout request and verifies the returned hash before updating your plan." />
         <div className="mt-6 grid gap-4">
           <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 text-sm text-slate-600">
             Days left on current plan: <span className="font-semibold text-[var(--foreground)]">{data.plan.daysLeft}</span>
           </div>
           <ControlButton variant="primary" className="w-full sm:w-auto" onClick={openRenewModal}>
-            {data.plan.freeTrial ? "Upgrade Plan" : "Renew with Razorpay"}
+            {data.plan.freeTrial ? "Upgrade Plan" : "Renew with PayU"}
           </ControlButton>
           {orderState ? (
             <div className="rounded-3xl border border-slate-200/80 bg-white/75 p-5 text-sm text-slate-600">
               <div>Mode: {orderState.mode || (orderState.configured ? "live" : "demo")}</div>
-              <div className="mt-2">Order ID: {orderState.orderId || orderState.gatewayResponse?.id || "Created"}</div>
-              <div className="mt-2">Key ID: {orderState.keyId}</div>
+              <div className="mt-2">Transaction ID: {orderState.txnid || orderState.orderId || "Created"}</div>
+              <div className="mt-2">Gateway: {orderState.gateway || "PAYU"}</div>
             </div>
           ) : null}
         </div>
@@ -1696,7 +1933,7 @@ export function AdminPlanScreen() {
           <div className="flex justify-end gap-3">
             <ControlButton onClick={() => setPlansModalOpen(false)}>Cancel</ControlButton>
             <ControlButton variant="primary" onClick={handleUpgrade} disabled={paying || plansLoading || !selectedRenewPlanId}>
-              {paying ? "Opening Razorpay..." : "Continue"}
+              {paying ? "Opening PayU..." : "Continue"}
             </ControlButton>
           </div>
         </div>
@@ -1725,7 +1962,7 @@ export function AdminReportsScreen() {
     },
     [appliedFilters.endDate, appliedFilters.range, appliedFilters.startDate, refreshTick]
   );
-  const { data, loading } = useAsyncLoader(loader, { summary: {}, series: [] });
+  const { data, setData, loading } = useAsyncLoader(loader, { summary: {}, series: [] });
 
   const applyQuickRange = (range) => {
     setQuickRange(range);
@@ -1800,6 +2037,8 @@ export function AdminReportsScreen() {
       setFilters({ startDate: "", endDate: "" });
       setAppliedFilters({ startDate: "", endDate: "", range: "" });
       setQuickRange("");
+      const response = await adminService.getReports();
+      setData(response);
       setRefreshTick((previous) => previous + 1);
       toast.success("Reports refreshed successfully");
     } catch (error) {
@@ -1999,6 +2238,10 @@ export function AdminSettingsScreen() {
       toast.error("Please enter a valid 10-digit mobile number.");
       return;
     }
+    if (!FULL_ADDRESS_REGEX.test(payload.address)) {
+      toast.error("Please enter a full address with at least 10 characters.");
+      return;
+    }
     const response = await adminService.updateProfile(payload);
     setData(response);
     dispatch(syncProfile(response.profile));
@@ -2154,7 +2397,7 @@ export function AdminSettingsScreen() {
                   className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-slate-600 outline-none"
                 />
               </div>
-            <FormField label="Mobile Number" name="mobileNumber" value={profileView?.mobileNumber || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value }))} required disabled={!isEditing} />
+            <FormField label="Mobile Number" name="mobileNumber" value={profileView?.mobileNumber || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value.replace(/\D/g, "").slice(0, 10) }))} required disabled={!isEditing} />
             <FormField label="Store Name" name="storeName" value={profileView?.storeName || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, storeName: event.target.value }))} required disabled={!isEditing} />
             <FormField label="City" name="city" value={profileView?.city || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, city: event.target.value }))} required disabled={!isEditing} />
             <FormField label="Address" name="address" value={profileView?.address || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, address: event.target.value }))} required disabled={!isEditing} />

@@ -140,7 +140,7 @@ public class AuthService {
         storeRepository.save(store);
 
         String token = jwtService.generateToken(admin, true);
-        sendWelcomeEmailSafely(admin.getFullName(), admin.getEmail());
+        sendRegistrationSuccessEmailSafely(admin, store, assignedPlan);
         return buildAuthPayload(admin, token);
     }
 
@@ -190,7 +190,7 @@ public class AuthService {
                 "New signup request",
                 request.fullName() + " registered " + request.storeName() + " and is waiting for approval",
                 NotificationType.SIGNUP_APPROVAL);
-        sendWelcomeEmailSafely(admin.getFullName(), admin.getEmail());
+        sendRegistrationSuccessEmailSafely(admin, store, defaultPlan);
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("email", admin.getEmail());
@@ -328,24 +328,31 @@ public class AuthService {
         }
     }
 
-    private void sendWelcomeEmailSafely(String fullName, String email) {
+    private void sendRegistrationSuccessEmailSafely(UserAccount admin, Store store, Plan plan) {
         try {
             String loginLink = frontendBaseUrl() + "/login";
+            String storeName = store != null && store.getName() != null ? store.getName() : admin.getStoreName();
+            String planName = plan != null && plan.getName() != null ? plan.getName() : "Your selected plan";
+            String statusMessage = admin.getStatus() == UserStatus.PENDING_APPROVAL
+                    ? "Your account is currently waiting for SuperAdmin approval."
+                    : "Your account is active and ready to use.";
+
             emailService.sendEmail(
-                    email,
-                    "Welcome to MyReport Store",
-                    "Hello " + fullName + ",\n\n"
-                            + "Your account has been successfully registered with MyReport Store.\n\n"
-                            + "You can now:\n"
-                            + "- Manage billing\n"
-                            + "- Track inventory\n"
-                            + "- Generate invoices\n"
-                            + "- View reports\n"
-                            + "- Manage customers\n\n"
-                            + "Login:\n" + loginLink + "\n\n"
-                            + "Thank you,\nMyReport Team");
+                    admin.getEmail(),
+                    "Registration Successful - Your MyReport Store Is Created",
+                    "Hello " + admin.getFullName() + ",\n\n"
+                            + "Congratulations! Your registration was successful and your MyReport store has been created.\n\n"
+                            + "Store Details:\n"
+                            + "Store Name: " + storeName + "\n"
+                            + "Plan: " + planName + "\n"
+                            + "Status: " + statusMessage + "\n\n"
+                            + "You can use MyReport to manage billing, inventory, invoices, customers, and reports from one workspace.\n\n"
+                            + "Login here:\n" + loginLink + "\n\n"
+                            + "Thank you for choosing MyReport.\n\n"
+                            + "Regards,\n"
+                            + "MyReport Team");
         } catch (Exception exception) {
-            log.warn("Welcome email could not be sent to {}: {}", email, exception.getMessage());
+            log.warn("Registration success email could not be sent to {}: {}", admin.getEmail(), exception.getMessage());
         }
     }
 

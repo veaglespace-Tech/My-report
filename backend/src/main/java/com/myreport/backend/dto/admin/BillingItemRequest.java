@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record BillingItemRequest(
+        Long productId,
         @NotBlank String productName,
         @NotNull @Positive Double quantity,
         @NotNull @DecimalMin("0.0") BigDecimal rate

@@ -1,7 +1,6 @@
 export const publicPlanService = {
   getPlans: async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
-    const response = await fetch(`${baseUrl}/public/plans`, {
+    const response = await fetch("/api/public/plans", {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",

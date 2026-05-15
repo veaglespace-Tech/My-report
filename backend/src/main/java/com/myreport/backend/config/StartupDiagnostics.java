@@ -24,9 +24,13 @@ public class StartupDiagnostics implements ApplicationRunner {
         String datasourceUrl = environment.getProperty("spring.datasource.url");
         boolean razorpayConfigured = hasText(environment.getProperty("razorpay.key-id"))
                 && hasText(environment.getProperty("razorpay.key-secret"));
+        boolean payuConfigured = hasText(environment.getProperty("payu.merchant-key"))
+                && hasText(environment.getProperty("payu.merchant-salt"))
+                && hasText(environment.getProperty("payu.base-url"));
         logger.info("Active profiles: {}", profiles);
         logger.info("Datasource URL: {}", datasourceUrl);
         logger.info("Razorpay configured: {}", razorpayConfigured);
+        logger.info("PayU configured: {}", payuConfigured);
     }
 
     private static boolean hasText(String value) {

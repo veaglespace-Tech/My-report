@@ -13,9 +13,10 @@ const HERO_BACKGROUNDS = {
     "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1800&q=80",
   clothing:
     "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1800&q=80",
-  shoes: "/hero/best affordable shopping products.jpg",
+  shoes:
+    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1800&q=80",
   electronics:
-    "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1800&q=80",
+    "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1800&q=80",
   beauty:
     "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1800&q=80",
   accessories:
@@ -29,6 +30,8 @@ const CATEGORY_CARDS = [
     text: "Fast checkout, reorder flow, and expiry tracking.",
     store: "grocery",
     image: HERO_BACKGROUNDS.grocery,
+    imagePosition: "center 42%",
+    accent: "from-emerald-400 to-teal-500",
   },
   {
     icon: Shirt,
@@ -36,6 +39,8 @@ const CATEGORY_CARDS = [
     text: "Sizes, colors, variants, and fast-moving SKUs.",
     store: "clothing",
     image: HERO_BACKGROUNDS.clothing,
+    imagePosition: "center 38%",
+    accent: "from-violet-400 to-indigo-500",
   },
   {
     icon: Footprints,
@@ -43,6 +48,8 @@ const CATEGORY_CARDS = [
     text: "Pairs, sizes, restock alerts, and returns.",
     store: "shoes",
     image: HERO_BACKGROUNDS.shoes,
+    imagePosition: "center 52%",
+    accent: "from-rose-400 to-orange-500",
   },
   {
     icon: Glasses,
@@ -50,6 +57,8 @@ const CATEGORY_CARDS = [
     text: "Warranty, serial numbers, and invoicing.",
     store: "electronics",
     image: HERO_BACKGROUNDS.electronics,
+    imagePosition: "center 48%",
+    accent: "from-sky-400 to-blue-600",
   },
   {
     icon: Gem,
@@ -57,6 +66,8 @@ const CATEGORY_CARDS = [
     text: "New arrivals, bundles, and repeat purchases.",
     store: "beauty",
     image: HERO_BACKGROUNDS.beauty,
+    imagePosition: "center 42%",
+    accent: "from-pink-400 to-fuchsia-500",
   },
   {
     icon: Watch,
@@ -64,6 +75,8 @@ const CATEGORY_CARDS = [
     text: "Bundles, attach-rate, promos, and add-ons.",
     store: "accessories",
     image: HERO_BACKGROUNDS.accessories,
+    imagePosition: "center 45%",
+    accent: "from-amber-300 to-yellow-500",
   },
 ];
 
@@ -190,22 +203,27 @@ export function HomeLanding() {
                   onFocus={() => setActiveStore(item.store)}
                   whileHover={{ y: -6, scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 240, damping: 18 }}
-                  className="group relative overflow-hidden rounded-2xl border border-black/10 bg-white/45 text-left shadow-md shadow-black/10 backdrop-blur-md"
+                  className="group relative overflow-hidden rounded-2xl border border-white/55 bg-white/60 text-left shadow-[0_14px_34px_rgba(79,70,229,0.14)] ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:border-white/75 hover:bg-white/70 hover:shadow-[0_22px_48px_rgba(79,70,229,0.22)]"
                   style={{ transformOrigin: "center" }}
                 >
-                  <div className="relative h-36 w-full">
+                  <div className="relative h-40 w-full overflow-hidden bg-slate-100">
                     <Image
                       src={item.image}
                       alt={`${item.title} store background`}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover object-center"
+                      className="object-cover saturate-[1.12] contrast-[1.06] transition duration-700 ease-out group-hover:scale-110 group-hover:saturate-[1.22]"
+                      style={{ objectPosition: item.imagePosition }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-white/40 to-transparent" />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04),rgba(15,23,42,0.02)_45%,rgba(238,242,255,0.20))]" />
+                    <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${item.accent}`} />
+                    <div className="absolute inset-0 opacity-0 transition duration-500 group-hover:opacity-100">
+                      <div className="absolute -left-1/3 top-0 h-full w-1/2 skew-x-[-18deg] bg-white/18 blur-sm transition-transform duration-700 group-hover:translate-x-[260%]" />
+                    </div>
                   </div>
-                  <div className="relative p-5">
+                  <div className="relative bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(245,241,255,0.74))] p-5">
                     <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-indigo-700 shadow-sm shadow-black/10 ring-1 ring-black/10 transition group-hover:bg-white/85">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${item.accent} text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/60 transition duration-300 group-hover:-translate-y-1 group-hover:scale-105`}>
                         <Icon size={18} />
                       </div>
                       <div className="min-w-0">

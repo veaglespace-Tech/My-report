@@ -41,9 +41,9 @@ function ProfileChip({ profile, mounted, size = "sm" }) {
   const avatarSize = size === "md" ? "40px" : "32px";
 
   return (
-    <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2 text-right">
-      <div className="flex items-center gap-2">
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
+    <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
           {mounted && avatarUrl ? (
             <Image src={avatarUrl} alt="Profile avatar" fill sizes={avatarSize} className="object-cover" unoptimized />
           ) : (
@@ -52,11 +52,11 @@ function ProfileChip({ profile, mounted, size = "sm" }) {
             </span>
           )}
         </div>
-        <div className="min-w-0">
-          <div suppressHydrationWarning className="truncate text-sm font-semibold">
+        <div className="min-w-0 flex-1 text-left leading-tight">
+          <div suppressHydrationWarning className="truncate text-sm font-semibold text-[var(--foreground)]">
             {profile?.fullName || "MyReport User"}
           </div>
-          <div suppressHydrationWarning className="truncate text-xs text-[var(--muted)]">
+          <div suppressHydrationWarning className="mt-0.5 truncate text-xs text-[var(--muted)]">
             {profile?.email || "Workspace ready"}
           </div>
         </div>

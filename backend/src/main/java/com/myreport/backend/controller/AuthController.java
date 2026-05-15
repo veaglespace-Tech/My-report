@@ -7,6 +7,7 @@ import com.myreport.backend.dto.auth.RegisterRequest;
 import com.myreport.backend.dto.auth.ResetPasswordRequest;
 import com.myreport.backend.dto.auth.SignupRequest;
 import com.myreport.backend.dto.common.ApiResponse;
+import com.myreport.backend.dto.payments.PayUSignupOrderRequest;
 import com.myreport.backend.dto.payments.RazorpaySignupOrderRequest;
 import com.myreport.backend.dto.payments.RazorpayVerifyRequest;
 import com.myreport.backend.service.AuthService;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -47,6 +49,16 @@ public class AuthController {
     @PostMapping("/register/razorpay/verify")
     public ApiResponse<Map<String, Object>> verifySignupPayment(@Valid @RequestBody RazorpayVerifyRequest request) {
         return new ApiResponse<>(true, "Razorpay signup payment verified", paymentService.verifyRazorpayPayment(request));
+    }
+
+    @PostMapping("/register/payu/order")
+    public ApiResponse<Map<String, Object>> createPayUSignupOrder(@Valid @RequestBody PayUSignupOrderRequest request) {
+        return new ApiResponse<>(true, "PayU signup order created", paymentService.createPayUSignupOrder(request));
+    }
+
+    @GetMapping("/register/payu/status")
+    public ApiResponse<Map<String, Object>> getPayUSignupStatus(@RequestParam String txnid) {
+        return new ApiResponse<>(true, "PayU signup payment status loaded", paymentService.getPayUSignupOrderStatus(txnid));
     }
 
     @PostMapping("/admin/signup")

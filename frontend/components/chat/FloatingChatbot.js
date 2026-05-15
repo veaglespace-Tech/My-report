@@ -268,7 +268,7 @@ export function FloatingChatbot() {
   if (hidden) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50">
+    <div className="fixed bottom-5 right-5 z-50 flex items-end justify-end">
       <AnimatePresence>
         {open ? (
           <motion.div
@@ -277,7 +277,7 @@ export function FloatingChatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 420, damping: 34 }}
-            className="w-[92vw] max-w-md overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-slate-950/78 via-indigo-950/70 to-cyan-950/62 shadow-2xl shadow-indigo-950/35 backdrop-blur-2xl dark:border-white/10"
+            className="mb-16 w-[min(92vw,28rem)] overflow-hidden rounded-[24px] border border-white/15 bg-gradient-to-br from-slate-950/78 via-indigo-950/70 to-cyan-950/62 shadow-2xl shadow-indigo-950/35 backdrop-blur-2xl dark:border-white/10"
           >
             <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-r from-cyan-400/18 via-indigo-400/18 to-fuchsia-400/16 px-4 py-3">
               <div className="flex items-center gap-2">
@@ -350,8 +350,8 @@ export function FloatingChatbot() {
                   onChange={(event) => setInput(event.target.value)}
                   onKeyDown={onKeyDown}
                   rows={1}
-                  placeholder="Ask about billing, GST, stock, reports..."
-                  className="min-h-[44px] max-h-28 flex-1 resize-none rounded-xl border border-white/10 bg-white/8 px-3 py-2 text-sm text-white/95 outline-none placeholder:text-white/80 focus:border-cyan-200/35 focus:ring-2 focus:ring-cyan-400/30 dark:bg-white/5"
+                  placeholder="Ask about billing, GST, stock, reports"
+                  className="min-h-[44px] max-h-28 min-w-0 flex-1 resize-none overflow-hidden rounded-xl border border-white/10 bg-white/8 px-3 py-2.5 text-sm leading-6 text-white/95 outline-none placeholder:text-white/65 focus:border-cyan-200/35 focus:ring-2 focus:ring-cyan-400/30 dark:bg-white/5"
                 />
                 <button
                   type="button"
@@ -377,7 +377,7 @@ export function FloatingChatbot() {
         type="button"
         onClick={() => setOpen((value) => !value)}
         whileTap={{ scale: 0.98 }}
-        className="group mt-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 via-indigo-600 to-fuchsia-600 text-white shadow-xl shadow-indigo-950/30 ring-1 ring-white/10 transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-cyan-500/30"
+        className="group absolute bottom-0 right-0 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 via-indigo-600 to-fuchsia-600 text-white shadow-xl shadow-indigo-950/30 ring-1 ring-white/10 transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-cyan-500/30"
         aria-label={open ? "Close chat" : "Open chat"}
         suppressHydrationWarning={true}
       >

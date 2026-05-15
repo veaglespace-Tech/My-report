@@ -21,17 +21,20 @@ export function SiteFooter() {
   const pathname = usePathname();
 
   return (
-    <footer className="w-full pb-3 text-center">
-      <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-2 px-6 pt-0">
-        <nav className="flex flex-wrap items-center justify-center gap-x-[18px] gap-y-2 text-sm font-semibold tracking-[0.125em] text-slate-600">
+    <footer className="relative z-10 w-full border-t border-white/25 bg-white/10 py-5 text-center backdrop-blur-sm">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-3 px-6">
+        <nav
+          aria-label="Footer navigation"
+          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm font-semibold tracking-[0.14em] text-slate-700 sm:gap-x-5"
+        >
           {LINKS.map((link, index) => {
             const active = isActivePath(pathname, link.href);
             return (
-              <div key={link.href} className="inline-flex items-center">
+              <div key={link.href} className="inline-flex items-center gap-4 sm:gap-5">
                 <Link
                   href={withBasePath(link.href)}
                   className={[
-                    "group relative cursor-pointer px-1 py-1 transition",
+                    "group relative cursor-pointer whitespace-nowrap px-1 py-1 transition",
                     active ? "text-indigo-700" : "hover:text-indigo-700",
                   ].join(" ")}
                 >
@@ -47,15 +50,15 @@ export function SiteFooter() {
                   </span>
                 </Link>
                 {index < LINKS.length - 1 ? (
-                  <span className="mx-[18px] inline-flex h-1.5 w-1.5 rounded-full bg-slate-400/70" aria-hidden="true" />
+                  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-slate-400/70" aria-hidden="true" />
                 ) : null}
               </div>
             );
           })}
         </nav>
 
-        <div className="flex flex-col items-center gap-1">
-          <span className="font-['Times_New_Roman',serif] text-[15px] font-normal leading-[1.6] tracking-[0.3px] text-[rgba(55,65,81,0.72)]">
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="font-['Times_New_Roman',serif] text-[15px] font-normal leading-[1.55] tracking-[0.3px] text-[rgba(55,65,81,0.78)]">
             All Rights Reserved © 2026{" "}
             <a
               href="https://veaglespace.com/"

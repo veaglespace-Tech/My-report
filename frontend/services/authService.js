@@ -20,6 +20,18 @@ export async function verifySignupRazorpayPayment(payload) {
   return response.data.data;
 }
 
+export async function createSignupPayUOrder(payload) {
+  const response = await axiosInstance.post("/auth/register/payu/order", payload);
+  return response.data.data;
+}
+
+export async function getSignupPayUStatus(txnid) {
+  const response = await axiosInstance.get("/auth/register/payu/status", {
+    params: { txnid },
+  });
+  return response.data.data;
+}
+
 export async function signupAdmin(payload) {
   const response = await axiosInstance.post("/auth/admin/signup", payload);
   return response.data.data;

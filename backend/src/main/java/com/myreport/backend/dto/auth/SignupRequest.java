@@ -7,13 +7,13 @@ import jakarta.validation.constraints.Size;
 
 public record SignupRequest(
         @NotBlank String fullName,
-        @NotBlank @Email String email,
+        @NotBlank @Email @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.com$", message = "Email must be a valid .com address") String email,
         @NotBlank @Pattern(regexp = "^[0-9]{10}$", message = "Mobile number must be 10 digits") String mobileNumber,
         @NotBlank @Size(min = 8, message = "Password must contain at least 8 characters") String password,
         @NotBlank String confirmPassword,
         @NotBlank String storeName,
         @NotBlank String city,
-        @NotBlank String address,
+        @NotBlank @Size(min = 10, message = "Address must be at least 10 characters") @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\s).{10,}$", message = "Please enter a full address") String address,
         @Pattern(regexp = "^[0-9]{6}$", message = "OTP must be 6 digits") String otp
 ) {
 }

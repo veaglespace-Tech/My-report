@@ -34,6 +34,23 @@ import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
 import { superAdminService } from "@/services/superAdminService";
 
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const SUPERADMIN_PAGE_SIZE = 5;
+const DOT_COM_EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.com$/;
+const TEN_DIGIT_PHONE_REGEX = /^[0-9]{10}$/;
+const FULL_ADDRESS_REGEX = /^(?=.*[A-Za-z])(?=.*\s).{10,}$/;
+
+function getContactValidationError({ email, phone, address }) {
+  if (email !== undefined && !DOT_COM_EMAIL_REGEX.test(String(email || "").trim())) {
+    return "Please enter a valid .com email address.";
+  }
+  if (phone !== undefined && !TEN_DIGIT_PHONE_REGEX.test(String(phone || "").trim())) {
+    return "Please enter a valid 10-digit phone number.";
+  }
+  if (address !== undefined && !FULL_ADDRESS_REGEX.test(String(address || "").trim())) {
+    return "Please enter a full address with at least 10 characters.";
+  }
+  return null;
+}
 
 function useAsyncLoader(loader, initialState) {
   const [data, setData] = useState(initialState);
@@ -136,13 +153,77 @@ function ChartCard({ title, description, children }) {
   );
 }
 
-function ActivityList({ title, items, render }) {
+function PaginationFooter({ currentPage, totalPages, visibleCount, totalCount, onPageChange }) {
+  if (totalPages <= 1) return null;
+
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 border-t border-slate-200/80 px-4 py-6 sm:flex-row sm:justify-between">
+      <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+        Showing <span className="text-[var(--muted-strong)]">{visibleCount}</span> of{" "}
+        <span className="text-[var(--muted-strong)]">{totalCount}</span> items
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Prev
+        </button>
+
+        <div className="flex items-center gap-1.5 px-2">
+          {pageNumbers.map((pageNumber) => (
+            <button
+              key={pageNumber}
+              type="button"
+              onClick={() => onPageChange(pageNumber)}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300 ${
+                currentPage === pageNumber
+                  ? "scale-105 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              {pageNumber}
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Next
+        </button>
+      </div>
+
+      <div className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] sm:block">
+        Page {currentPage} / {totalPages}
+      </div>
+    </div>
+  );
+}
+
+function ActivityList({ title, items, render, pageSize = null }) {
+  const [page, setPage] = useState(1);
+  const shouldPaginate = Number(pageSize) > 0 && (items?.length || 0) > Number(pageSize);
+  const totalPages = shouldPaginate ? Math.ceil((items?.length || 0) / Number(pageSize)) : 1;
+  const currentPage = Math.min(page, totalPages);
+  const visibleItems = shouldPaginate
+    ? items.slice((currentPage - 1) * Number(pageSize), currentPage * Number(pageSize))
+    : items;
+
   return (
     <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <h3 className="text-lg font-semibold">{title}</h3>
       <div className="mt-5 grid gap-3">
-        {items?.length ? (
-          items.map((item, index) => (
+        {visibleItems?.length ? (
+          visibleItems.map((item, index) => (
             <div key={`${item.title || item.storeName}-${index}`} className="rounded-2xl border border-slate-200/70 bg-white/70 p-4">
               {render(item)}
             </div>
@@ -151,6 +232,13 @@ function ActivityList({ title, items, render }) {
           <div className="rounded-2xl border border-slate-200/70 bg-slate-50/90 p-4 text-sm text-[var(--muted)]">Nothing to show yet.</div>
         )}
       </div>
+      <PaginationFooter
+        currentPage={currentPage}
+        totalPages={totalPages}
+        visibleCount={visibleItems?.length || 0}
+        totalCount={items?.length || 0}
+        onPageChange={setPage}
+      />
     </GlassPanel>
   );
 }
@@ -369,11 +457,24 @@ export function SuperAdminAdminsScreen() {
   };
 
   const handleFormChange = (event) => {
-    setForm((previous) => ({ ...previous, [event.target.name]: event.target.value }));
+    const value = ["mobileNumber", "phone"].includes(event.target.name)
+      ? event.target.value.replace(/\D/g, "").slice(0, 10)
+      : event.target.value;
+    setForm((previous) => ({ ...previous, [event.target.name]: value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    const validationError = getContactValidationError({
+      email: form.email,
+      phone: form.mobileNumber,
+      address: form.address,
+    });
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -512,6 +613,7 @@ export function SuperAdminAdminsScreen() {
           },
         ]}
         rows={filteredAdmins}
+        pageSize={SUPERADMIN_PAGE_SIZE}
       />
 
       <Modal
@@ -619,6 +721,7 @@ export function SuperAdminStoresScreen() {
           { key: "planExpiresAt", label: "Plan Expiry", render: (value) => formatDate(value) },
         ]}
         rows={data.items}
+        pageSize={SUPERADMIN_PAGE_SIZE}
       />
 
       <Modal
@@ -632,6 +735,15 @@ export function SuperAdminStoresScreen() {
           onSubmit={async (event) => {
             event.preventDefault();
             if (saving) return;
+            const validationError = getContactValidationError({
+              email: form.email,
+              phone: form.phone,
+              address: form.address,
+            });
+            if (validationError) {
+              toast.error(validationError);
+              return;
+            }
             setSaving(true);
             try {
               const saved = await superAdminService.createStore(form);
@@ -1050,6 +1162,7 @@ export function SuperAdminInvoicesScreen() {
           { key: "createdAt", label: "Date", render: (value) => formatDate(value) },
         ]}
         rows={data.items}
+        pageSize={SUPERADMIN_PAGE_SIZE}
       />
     </div>
   );
@@ -1059,27 +1172,55 @@ export function SuperAdminEnquiriesScreen() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [sourceFilter, setSourceFilter] = useState("ALL");
   const [query, setQuery] = useState("");
-  const [refreshTick, setRefreshTick] = useState(0);
   const [selectedItem, setSelectedItem] = useState(null);
   const [replyMessage, setReplyMessage] = useState("");
   const [replying, setReplying] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [enquiriesPage, setEnquiriesPage] = useState(1);
 
   const loader = useMemo(() => {
-    const tick = refreshTick;
-    return () => {
-      void tick;
-      return superAdminService.getEnquiries({
+    return () => superAdminService.getEnquiries({
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+      source: sourceFilter === "ALL" ? undefined : sourceFilter,
+      q: query || undefined,
+    });
+  }, [statusFilter, sourceFilter, query]);
+  const { data, setData, loading } = useAsyncLoader(loader, { items: [], total: 0, stats: {} });
+  const stats = data.stats || {};
+  const enquiryItems = data.items || [];
+  const enquiryTotalPages = Math.max(1, Math.ceil(enquiryItems.length / SUPERADMIN_PAGE_SIZE));
+  const currentEnquiriesPage = Math.min(enquiriesPage, enquiryTotalPages);
+  const visibleEnquiries = enquiryItems.slice(
+    (currentEnquiriesPage - 1) * SUPERADMIN_PAGE_SIZE,
+    currentEnquiriesPage * SUPERADMIN_PAGE_SIZE
+  );
+
+  const refresh = async (options = {}) => {
+    const silent = options?.silent === true;
+    if (refreshing && !silent) return;
+    if (!silent) {
+      setRefreshing(true);
+    }
+    try {
+      const response = await superAdminService.getEnquiries({
         status: statusFilter === "ALL" ? undefined : statusFilter,
         source: sourceFilter === "ALL" ? undefined : sourceFilter,
         q: query || undefined,
       });
-    };
-  }, [statusFilter, sourceFilter, query, refreshTick]);
-  const { data, loading } = useAsyncLoader(loader, { items: [], total: 0, stats: {} });
-  const stats = data.stats || {};
-
-  const refresh = () => setRefreshTick((value) => value + 1);
+      setData(response);
+      setEnquiriesPage(1);
+      if (!silent) {
+        toast.success("Support enquiries refreshed");
+      }
+    } catch (error) {
+      toast.error(error?.message || "Failed to refresh support enquiries");
+    } finally {
+      if (!silent) {
+        setRefreshing(false);
+      }
+    }
+  };
 
   const applyReply = async () => {
     if (!selectedItem || !replyMessage.trim()) return;
@@ -1089,7 +1230,7 @@ export function SuperAdminEnquiriesScreen() {
       toast.success("Reply saved");
       setSelectedItem(null);
       setReplyMessage("");
-      refresh();
+      await refresh({ silent: true });
     } catch (error) {
       toast.error(error?.message || "Unable to save reply");
     } finally {
@@ -1102,7 +1243,7 @@ export function SuperAdminEnquiriesScreen() {
     try {
       await superAdminService.updateSupportStatus({ id: item.id, status: "RESOLVED" });
       toast.success("Marked as resolved");
-      refresh();
+      await refresh({ silent: true });
     } catch (error) {
       toast.error(error?.message || "Unable to update status");
     } finally {
@@ -1115,7 +1256,7 @@ export function SuperAdminEnquiriesScreen() {
     try {
       await superAdminService.deleteSupportEnquiry(item.id);
       toast.success("Support enquiry deleted");
-      refresh();
+      await refresh({ silent: true });
     } catch (error) {
       toast.error(error?.message || "Unable to delete enquiry");
     } finally {
@@ -1134,8 +1275,11 @@ export function SuperAdminEnquiriesScreen() {
         title="Support Enquiries"
         description="Contact and chatbot routing"
         action={
-          <ControlButton variant="primary" onClick={refresh}>
-            Refresh
+          <ControlButton variant="primary" onClick={refresh} disabled={refreshing || updating || replying}>
+            <span className="inline-flex items-center gap-2">
+              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </span>
           </ControlButton>
         }
       />
@@ -1152,11 +1296,26 @@ export function SuperAdminEnquiriesScreen() {
         <div className="grid gap-4 lg:grid-cols-[1.25fr_0.4fr_0.4fr]">
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-[var(--muted-strong)]">Search</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search enquiries..." className="theme-input w-full rounded-2xl px-4 py-3 outline-none" />
+            <input
+              value={query}
+              onChange={(event) => {
+                setEnquiriesPage(1);
+                setQuery(event.target.value);
+              }}
+              placeholder="Search enquiries..."
+              className="theme-input w-full rounded-2xl px-4 py-3 outline-none"
+            />
           </label>
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-[var(--muted-strong)]">Status</span>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="theme-input w-full rounded-2xl px-4 py-3 outline-none">
+            <select
+              value={statusFilter}
+              onChange={(event) => {
+                setEnquiriesPage(1);
+                setStatusFilter(event.target.value);
+              }}
+              className="theme-input w-full rounded-2xl px-4 py-3 outline-none"
+            >
               {["ALL", "NEW", "IN_PROGRESS", "RESOLVED"].map((option) => (
                 <option key={option} value={option}>{option.replace("_", " ")}</option>
               ))}
@@ -1164,7 +1323,14 @@ export function SuperAdminEnquiriesScreen() {
           </label>
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-[var(--muted-strong)]">Source</span>
-            <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="theme-input w-full rounded-2xl px-4 py-3 outline-none">
+            <select
+              value={sourceFilter}
+              onChange={(event) => {
+                setEnquiriesPage(1);
+                setSourceFilter(event.target.value);
+              }}
+              className="theme-input w-full rounded-2xl px-4 py-3 outline-none"
+            >
               {["ALL", "CONTACT_FORM", "CHATBOT", "WEBSITE", "ADMIN_PANEL"].map((option) => (
                 <option key={option} value={option}>{option.replace("_", " ")}</option>
               ))}
@@ -1185,7 +1351,7 @@ export function SuperAdminEnquiriesScreen() {
           </div>
 
           <div className="grid min-w-[1280px] gap-2 bg-slate-50/80 p-2">
-            {data.items?.length ? data.items.map((item) => (
+            {visibleEnquiries.length ? visibleEnquiries.map((item) => (
               <div key={item.id} className="grid grid-cols-[1.05fr_1.25fr_1.25fr_0.9fr_1.35fr_0.9fr_0.8fr_2fr] items-center gap-0 rounded-[24px] border border-slate-200/80 bg-white/90 px-4 py-4 text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200/80 hover:bg-white hover:shadow-md [&>div:nth-child(2)>div:nth-child(2)]:!text-slate-500">
                 <div className="text-sm font-semibold text-slate-900">{item.ticketId}</div>
                 <div>
@@ -1209,6 +1375,13 @@ export function SuperAdminEnquiriesScreen() {
             )}
           </div>
         </div>
+        <PaginationFooter
+          currentPage={currentEnquiriesPage}
+          totalPages={enquiryTotalPages}
+          visibleCount={visibleEnquiries.length}
+          totalCount={enquiryItems.length}
+          onPageChange={setEnquiriesPage}
+        />
       </GlassPanel>
 
       <Modal open={Boolean(selectedItem)} onClose={() => { setSelectedItem(null); setReplyMessage(""); }} title="Support Ticket">
@@ -1429,6 +1602,7 @@ export function SuperAdminReportsScreen() {
         <ActivityList
           title="Plan Mix"
           items={data.planMix}
+          pageSize={SUPERADMIN_PAGE_SIZE}
           render={(item) => (
             <>
               <div className="flex items-center justify-between">
@@ -1502,6 +1676,14 @@ export function SuperAdminSettingsScreen() {
 
   const handleProfileSave = async (event) => {
     event.preventDefault();
+    const validationError = getContactValidationError({
+      phone: draftProfile.mobileNumber,
+      address: draftProfile.address,
+    });
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     try {
       const response = await superAdminService.updateProfile({
         fullName: draftProfile.fullName,
@@ -1719,7 +1901,7 @@ export function SuperAdminSettingsScreen() {
               label="Mobile Number"
               name="mobileNumber"
               value={profileView?.mobileNumber || ""}
-              onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value }))}
+              onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value.replace(/\D/g, "").slice(0, 10) }))}
               required
               disabled={!isEditing}
             />

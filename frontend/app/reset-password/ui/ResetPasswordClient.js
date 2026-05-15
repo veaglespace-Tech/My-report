@@ -51,6 +51,7 @@ export default function ResetPasswordClient() {
           <label className="grid gap-2 text-sm font-medium text-[var(--muted-strong)]">
             New Password
             <input
+              suppressHydrationWarning
               type="password"
               value={form.password}
               onChange={(event) => setForm((previous) => ({ ...previous, password: event.target.value }))}
@@ -61,6 +62,7 @@ export default function ResetPasswordClient() {
           <label className="grid gap-2 text-sm font-medium text-[var(--muted-strong)]">
             Confirm Password
             <input
+              suppressHydrationWarning
               type="password"
               value={form.confirmPassword}
               onChange={(event) => setForm((previous) => ({ ...previous, confirmPassword: event.target.value }))}
@@ -70,6 +72,7 @@ export default function ResetPasswordClient() {
           </label>
 
           <button
+            suppressHydrationWarning
             type="submit"
             disabled={loading}
             className="rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--theme-primary-button-text)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"

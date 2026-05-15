@@ -76,7 +76,7 @@ public class AdminService {
         LocalDateTime nextMonthStart = currentMonth.plusMonths(1).atDay(1).atStartOfDay();
 
         BigDecimal todaysSales = calculateTodaySales(admin.getId());
-        BigDecimal monthlySales = invoiceRepository.sumTotalAmountByOwnerIdAndCreatedAtBetween(admin.getId(), monthStart, nextMonthStart);
+        BigDecimal monthlySales = calculateSalesBetween(admin.getId(), monthStart, nextMonthStart);
         long lowStockCount = products.stream()
                 .filter(product -> product.getQuantity() <= LOW_STOCK_QUANTITY)
                 .count();
@@ -241,6 +241,31 @@ public class AdminService {
     public Map<String, Object> createInvoice(String email, BillingRequest request) {
         UserAccount admin = getAdmin(email);
         Store store = getStore(admin.getId());
+        List<Product> products = productRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId());
+        Map<Long, Product> productsById = new HashMap<>();
+        Map<String, Product> productsByName = new HashMap<>();
+        products.forEach(product -> {
+            productsById.put(product.getId(), product);
+            productsByName.put(product.getName().trim().toLowerCase(), product);
+        });
+
+        Map<Long, Double> requestedQuantityByProduct = new HashMap<>();
+        Map<Long, Product> requestedProducts = new HashMap<>();
+        request.items().forEach(item -> {
+            Product product = resolveBillingProduct(item, productsById, productsByName);
+            requestedQuantityByProduct.merge(product.getId(), item.quantity(), Double::sum);
+            requestedProducts.put(product.getId(), product);
+        });
+
+        requestedQuantityByProduct.forEach((productId, requestedQuantity) -> {
+            Product product = requestedProducts.get(productId);
+            if (product.getQuantity() < requestedQuantity) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "Insufficient stock for " + product.getName() + ". Available quantity: " + product.getQuantity()
+                );
+            }
+        });
 
         BigDecimal subtotal = request.items().stream()
                 .map(item -> item.rate().multiply(BigDecimal.valueOf(item.quantity())))
@@ -278,28 +303,11 @@ public class AdminService {
             customerRepository.save(matchedCustomer);
         }
 
-        List<Product> products = productRepository.findByStoreOwnerIdOrderByCreatedAtDesc(admin.getId());
-        Map<String, Product> productsByName = new HashMap<>();
-        products.forEach(product -> productsByName.put(product.getName().trim().toLowerCase(), product));
-
-        request.items().forEach(item -> {
-            Product product = productsByName.get(item.productName().trim().toLowerCase());
-            if (product == null) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Product not found in store: " + item.productName());
-            }
-            if (product.getQuantity() < item.quantity()) {
-                throw new ApiException(
-                        HttpStatus.BAD_REQUEST,
-                        "Insufficient stock for " + product.getName() + ". Available quantity: " + product.getQuantity()
-                );
-            }
-        });
-
         List<Order> orders = new ArrayList<>();
         List<InvoiceItem> invoiceItems = new ArrayList<>();
 
         request.items().forEach(item -> {
-            Product product = productsByName.get(item.productName().trim().toLowerCase());
+            Product product = resolveBillingProduct(item, productsById, productsByName);
             BigDecimal lineTotal = item.rate().multiply(BigDecimal.valueOf(item.quantity()));
             product.setQuantity(Math.max(0, product.getQuantity() - item.quantity()));
             productRepository.save(product);
@@ -332,6 +340,12 @@ public class AdminService {
         }
 
         BigDecimal todaysSales = calculateTodaySales(admin.getId());
+        YearMonth currentMonth = YearMonth.now();
+        BigDecimal monthlySales = calculateSalesBetween(
+                admin.getId(),
+                currentMonth.atDay(1).atStartOfDay(),
+                currentMonth.plusMonths(1).atDay(1).atStartOfDay()
+        );
 
         return Map.of(
                 "invoiceNumber", invoice.getInvoiceNumber(),
@@ -341,6 +355,8 @@ public class AdminService {
                 "totalAmount", totalAmount,
                 "todaySales", todaysSales,
                 "todaySalesDisplay", "Rs. " + todaysSales.setScale(0, RoundingMode.HALF_UP),
+                "monthlySales", monthlySales,
+                "monthlySalesDisplay", "Rs. " + monthlySales.setScale(0, RoundingMode.HALF_UP),
                 "createdAt", invoice.getCreatedAt()
         );
     }
@@ -375,7 +391,7 @@ public class AdminService {
         plan.put("duration", duration);
         plan.put("freeTrial", freeTrial);
         plan.put("displayPrice", freeTrial ? "Rs. 0 / 7 Days" : ("Rs. " + monthlyPrice.setScale(0, RoundingMode.HALF_UP) + " / month"));
-        plan.put("actionLabel", freeTrial ? "Upgrade Plan" : "Renew with Razorpay");
+        plan.put("actionLabel", freeTrial ? "Upgrade Plan" : "Renew with PayU");
         plan.put("startedAt", planStartedAt);
         plan.put("expiresAt", planExpiresAt);
         plan.put("daysLeft", ChronoUnit.DAYS.between(LocalDate.now(), planExpiresAt));
@@ -544,11 +560,31 @@ public class AdminService {
 
     private BigDecimal calculateTodaySales(Long ownerId) {
         LocalDate today = LocalDate.now();
-        return invoiceRepository.sumTotalAmountByOwnerIdAndCreatedAtBetween(
+        return calculateSalesBetween(
                 ownerId,
                 today.atStartOfDay(),
                 today.plusDays(1).atStartOfDay()
         );
+    }
+
+    private BigDecimal calculateSalesBetween(Long ownerId, LocalDateTime start, LocalDateTime end) {
+        BigDecimal total = invoiceRepository.sumTotalAmountByOwnerIdAndCreatedAtBetween(ownerId, start, end);
+        return total == null ? BigDecimal.ZERO : total;
+    }
+
+    private Product resolveBillingProduct(
+            com.myreport.backend.dto.admin.BillingItemRequest item,
+            Map<Long, Product> productsById,
+            Map<String, Product> productsByName
+    ) {
+        Product product = item.productId() == null ? null : productsById.get(item.productId());
+        if (product == null && item.productName() != null) {
+            product = productsByName.get(item.productName().trim().toLowerCase());
+        }
+        if (product == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Product not found in store: " + item.productName());
+        }
+        return product;
     }
 
     private Map<String, Object> mapCustomer(Customer customer) {

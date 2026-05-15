@@ -62,32 +62,29 @@ function PricingCard({ plan, onSelect }) {
       </div>
 
       <div className="relative flex h-full flex-1 flex-col">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold tracking-[0.04em] text-white/95">{plan.name}</div>
-            <div className="mt-2 text-4xl font-black tracking-tight text-white">
-              <span className="bg-gradient-to-r from-cyan-200 via-blue-200 to-violet-200 bg-clip-text text-transparent">
-                {plan.price}
-              </span>
-            </div>
-            <div className="mt-2 text-sm text-white/78">{plan.cycle}</div>
-          </div>
-
-          <div className="flex flex-col items-end gap-2">
-            {plan.trialAvailable ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/18">
-                <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
-                Free Trial Available
-              </div>
-            ) : null}
-
+        <div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="min-w-0 truncate text-sm font-semibold tracking-[0.04em] text-white/95">{plan.name}</div>
             {plan.badge ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/18">
-                <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+              <div className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold leading-none text-white/88 ring-1 ring-white/14">
+                <Sparkles className="h-3 w-3 text-cyan-200" />
                 {plan.badge}
               </div>
             ) : null}
           </div>
+          <div className="mt-2 text-4xl font-black tracking-tight text-white">
+            <span className="bg-gradient-to-r from-cyan-200 via-blue-200 to-violet-200 bg-clip-text text-transparent">
+              {plan.price}
+            </span>
+          </div>
+          <div className="mt-2 text-sm text-white/78">{plan.cycle}</div>
+
+          {plan.trialAvailable ? (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/18">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
+              Free Trial Available
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-6 flex-1 space-y-3">
@@ -133,7 +130,6 @@ export default function PricingClient() {
       setLoadingPlans(true);
       try {
         const response = await publicPlanService.getPlans();
-        console.log("Plans response:", response);
         if (active) {
           let fetchedPlans = [];
           if (Array.isArray(response)) {

@@ -50,7 +50,7 @@ export function PasswordField({
           {visible ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
-      {helper ? <span className="text-xs text-[var(--muted)]">{helper}</span> : null}
+      {helper ? <span className={`text-xs ${status === "error" ? "text-red-500" : "text-[var(--muted)]"}`}>{helper}</span> : null}
     </label>
   );
 }

@@ -7,10 +7,10 @@ import jakarta.validation.constraints.Size;
 
 public record AdminRegistrationRequest(
         @NotBlank String fullName,
-        @NotBlank @Email String email,
+        @NotBlank @Email @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.com$", message = "Email must be a valid .com address") String email,
         @NotBlank @Size(min = 8, message = "Password must contain at least 8 characters") String password,
         @NotBlank String confirmPassword,
-        @NotBlank @Pattern(regexp = "^[0-9]{10,15}$", message = "Mobile must be 10 to 15 digits") String mobile,
+        @NotBlank @Pattern(regexp = "^[0-9]{10}$", message = "Mobile must be exactly 10 digits") String mobile,
         @NotBlank String gender
 ) {
 }

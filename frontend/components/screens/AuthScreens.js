@@ -14,15 +14,38 @@ import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { GlassPanel } from "@/components/common/GlassPanel";
 import { clearSession, persistSession } from "@/lib/session";
 import { persistThemeMode } from "@/lib/theme";
-import { createSignupRazorpayOrder, login, register, verifySignupRazorpayPayment } from "@/services/authService";
+import { createSignupPayUOrder, login, register } from "@/services/authService";
 import { publicPlanService } from "@/services/publicPlanService";
 import { clearAuth, setCredentials } from "@/redux/slices/authSlice";
 import { setThemeMode } from "@/redux/slices/uiSlice";
-import { openRazorpayCheckout } from "@/lib/razorpayCheckout";
+import { PENDING_PAYU_SIGNUP_KEY, submitPayUCheckout } from "@/lib/payuCheckout";
 
 const ADMIN_SIGNUP_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const STRONG_PASSWORD_MESSAGE = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
 const EMAIL_LOCAL_PART_REGEX = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
 const EMAIL_DOMAIN_LABEL_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
+const FULL_ADDRESS_REGEX = /^(?=.*[A-Za-z])(?=.*\s).{10,}$/;
+const NAME_REGEX = /^[A-Za-z][A-Za-z .'-]*[A-Za-z]$/;
+const STORE_NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9 &'().-]*[A-Za-z0-9]$/;
+const PLACE_REGEX = /^[A-Za-z][A-Za-z .'-]*[A-Za-z]$/;
+const PHONE_REGEX = /^[0-9]{10}$/;
+
+function isDummyText(value) {
+  const compact = String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return compact.length > 0 && new Set(compact).size === 1;
+}
+
+function hasEnoughVowels(value) {
+  const letters = String(value ?? "").toLowerCase().replace(/[^a-z]/g, "");
+  if (letters.length < 5) return /[aeiou]/.test(letters);
+  const vowelCount = (letters.match(/[aeiou]/g) || []).length;
+  return vowelCount >= 2;
+}
+
+function hasOnlyRepeatedDigits(value) {
+  const phone = String(value ?? "").trim();
+  return /^(\d)\1{9}$/.test(phone);
+}
 
 function getEmailValidationError(value, label = "Email") {
   const email = String(value ?? "").trim();
@@ -61,6 +84,11 @@ function getEmailValidationError(value, label = "Email") {
 
   const domainLabels = domain.split(".");
   const topLevelDomain = domainLabels[domainLabels.length - 1] || "";
+  const normalizedDomain = domain.toLowerCase();
+
+  if (normalizedDomain.startsWith("gmail.") && normalizedDomain !== "gmail.com") {
+    return "Gmail address must end with @gmail.com.";
+  }
 
   if (domainLabels.length < 2 || !/^[A-Za-z]{2,}$/.test(topLevelDomain)) {
     return "Enter a valid email address.";
@@ -70,11 +98,66 @@ function getEmailValidationError(value, label = "Email") {
     return "Enter a valid email address.";
   }
 
+  if (topLevelDomain.toLowerCase() !== "com") {
+    return `${label} must be a .com email address.`;
+  }
+
+  if (normalizedDomain.includes("gmail") && normalizedDomain !== "gmail.com") {
+    return "Gmail address must end with @gmail.com.";
+  }
+
   return null;
+}
+
+function isValidFullAddress(value) {
+  const address = String(value || "").trim();
+  return FULL_ADDRESS_REGEX.test(address) && !isDummyText(address) && hasEnoughVowels(address);
 }
 
 function isValidEmailAddress(value) {
   return !getEmailValidationError(value);
+}
+
+function getFullNameValidationError(value, label = "Full name") {
+  const fullName = String(value ?? "").trim().replace(/\s+/g, " ");
+  if (!fullName) return `${label} is required.`;
+  if (fullName.length < 3) return `${label} must be at least 3 characters.`;
+  if (fullName.length > 60) return `${label} must be at most 60 characters.`;
+  if (fullName.split(" ").filter(Boolean).length < 2) return "Please enter first and last name.";
+  if (!NAME_REGEX.test(fullName) || isDummyText(fullName) || !hasEnoughVowels(fullName)) {
+    return `Please enter a valid ${label.toLowerCase()}.`;
+  }
+  return null;
+}
+
+function getStoreNameValidationError(value) {
+  const storeName = String(value ?? "").trim().replace(/\s+/g, " ");
+  if (!storeName) return "Store name is required.";
+  if (storeName.length < 3) return "Store name must be at least 3 characters.";
+  if (storeName.length > 80) return "Store name must be at most 80 characters.";
+  if (!STORE_NAME_REGEX.test(storeName) || isDummyText(storeName) || !hasEnoughVowels(storeName)) {
+    return "Please enter a valid store name.";
+  }
+  return null;
+}
+
+function getPlaceValidationError(value, label) {
+  const place = String(value ?? "").trim().replace(/\s+/g, " ");
+  if (!place) return `${label} is required.`;
+  if (place.length < 3) return `${label} must be at least 3 characters.`;
+  if (place.length > 60) return `${label} must be at most 60 characters.`;
+  if (!PLACE_REGEX.test(place) || isDummyText(place) || !hasEnoughVowels(place)) {
+    return `Please enter a valid ${label.toLowerCase()}.`;
+  }
+  return null;
+}
+
+function getPhoneValidationError(value, label = "Phone number") {
+  const phone = String(value ?? "").trim();
+  if (!phone) return `${label} is required.`;
+  if (!PHONE_REGEX.test(phone)) return `${label} must be exactly 10 digits.`;
+  if (phone === "0000000000" || hasOnlyRepeatedDigits(phone)) return `Please enter a valid ${label.toLowerCase()}.`;
+  return null;
 }
 
 function AuthBackdrop() {
@@ -256,7 +339,7 @@ function AuthFormField({
         autoComplete={autoComplete}
         className={`theme-input w-full rounded-xl bg-white/70 px-5 py-4 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 ${statusClassName}`}
       />
-      {helper ? <span className="text-xs text-[var(--muted)]">{helper}</span> : null}
+      {helper ? <span className={`text-xs ${status === "error" ? "text-red-500" : "text-[var(--muted)]"}`}>{helper}</span> : null}
     </label>
   );
 }
@@ -299,7 +382,7 @@ export function LoginScreen({ role }) {
 
   const errors = useMemo(() => {
     const nextErrors = {};
-    const emailError = getEmailValidationError(form.email);
+    const emailError = getEmailValidationError(form.email, role === "ADMIN" ? "Admin email" : "Email");
 
     if (emailError) {
       nextErrors.email = emailError;
@@ -307,12 +390,12 @@ export function LoginScreen({ role }) {
 
     if (!form.password) {
       nextErrors.password = "Password is required.";
-    } else if (form.password.length < 6) {
-      nextErrors.password = "Password must be at least 6 characters.";
+    } else if (!ADMIN_SIGNUP_PASSWORD_REGEX.test(form.password)) {
+      nextErrors.password = STRONG_PASSWORD_MESSAGE;
     }
 
     return nextErrors;
-  }, [form.email, form.password]);
+  }, [form.email, form.password, role]);
 
   const isValid = Object.keys(errors).length === 0;
 
@@ -458,6 +541,7 @@ export function AdminSignupScreen() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [attemptedNext, setAttemptedNext] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({});
   const [availablePlans, setAvailablePlans] = useState([]);
 
   // Allow selecting a plan from `/pricing` and jumping directly to plan selection.
@@ -555,41 +639,26 @@ export function AdminSignupScreen() {
   }, []);
 
   const isStep1Complete = useMemo(() => {
-    const storeNameRegex = /^[A-Za-z0-9]+(?:[A-Za-z0-9 ]*[A-Za-z0-9])?$/;
-    const placeRegex = /^[A-Za-z]{2,}(?:[ A-Za-z]{0,}[A-Za-z]{2,})*$/;
-    const phoneRegex = /^[0-9]{10}$/;
-    const addressRegex = /[A-Za-z]{2,}/;
-
     return (
-      form.organization.organizationName.trim().length >= 3 &&
-      storeNameRegex.test(form.organization.organizationName.trim()) &&
+      !getStoreNameValidationError(form.organization.organizationName) &&
       Boolean(form.organization.storeType.trim()) &&
-      isValidEmailAddress(form.organization.businessEmail) &&
-      placeRegex.test(form.organization.city.trim()) &&
-      placeRegex.test(form.organization.state.trim()) &&
-      placeRegex.test(form.organization.country.trim()) &&
-      Boolean(form.organization.phone.trim()) &&
-      phoneRegex.test(form.organization.phone.trim()) &&
-      form.organization.address.trim().length >= 5 &&
-      addressRegex.test(form.organization.address.trim())
+      !getEmailValidationError(form.organization.businessEmail, "Business email") &&
+      !getPlaceValidationError(form.organization.city, "City") &&
+      !getPlaceValidationError(form.organization.state, "State") &&
+      !getPlaceValidationError(form.organization.country, "Country") &&
+      !getPhoneValidationError(form.organization.phone, "Phone number") &&
+      isValidFullAddress(form.organization.address)
     );
   }, [form.organization]);
 
   const isStep2Complete = useMemo(() => {
-    const fullNameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
-    const phoneRegex = /^[0-9]{10}$/;
-    const email = form.admin.email.trim();
-    const mobile = form.admin.mobile.trim();
-
     return (
-      fullNameRegex.test(form.admin.fullName.trim()) &&
-      Boolean(email) &&
-      isValidEmailAddress(email) &&
+      !getFullNameValidationError(form.admin.fullName, "Full name") &&
+      !getEmailValidationError(form.admin.email, "Admin email") &&
       Boolean(form.admin.gender.trim()) &&
       ADMIN_SIGNUP_PASSWORD_REGEX.test(form.admin.password) &&
       form.admin.password === form.admin.confirmPassword &&
-      Boolean(mobile) &&
-      phoneRegex.test(mobile)
+      !getPhoneValidationError(form.admin.mobile, "Mobile")
     );
   }, [form.admin]);
 
@@ -625,21 +694,17 @@ export function AdminSignupScreen() {
 
   const getStepErrors = useMemo(() => {
     const errors = {};
-    const fullNameRegex = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
-    const storeNameRegex = /^[A-Za-z0-9]+(?:[A-Za-z0-9 ]*[A-Za-z0-9])?$/;
-    const placeRegex = /^[A-Za-z]{2,}(?:[ A-Za-z]{0,}[A-Za-z]{2,})*$/;
-    const phoneRegex = /^[0-9]{10}$/;
-    const addressRegex = /[A-Za-z]{2,}/;
 
     if (currentStep === 1) {
-      const storeName = form.organization.organizationName.trim();
-      const city = form.organization.city.trim();
-      const state = form.organization.state.trim();
-      const country = form.organization.country.trim();
       const address = form.organization.address.trim();
+      const storeNameError = getStoreNameValidationError(form.organization.organizationName);
+      const cityError = getPlaceValidationError(form.organization.city, "City");
+      const stateError = getPlaceValidationError(form.organization.state, "State");
+      const countryError = getPlaceValidationError(form.organization.country, "Country");
+      const phoneError = getPhoneValidationError(form.organization.phone, "Phone number");
 
-      if (storeName.length < 3 || !storeNameRegex.test(storeName)) {
-        errors.organizationName = "Please enter a valid store name.";
+      if (storeNameError) {
+        errors.organizationName = storeNameError;
       }
       if (!form.organization.storeType.trim()) {
         errors.storeType = "Store type is required.";
@@ -650,35 +715,33 @@ export function AdminSignupScreen() {
           ? "Please enter a valid email address."
           : businessEmailError;
       }
-      if (!city || !placeRegex.test(city)) {
-        errors.city = "Please enter a valid city/state/country.";
+      if (cityError) {
+        errors.city = cityError;
       }
-      if (!state || !placeRegex.test(state)) {
-        errors.state = "Please enter a valid city/state/country.";
+      if (stateError) {
+        errors.state = stateError;
       }
-      if (!country || !placeRegex.test(country)) {
-        errors.country = "Please enter a valid city/state/country.";
+      if (countryError) {
+        errors.country = countryError;
       }
-      if (!form.organization.phone.trim()) {
-        errors.phone = "Phone number is required.";
-      } else if (!phoneRegex.test(form.organization.phone.trim())) {
-        errors.phone = "Please enter a valid 10-digit phone number.";
+      if (phoneError) {
+        errors.phone = phoneError;
       }
-      if (!address || address.length < 5 || !addressRegex.test(address)) {
-        errors.address = "Please enter a valid address.";
+      if (!isValidFullAddress(address)) {
+        errors.address = "Please enter a full address with area and landmark.";
       }
     }
 
     if (currentStep === 2) {
-      const fullName = form.admin.fullName.trim();
       const email = form.admin.email.trim();
-      const mobile = form.admin.mobile.trim();
       const password = form.admin.password;
       const confirmPassword = form.admin.confirmPassword;
       const gender = form.admin.gender.trim();
+      const fullNameError = getFullNameValidationError(form.admin.fullName, "Full name");
+      const mobileError = getPhoneValidationError(form.admin.mobile, "Mobile");
 
-      if (!fullName || fullName.length < 3 || !fullNameRegex.test(fullName)) {
-        errors.fullName = "Please enter a valid full name.";
+      if (fullNameError) {
+        errors.fullName = fullNameError;
       }
       const adminEmailError = getEmailValidationError(email, "Admin email");
       if (adminEmailError) {
@@ -689,10 +752,8 @@ export function AdminSignupScreen() {
       if (!gender) {
         errors.gender = "Please select gender.";
       }
-      if (!mobile) {
-        errors.adminMobile = "Mobile is required.";
-      } else if (!phoneRegex.test(mobile) || /^0+$/.test(mobile) || /^(\d)\1{9}$/.test(mobile)) {
-        errors.adminMobile = "Please enter a valid 10-digit phone number.";
+      if (mobileError) {
+        errors.adminMobile = mobileError;
       }
       if (!password) {
         errors.password = "Password is required.";
@@ -712,6 +773,10 @@ export function AdminSignupScreen() {
   const isCurrentStepValid = Object.keys(getStepErrors).length === 0;
 
   const updateSection = (section, field, value) => {
+    setTouchedFields((previous) => ({
+      ...previous,
+      [`${section}.${field}`]: true,
+    }));
     setForm((previous) => ({
       ...previous,
       [section]: {
@@ -720,6 +785,8 @@ export function AdminSignupScreen() {
       },
     }));
   };
+
+  const visibleError = (section, field, error) => (attemptedNext || touchedFields[`${section}.${field}`] ? error : null);
 
   const validateCurrentStep = () => {
     setAttemptedNext(true);
@@ -766,15 +833,15 @@ export function AdminSignupScreen() {
         }
       }
 
-      const phoneRegex = /^[0-9]{10}$/;
-
-      if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(form.admin.fullName.trim()) || form.admin.fullName.trim().length < 3) {
-        toast.error("Please enter a valid full name.");
+      const fullNameError = getFullNameValidationError(form.admin.fullName, "Full name");
+      if (fullNameError) {
+        toast.error(fullNameError);
         return false;
       }
 
-      if (!isValidEmailAddress(form.admin.email.trim())) {
-        toast.error("Please enter a valid email address.");
+      const adminEmailError = getEmailValidationError(form.admin.email.trim(), "Admin email");
+      if (adminEmailError) {
+        toast.error(adminEmailError);
         return false;
       }
 
@@ -783,8 +850,9 @@ export function AdminSignupScreen() {
         return false;
       }
 
-      if (!phoneRegex.test(form.admin.mobile.trim()) || /^0+$/.test(form.admin.mobile.trim()) || /^(\d)\1{9}$/.test(form.admin.mobile.trim())) {
-        toast.error("Please enter a valid 10-digit phone number.");
+      const mobileError = getPhoneValidationError(form.admin.mobile.trim(), "Mobile");
+      if (mobileError) {
+        toast.error(mobileError);
         return false;
       }
 
@@ -849,54 +917,28 @@ export function AdminSignupScreen() {
           return;
         }
 
-        const order = await createSignupRazorpayOrder({
+        const order = await createSignupPayUOrder({
           email: form.admin.email,
+          firstname: form.admin.fullName,
+          phone: form.admin.mobile,
           planName: selectedPlan.title,
           amount,
         });
 
-        if (!order?.configured || !order?.orderId) {
-          throw new Error("Razorpay is not configured on server");
+        if (!order?.configured || !order?.paymentUrl || !order?.formFields) {
+          throw new Error("PayU is not configured on server");
         }
 
-        await openRazorpayCheckout({
-          key: order.keyId,
-          orderId: order.orderId,
-          amount: order.amount,
-          currency: order.currency || "INR",
-          name: "MyReport",
-          description: `Signup - ${order.planName || selectedPlan.title}`,
-          prefill: {
-            name: form.admin.fullName,
-            email: form.admin.email,
-            contact: form.admin.mobile,
-          },
-          onSuccess: async (rzpResponse) => {
-            const verification = await verifySignupRazorpayPayment({
-              razorpayOrderId: rzpResponse.razorpay_order_id,
-              razorpayPaymentId: rzpResponse.razorpay_payment_id,
-              razorpaySignature: rzpResponse.razorpay_signature,
-            });
-
-            if (!verification?.verified) {
-              throw new Error("Payment verification failed");
-            }
-
-            await register({
-              ...form,
-              planId: Number(selectedPlanId),
-            });
-            clearSession();
-            dispatch(clearAuth());
-            persistThemeMode("light");
-            dispatch(setThemeMode("light"));
-            toast.success("Registration completed successfully");
-            router.push("/admin/login");
-          },
-          onDismiss: () => {
-            toast.message("Payment cancelled");
-          },
-        });
+        localStorage.setItem(
+          PENDING_PAYU_SIGNUP_KEY,
+          JSON.stringify({
+            txnid: order.txnid || order.orderId,
+            planId: Number(selectedPlanId),
+            form,
+          })
+        );
+        toast.message("Redirecting to PayU checkout...");
+        submitPayUCheckout(order);
       } catch (error) {
         toast.error(error.message || "Unable to complete registration");
       } finally {
@@ -971,11 +1013,12 @@ export function AdminSignupScreen() {
                 <Building2 size={18} />,
                 <input
                   value={form.organization.organizationName}
-                  onChange={(event) => updateSection("organization", "organizationName", event.target.value)}
+                  onChange={(event) => updateSection("organization", "organizationName", event.target.value.slice(0, 80))}
                   placeholder="GlowMart"
+                  maxLength={80}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.organizationName : null
+                visibleError("organization", "organizationName", getStepErrors.organizationName)
               )}
               {renderField(
                 "Store Type",
@@ -993,7 +1036,7 @@ export function AdminSignupScreen() {
                   <option value="Beauty Shop">Beauty Shop</option>
                   <option value="Accessories Shop">Accessories Shop</option>
                 </select>,
-                attemptedNext ? getStepErrors.storeType : null
+                visibleError("organization", "storeType", getStepErrors.storeType)
               )}
               {renderField(
                 "Business Email",
@@ -1001,44 +1044,48 @@ export function AdminSignupScreen() {
                 <input
                   type="email"
                   value={form.organization.businessEmail}
-                  onChange={(event) => updateSection("organization", "businessEmail", event.target.value)}
+                  onChange={(event) => updateSection("organization", "businessEmail", event.target.value.slice(0, 160))}
                   placeholder="store@company.com"
+                  maxLength={160}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.businessEmail : null
+                visibleError("organization", "businessEmail", getStepErrors.businessEmail)
               )}
               {renderField(
                 "City",
                 <MapPin size={18} />,
                 <input
                   value={form.organization.city}
-                  onChange={(event) => updateSection("organization", "city", event.target.value)}
+                  onChange={(event) => updateSection("organization", "city", event.target.value.slice(0, 60))}
                   placeholder="City"
+                  maxLength={60}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.city : null
+                visibleError("organization", "city", getStepErrors.city)
               )}
               {renderField(
                 "State",
                 <Globe size={18} />,
                 <input
                   value={form.organization.state}
-                  onChange={(event) => updateSection("organization", "state", event.target.value)}
+                  onChange={(event) => updateSection("organization", "state", event.target.value.slice(0, 60))}
                   placeholder="State"
+                  maxLength={60}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.state : null
+                visibleError("organization", "state", getStepErrors.state)
               )}
               {renderField(
                 "Country",
                 <Globe size={18} />,
                 <input
                   value={form.organization.country}
-                  onChange={(event) => updateSection("organization", "country", event.target.value)}
+                  onChange={(event) => updateSection("organization", "country", event.target.value.slice(0, 60))}
                   placeholder="Country"
+                  maxLength={60}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.country : null
+                visibleError("organization", "country", getStepErrors.country)
               )}
               {renderField(
                 "Phone Number",
@@ -1049,9 +1096,10 @@ export function AdminSignupScreen() {
                   pattern="[0-9]*"
                   onChange={(event) => updateSection("organization", "phone", event.target.value.replace(/\D/g, "").slice(0, 10))}
                   placeholder="10-digit phone number"
+                  maxLength={10}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.phone : null
+                visibleError("organization", "phone", getStepErrors.phone)
               )}
             </div>
             {renderField(
@@ -1059,11 +1107,12 @@ export function AdminSignupScreen() {
               <MapPin size={18} />,
               <input
                 value={form.organization.address}
-                onChange={(event) => updateSection("organization", "address", event.target.value)}
+                onChange={(event) => updateSection("organization", "address", event.target.value.slice(0, 180))}
                 placeholder="Street, area, landmark"
+                maxLength={180}
                 className="w-full bg-transparent text-sm outline-none"
               />,
-              attemptedNext ? getStepErrors.address : null
+              visibleError("organization", "address", getStepErrors.address)
             )}
           </div>
         ) : null}
@@ -1080,11 +1129,12 @@ export function AdminSignupScreen() {
                 <UserRound size={18} />,
                 <input
                   value={form.admin.fullName}
-                  onChange={(event) => updateSection("admin", "fullName", event.target.value)}
+                  onChange={(event) => updateSection("admin", "fullName", event.target.value.slice(0, 60))}
                   placeholder="Full name"
+                  maxLength={60}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.fullName : null
+                visibleError("admin", "fullName", getStepErrors.fullName)
               )}
               {renderField(
                 "Admin Email",
@@ -1092,12 +1142,13 @@ export function AdminSignupScreen() {
                 <input
                   type="email"
                   value={form.admin.email}
-                  onChange={(event) => updateSection("admin", "email", event.target.value)}
+                  onChange={(event) => updateSection("admin", "email", event.target.value.slice(0, 160))}
                   placeholder="name@company.com"
                   autoComplete="off"
+                  maxLength={160}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.adminEmail : null
+                visibleError("admin", "email", getStepErrors.adminEmail)
               )}
               {renderField(
                 "Mobile",
@@ -1108,9 +1159,10 @@ export function AdminSignupScreen() {
                   pattern="[0-9]*"
                   onChange={(event) => updateSection("admin", "mobile", event.target.value.replace(/\D/g, "").slice(0, 10))}
                   placeholder="10-digit mobile number"
+                  maxLength={10}
                   className="w-full bg-transparent text-sm outline-none"
                 />,
-                attemptedNext ? getStepErrors.adminMobile : null
+                visibleError("admin", "mobile", getStepErrors.adminMobile)
               )}
               {renderField(
                 "Gender",
@@ -1125,7 +1177,7 @@ export function AdminSignupScreen() {
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other</option>
                 </select>,
-                attemptedNext ? getStepErrors.gender : null
+                visibleError("admin", "gender", getStepErrors.gender)
               )}
             </div>
             <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2">
@@ -1249,8 +1301,8 @@ export function AdminSignupScreen() {
                 },
               ].map((item) => (
                 <div key={item.title} className="group flex gap-4 rounded-[24px] border border-white/12 bg-white/55 p-4 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] hover:border-cyan-200/60 hover:bg-white/70 hover:shadow-[0_10px_25px_rgba(99,102,241,0.18),0_0_0_1px_rgba(34,211,238,0.16)]">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(79,209,197,0.18),rgba(124,140,255,0.16))] text-blue-600 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-[0_8px_20px_rgba(99,102,241,0.18)] group-hover:text-cyan-600">
-                    <span className="transition-transform duration-300 group-hover:scale-110">{item.icon}</span>
+                  <div className="flex h-12 w-12 items-center justify-center text-blue-600 transition-colors duration-300 group-hover:text-cyan-600">
+                    <span className="transition-transform duration-300 group-hover:scale-125 group-hover:rotate-3">{item.icon}</span>
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900">{item.title}</div>
@@ -1333,7 +1385,7 @@ export function AdminSignupScreen() {
                 whileTap={{ scale: 0.99 }}
                 type="button"
                 onClick={goNext}
-                disabled={loading || !isCurrentStepValid}
+                disabled={loading}
                 className="theme-primary-button rounded-2xl px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Next

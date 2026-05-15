@@ -36,18 +36,18 @@ export default function AboutPage() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="flex h-full flex-1 flex-col justify-between rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(45,45,70,0.78)] p-5 shadow-[0_18px_60px_rgba(3,10,25,0.22)] backdrop-blur-[14px] transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(255,255,255,0.2)] hover:bg-[rgba(45,45,70,0.84)] hover:shadow-[0_14px_34px_rgba(0,0,0,0.1)]"
+                  className="flex h-full flex-1 flex-col justify-between rounded-[22px] border border-cyan-200/50 bg-white/78 p-5 shadow-[0_16px_42px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/70 hover:bg-white/90 hover:shadow-[0_18px_46px_rgba(59,130,246,0.16)]"
                 >
                   <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-800">{item.text}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="group flex h-full flex-col justify-between rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(45,45,70,0.78)] p-6 shadow-[0_18px_60px_rgba(3,10,25,0.22)] backdrop-blur-[14px] transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(255,255,255,0.2)] hover:shadow-[0_14px_34px_rgba(0,0,0,0.1)]">
+          <div className="group flex h-full flex-col justify-between rounded-[24px] border border-indigo-200/60 bg-white/80 p-6 shadow-[0_18px_48px_rgba(99,102,241,0.14)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300/70 hover:bg-white/92">
             <p className="text-sm font-semibold text-slate-950">What you get</p>
-            <ul className="mt-4 space-y-3 text-sm text-slate-800">
+            <ul className="mt-4 space-y-3 text-sm text-slate-600">
               {[
                 "Centralized multi-store management",
                 "Billing + POS with customer tracking",
@@ -57,7 +57,7 @@ export default function AboutPage() {
                 "Reports built for daily decisions",
               ].map((feature) => (
                 <li key={feature} className="group/item flex gap-3 transition-all duration-300 hover:translate-x-0.5 hover:text-slate-950">
-                  <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(124,140,255,0.18)] text-cyan-200 shadow-[0_0_0_0_rgba(79,209,197,0)] transition-all duration-300 group-hover/item:bg-[rgba(79,209,197,0.24)] group-hover/item:text-white group-hover/item:shadow-[0_0_18px_rgba(79,209,197,0.28)]">
+                  <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-teal-700 ring-1 ring-cyan-200 transition-all duration-300 group-hover/item:bg-teal-600 group-hover/item:text-white">
                     <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
                       <path
                         fillRule="evenodd"
@@ -113,12 +113,13 @@ export default function AboutPage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="group relative flex min-h-[260px] flex-col justify-start overflow-hidden rounded-[30px] border border-[rgba(255,255,255,0.14)] bg-[linear-gradient(180deg,rgba(74,67,111,0.96),rgba(58,52,86,0.96))] p-9 shadow-[0_18px_60px_rgba(3,10,25,0.22)] backdrop-blur-[14px] transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(124,140,255,0.3)] hover:shadow-[0_20px_48px_rgba(2,8,20,0.22)]"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(124,140,255,0.14),transparent_42%),radial-gradient(circle_at_top,rgba(79,209,197,0.12),transparent_55%)] opacity-90" />
+            className="group relative flex min-h-[230px] flex-col justify-start overflow-hidden rounded-[26px] border border-slate-200/80 bg-white/82 p-8 shadow-[0_18px_52px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-200/90 hover:bg-white hover:shadow-[0_20px_52px_rgba(59,130,246,0.17)]"
+          >
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-400" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_45%)] opacity-80" />
               <div className="relative flex h-full flex-col justify-start">
                 <p className="text-base font-semibold leading-6 text-slate-950">{item.title}</p>
-                <p className="mt-3 max-w-[30ch] text-sm leading-6 text-slate-800">{item.text}</p>
+                <p className="mt-3 max-w-[30ch] text-sm leading-6 text-slate-600">{item.text}</p>
               </div>
             </div>
           ))}
@@ -209,7 +210,7 @@ function ResourceCard({ title, description, buttonLabel, href, accent }) {
   return (
     <div
       className={[
-        "group relative flex h-full flex-1 flex-col justify-between overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(45,45,70,0.78)] p-7 shadow-[0_18px_60px_rgba(3,10,25,0.22)] backdrop-blur-[14px] transition-all duration-300 hover:-translate-y-1 hover:border-[rgba(255,255,255,0.22)] hover:bg-[rgba(45,45,70,0.88)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]",
+        "group relative flex h-full flex-1 flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/82 p-7 shadow-[0_18px_48px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200/90 hover:bg-white hover:shadow-[0_18px_48px_rgba(59,130,246,0.17)]",
         "ring-1",
         accentStyles.ring,
       ].join(" ")}
@@ -221,8 +222,8 @@ function ResourceCard({ title, description, buttonLabel, href, accent }) {
       <div className="relative flex h-full flex-col justify-between">
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0">
-            <p className="text-base font-semibold text-white">{title}</p>
-            <p className="mt-2 text-sm leading-6 text-white/68">{description}</p>
+            <p className="text-base font-semibold text-slate-950">{title}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
           </div>
           <span
             className={[

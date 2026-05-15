@@ -21,6 +21,22 @@ const mapsUrl =
 const mapEmbedUrl =
   "https://www.google.com/maps?q=Veagle%20Space%20Technology%2C%20Kudale%20Patil%20Tower%2C%20Vadgaon%20Budruk%2C%20Pune&output=embed";
 
+const FIELD_LIMITS = {
+  fullName: 60,
+  email: 160,
+  phone: 10,
+  subject: 120,
+  message: 1000,
+};
+
+const emailRegex = /^(?!.*\.\.)(?!.*\s)[A-Za-z0-9](?:[A-Za-z0-9._%+-]{0,62}[A-Za-z0-9])?@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+com$/i;
+const fullNameRegex = /^[A-Za-z][A-Za-z .'-]*[A-Za-z]$/;
+
+const isDummyText = (value) => {
+  const compact = value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return compact.length > 0 && new Set(compact).size === 1;
+};
+
 function ContactInfoItem({ icon: Icon, label, value }) {
   return (
     <div className="group flex items-start gap-4 rounded-3xl p-3 transition-all duration-300 hover:-translate-y-1 hover:bg-white/45 dark:hover:bg-white/5">
@@ -57,32 +73,54 @@ export default function ContactClient() {
 
   const errors = useMemo(() => {
     const nextErrors = {};
-    const emailRegex = /^(?!.*\.\.)[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$/;
-
-    if (!form.fullName.trim()) {
-      nextErrors.fullName = "Full Name is required.";
-    }
-
+    const fullName = form.fullName.trim().replace(/\s+/g, " ");
     const email = form.email.trim().toLowerCase();
+    const phone = form.phone.trim();
+    const subject = form.subject.trim().replace(/\s+/g, " ");
+    const message = form.message.trim().replace(/\s+/g, " ");
+
+    if (!fullName) {
+      nextErrors.fullName = "Full Name is required.";
+    } else if (fullName.length < 3) {
+      nextErrors.fullName = "Full Name must be at least 3 characters.";
+    } else if (fullName.length > FIELD_LIMITS.fullName) {
+      nextErrors.fullName = `Full Name must be at most ${FIELD_LIMITS.fullName} characters.`;
+    } else if (!fullNameRegex.test(fullName) || isDummyText(fullName)) {
+      nextErrors.fullName = "Enter a valid full name.";
+    }
 
     if (!email) {
       nextErrors.email = "Email Address is required.";
     } else if (!emailRegex.test(email)) {
-      nextErrors.email = "Please enter a valid email address.";
+      nextErrors.email = "Enter a valid .com email address.";
     }
 
-    if (!form.phone.trim()) {
+    if (!phone) {
       nextErrors.phone = "Phone Number is required.";
-    } else if (!/^[0-9]{10,15}$/.test(form.phone.trim())) {
-      nextErrors.phone = "Phone Number is invalid.";
+    } else if (!/^[0-9]{10}$/.test(phone)) {
+      nextErrors.phone = "Phone Number must be exactly 10 digits.";
+    } else if (/^(\d)\1{9}$/.test(phone)) {
+      nextErrors.phone = "Enter a valid phone number.";
     }
 
-    if (!form.subject.trim()) {
+    if (!subject) {
       nextErrors.subject = "Subject is required.";
+    } else if (subject.length < 5) {
+      nextErrors.subject = "Subject must be at least 5 characters.";
+    } else if (subject.length > FIELD_LIMITS.subject) {
+      nextErrors.subject = `Subject must be at most ${FIELD_LIMITS.subject} characters.`;
+    } else if (isDummyText(subject)) {
+      nextErrors.subject = "Enter a valid subject.";
     }
 
-    if (!form.message.trim()) {
+    if (!message) {
       nextErrors.message = "Inquiry Message is required.";
+    } else if (message.length < 10) {
+      nextErrors.message = "Inquiry Message must be at least 10 characters.";
+    } else if (message.length > FIELD_LIMITS.message) {
+      nextErrors.message = `Inquiry Message must be at most ${FIELD_LIMITS.message} characters.`;
+    } else if (isDummyText(message)) {
+      nextErrors.message = "Enter a valid inquiry message.";
     }
 
     return nextErrors;
@@ -114,9 +152,10 @@ export default function ContactClient() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setTouched(true);
+    const nextValue = name === "phone" ? value.replace(/\D/g, "").slice(0, FIELD_LIMITS.phone) : value.slice(0, FIELD_LIMITS[name] ?? value.length);
     setForm((previous) => ({
       ...previous,
-      [name]: name === "phone" ? value.replace(/\D/g, "").slice(0, 15) : value,
+      [name]: nextValue,
     }));
   };
 
@@ -137,6 +176,13 @@ export default function ContactClient() {
 
     startTransition(async () => {
       try {
+        const payload = {
+          fullName: form.fullName.trim().replace(/\s+/g, " "),
+          email: form.email.trim().toLowerCase(),
+          phone: form.phone.trim(),
+          subject: form.subject.trim().replace(/\s+/g, " "),
+          message: form.message.trim().replace(/\s+/g, " "),
+        };
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -145,7 +191,7 @@ export default function ContactClient() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
           signal: controller.signal,
         });
 
@@ -246,6 +292,8 @@ export default function ContactClient() {
                     autoComplete="name"
                     name="fullName"
                     type="text"
+                    minLength={3}
+                    maxLength={FIELD_LIMITS.fullName}
                     value={form.fullName}
                     onChange={handleChange}
                   />
@@ -261,6 +309,7 @@ export default function ContactClient() {
                     autoComplete="email"
                     name="email"
                     type="email"
+                    maxLength={FIELD_LIMITS.email}
                     value={form.email}
                     onChange={handleChange}
                   />
@@ -272,12 +321,13 @@ export default function ContactClient() {
                   <label className="text-sm font-medium text-[var(--foreground)]">Phone Number</label>
                   <input
                     className={fieldClassName("phone")}
-                    placeholder="10 to 15 digit phone number"
+                    placeholder="10 digits"
                     autoComplete="tel"
                     name="phone"
                     type="tel"
                     inputMode="numeric"
                     pattern="[0-9]*"
+                    maxLength={FIELD_LIMITS.phone}
                     value={form.phone}
                     onChange={handleChange}
                   />
@@ -294,6 +344,8 @@ export default function ContactClient() {
                   placeholder="What do you need help with?"
                   name="subject"
                   type="text"
+                  minLength={5}
+                  maxLength={FIELD_LIMITS.subject}
                   value={form.subject}
                   onChange={handleChange}
                 />
@@ -308,6 +360,8 @@ export default function ContactClient() {
                   className={`${fieldClassName("message")} min-h-32 resize-none`}
                   placeholder="Share the details so SuperAdmin can review and solve it..."
                   name="message"
+                  minLength={10}
+                  maxLength={FIELD_LIMITS.message}
                   value={form.message}
                   onChange={handleChange}
                 />
