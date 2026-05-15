@@ -17,6 +17,8 @@ import {
 import { Ban, CheckCircle2, Pencil, Plus, Printer, RefreshCw, Search, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useDispatch } from "react-redux";
+import { PasswordField } from "@/components/auth/PasswordField";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { DataTable } from "@/components/common/DataTable";
 import { DownloadToolbar } from "@/components/common/DownloadToolbar";
 import { GlassPanel } from "@/components/common/GlassPanel";
@@ -30,6 +32,8 @@ import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
 import { updateStoredProfile } from "@/lib/session";
 import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
 import { superAdminService } from "@/services/superAdminService";
+
+const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 function useAsyncLoader(loader, initialState) {
   const [data, setData] = useState(initialState);
@@ -125,7 +129,7 @@ function ChartCard({ title, description, children }) {
     <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <div className="mb-6">
         <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-white/55">{description}</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
       </div>
       {children}
     </GlassPanel>
@@ -139,12 +143,12 @@ function ActivityList({ title, items, render }) {
       <div className="mt-5 grid gap-3">
         {items?.length ? (
           items.map((item, index) => (
-            <div key={`${item.title || item.storeName}-${index}`} className="rounded-2xl border border-white/8 bg-white/4 p-4">
+            <div key={`${item.title || item.storeName}-${index}`} className="rounded-2xl border border-slate-200/70 bg-white/70 p-4">
               {render(item)}
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-white/8 bg-white/4 p-4 text-sm text-white/55">Nothing to show yet.</div>
+          <div className="rounded-2xl border border-slate-200/70 bg-slate-50/90 p-4 text-sm text-[var(--muted)]">Nothing to show yet.</div>
         )}
       </div>
     </GlassPanel>
@@ -198,9 +202,9 @@ export function SuperAdminDashboardScreen() {
                       <stop offset="95%" stopColor="#4fd1c5" stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                  <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                  <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                  <CartesianGrid stroke="rgba(26,16,53,0.08)" vertical={false} />
+                  <XAxis dataKey="label" stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
+                  <YAxis stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }}
                   />
@@ -215,7 +219,7 @@ export function SuperAdminDashboardScreen() {
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">Expiry Plan Alerts</h3>
-                  <p className="text-sm text-white/50">Subscription risks requiring attention</p>
+                  <p className="text-sm text-[var(--muted)]">Subscription risks requiring attention</p>
                 </div>
                 <div className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-400">
                   {data.expiringPlans?.length || 0} Alerts
@@ -223,14 +227,14 @@ export function SuperAdminDashboardScreen() {
               </div>
               <div className="grid gap-3">
                 {data.expiringPlans?.map((item, index) => (
-                  <div key={index} className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/4 p-4 transition-all hover:bg-white/6">
+                  <div key={index} className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm transition-all hover:bg-white/90">
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
                           <span className="truncate font-semibold">{item.storeName}</span>
                         </div>
-                        <div className="mt-1 text-xs text-white/50">{item.owner} • {item.plan} Plan</div>
+                        <div className="mt-1 text-xs text-[var(--muted)]">{item.owner} • {item.plan} Plan</div>
                       </div>
                       <div className="text-right">
                         <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80">
@@ -247,14 +251,14 @@ export function SuperAdminDashboardScreen() {
             <GlassPanel className="p-6">
               <div className="mb-6">
                 <h3 className="text-lg font-semibold">Growth Analytics</h3>
-                <p className="text-sm text-white/50">Admin and store onboarding velocity</p>
+                <p className="text-sm text-[var(--muted)]">Admin and store onboarding velocity</p>
               </div>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.growthSeries}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                    <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                    <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                    <CartesianGrid stroke="rgba(26,16,53,0.08)" vertical={false} />
+                    <XAxis dataKey="label" stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
                     <Bar dataKey="admins" fill="#7c8cff" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="stores" fill="#4fd1c5" radius={[4, 4, 0, 0]} />
@@ -268,11 +272,11 @@ export function SuperAdminDashboardScreen() {
         <GlassPanel className="flex flex-col p-6">
           <div className="mb-8">
             <h3 className="text-lg font-semibold">Live Activity Feed</h3>
-            <p className="text-sm text-white/50">Real-time platform events</p>
+            <p className="text-sm text-[var(--muted)]">Real-time platform events</p>
           </div>
           
           <div className="relative flex flex-1 flex-col gap-8 pl-4">
-            <div className="absolute left-[19px] top-2 bottom-2 w-px bg-gradient-to-b from-cyan-400/50 via-white/10 to-transparent" />
+            <div className="absolute left-[19px] top-2 bottom-2 w-px bg-gradient-to-b from-cyan-400/50 via-slate-300/60 to-transparent" />
             
             {data.recentActivities?.map((item, index) => (
               <div key={index} className="relative flex gap-4 transition-all duration-300 hover:translate-x-1">
@@ -280,8 +284,8 @@ export function SuperAdminDashboardScreen() {
                   <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.6)]" />
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="text-sm font-bold text-white/90">{item.title}</div>
-                  <div className="mt-1 text-xs text-white/50 leading-relaxed">{item.subtitle}</div>
+                  <div className="text-sm font-bold text-[var(--foreground)]">{item.title}</div>
+                  <div className="mt-1 text-xs text-[var(--muted)] leading-relaxed">{item.subtitle}</div>
                   <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-cyan-400/60">
                     {formatDate(item.timestamp)}
                   </div>
@@ -295,8 +299,8 @@ export function SuperAdminDashboardScreen() {
                   <div className="h-2.5 w-2.5 rounded-full bg-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.6)]" />
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="text-sm font-bold text-white/90">{item.title}</div>
-                  <div className="mt-1 text-xs text-white/50 leading-relaxed">{item.message}</div>
+                  <div className="text-sm font-bold text-[var(--foreground)]">{item.title}</div>
+                  <div className="mt-1 text-xs text-[var(--muted)] leading-relaxed">{item.message}</div>
                   <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-violet-400/60">
                     {formatDate(item.createdAt)}
                   </div>
@@ -441,13 +445,13 @@ export function SuperAdminAdminsScreen() {
       />
 
       <GlassPanel className="p-5">
-        <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-          <Search size={16} className="text-white/45" />
+        <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-cyan-200/40 bg-gradient-to-r from-cyan-100/30 via-white/20 to-violet-100/25 px-4 py-3 shadow-[0_6px_20px_rgba(148,163,184,0.16)]">
+          <Search size={16} className="shrink-0 text-teal-600" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search admins, stores, or emails..."
-            className="w-full bg-transparent text-sm outline-none placeholder:text-white/35"
+            className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
           />
         </div>
       </GlassPanel>
@@ -474,7 +478,7 @@ export function SuperAdminAdminsScreen() {
                     <button
                       type="button"
                       onClick={() => handleApprove(row.id)}
-                      className="shrink-0 rounded-xl bg-emerald-500/14 px-3 py-2 text-xs font-semibold text-emerald-100"
+                      className="shrink-0 rounded-xl bg-emerald-500/20 px-3 py-2 text-xs font-semibold text-emerald-800"
                     >
                       Approve
                     </button>
@@ -482,7 +486,7 @@ export function SuperAdminAdminsScreen() {
                   <button
                     type="button"
                     onClick={() => openEdit(row)}
-                    className="shrink-0 rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75"
+                    className="shrink-0 rounded-xl border border-slate-200/90 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white"
                   >
                     <span className="inline-flex items-center gap-1"><Pencil size={12} /> Edit</span>
                   </button>
@@ -490,7 +494,7 @@ export function SuperAdminAdminsScreen() {
                     <button
                       type="button"
                       onClick={() => handleToggleStatus(row.id)}
-                      className="shrink-0 rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75"
+                      className="shrink-0 rounded-xl border border-slate-200/90 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white"
                     >
                       <span className="inline-flex items-center gap-1"><Ban size={12} /> {row.status === "BLOCKED" ? "Unblock" : "Block"}</span>
                     </button>
@@ -578,7 +582,7 @@ export function SuperAdminStoresScreen() {
       <GlassPanel className="p-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
           <div className="grid gap-2">
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Store Type</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">Store Type</div>
             <select
               value={storeType}
               onChange={(event) => setStoreType(event.target.value)}
@@ -596,7 +600,7 @@ export function SuperAdminStoresScreen() {
           <button
             type="button"
             onClick={() => setStoreType("")}
-            className="h-12 rounded-2xl border border-white/10 bg-white/6 px-5 text-sm font-semibold text-white/75 transition hover:bg-white/10"
+            className="h-12 rounded-2xl border border-slate-200/90 bg-white/85 px-5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-white"
           >
             Clear Filter
           </button>
@@ -868,19 +872,19 @@ export function SuperAdminPlansScreen() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xl font-semibold">{plan.name}</div>
-                  <div className="mt-2 text-sm text-white/55">{plan.description}</div>
+                  <div className="mt-2 text-sm text-[var(--muted)]">{plan.description}</div>
                 </div>
                 <StatusBadge value={plan.status} />
               </div>
-              <div className="mt-6 text-3xl font-semibold">{formatCurrency(plan.monthlyPrice)}<span className="text-base text-white/45"> / month</span></div>
-              <div className="mt-1 text-xs uppercase tracking-[0.22em] text-white/45">{plan.duration || "Monthly"}</div>
-              <div className="mt-2 text-sm text-white/55">{formatCurrency(plan.yearlyPrice)} annual billing</div>
-              <div className="mt-5 grid gap-2 text-sm text-white/68">
+              <div className="mt-6 text-3xl font-semibold">{formatCurrency(plan.monthlyPrice)}<span className="text-base text-slate-500"> / month</span></div>
+              <div className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-500">{plan.duration || "Monthly"}</div>
+              <div className="mt-2 text-sm text-[var(--muted)]">{formatCurrency(plan.yearlyPrice)} annual billing</div>
+              <div className="mt-5 grid gap-2 text-sm text-slate-600">
                 <div>Products: {plan.maxProducts}</div>
                 <div>Users: {plan.maxUsers}</div>
                 <div>Customers: {plan.maxCustomers}</div>
-                {plan.trialAvailable ? <div className="text-cyan-200/90">Free trial available</div> : null}
-                {plan.popular ? <div className="text-violet-200/90">Most popular</div> : null}
+                {plan.trialAvailable ? <div className="text-teal-700">Free trial available</div> : null}
+                {plan.popular ? <div className="text-violet-700">Most popular</div> : null}
                 <div>{plan.features}</div>
               </div>
               <div className="mt-auto flex flex-wrap gap-2 pt-6">
@@ -935,33 +939,33 @@ export function SuperAdminPlansScreen() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white/75">
+            <label className="flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white/80 px-4 py-3 text-sm text-slate-700">
               <input type="checkbox" checked={form.trialAvailable} onChange={(event) => setForm((previous) => ({ ...previous, trialAvailable: event.target.checked }))} className="theme-input h-4 w-4 rounded" />
               Trial Available
             </label>
-            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-white/75">
+            <label className="flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white/80 px-4 py-3 text-sm text-slate-700">
               <input type="checkbox" checked={form.popular} onChange={(event) => setForm((previous) => ({ ...previous, popular: event.target.checked }))} className="theme-input h-4 w-4 rounded" />
               Most Popular
             </label>
           </div>
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-white/72">Description</span>
+            <span className="font-medium text-slate-600">Description</span>
             <textarea
               rows={3}
               required
               value={form.description}
               onChange={(event) => setForm((previous) => ({ ...previous, description: event.target.value }))}
-              className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 outline-none transition focus:border-cyan-300/40"
+              className="theme-input h-12 w-full rounded-2xl px-4 py-3 outline-none transition"
             />
           </label>
           <label className="grid gap-2 text-sm">
-            <span className="font-medium text-white/72">Features</span>
+            <span className="font-medium text-slate-600">Features</span>
             <textarea
               rows={3}
               required
               value={form.features}
               onChange={(event) => setForm((previous) => ({ ...previous, features: event.target.value }))}
-              className="w-full rounded-2xl border border-white/10 bg-white/6 px-4 py-3 outline-none transition focus:border-cyan-300/40"
+              className="theme-input h-12 w-full rounded-2xl px-4 py-3 outline-none transition"
             />
           </label>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -1168,8 +1172,8 @@ export function SuperAdminEnquiriesScreen() {
           </label>
         </div>
 
-        <div className="mt-6 overflow-hidden rounded-[28px] border border-white/10">
-          <div className="grid grid-cols-[1.1fr_1.4fr_0.9fr_1.1fr_0.9fr_0.9fr_0.9fr_1.2fr] gap-0 border-b border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
+        <div className="mt-6 overflow-x-auto rounded-[28px] border border-slate-200/80 bg-white/60">
+          <div className="grid min-w-[1280px] grid-cols-[1.05fr_1.25fr_1.25fr_0.9fr_1.35fr_0.9fr_0.8fr_2fr] gap-0 border-b border-slate-200/80 bg-slate-100/90 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
             <div>Ticket ID</div>
             <div>Contact Name</div>
             <div>Message</div>
@@ -1180,28 +1184,28 @@ export function SuperAdminEnquiriesScreen() {
             <div>Actions</div>
           </div>
 
-          <div className="grid gap-2 bg-black/10 p-2">
+          <div className="grid min-w-[1280px] gap-2 bg-slate-50/80 p-2">
             {data.items?.length ? data.items.map((item) => (
-              <div key={item.id} className="grid items-center grid-cols-[1.1fr_1.4fr_0.9fr_1.1fr_0.9fr_0.9fr_0.9fr_1.2fr] gap-0 rounded-[24px] border border-white/8 bg-[linear-gradient(135deg,rgba(28,18,38,0.92),rgba(45,18,28,0.88))] px-4 py-4 transition hover:-translate-y-0.5 hover:border-cyan-300/30">
-                <div className="text-sm font-semibold text-white">{item.ticketId}</div>
+              <div key={item.id} className="grid grid-cols-[1.05fr_1.25fr_1.25fr_0.9fr_1.35fr_0.9fr_0.8fr_2fr] items-center gap-0 rounded-[24px] border border-slate-200/80 bg-white/90 px-4 py-4 text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200/80 hover:bg-white hover:shadow-md [&>div:nth-child(2)>div:nth-child(2)]:!text-slate-500">
+                <div className="text-sm font-semibold text-slate-900">{item.ticketId}</div>
                 <div>
-                  <div className="text-sm font-semibold text-white">{item.name}</div>
-                  <div className="text-xs text-white/50">{item.phone || "—"}</div>
+                  <div className="text-sm font-semibold text-slate-900">{item.name}</div>
+                  <div className="text-xs text-white/55">{item.phone || "—"}</div>
                 </div>
-                <div className="max-w-[32ch] text-sm leading-6 text-white/75">{item.message}</div>
-                <div className="text-sm font-semibold text-cyan-200">{String(item.status || "").replace("_", " ")}</div>
-                <div className="text-sm text-white/75">{item.email}</div>
-                <div className="text-sm text-white/75">{String(item.source || "").replace("_", " ")}</div>
-                <div className="text-xs uppercase tracking-[0.14em] text-white/55">{formatDate(item.createdAt)}</div>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setSelectedItem(item)} className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/16">View</button>
-                  <button type="button" onClick={() => { setSelectedItem(item); setReplyMessage(item.replyMessage || ""); }} className="rounded-full bg-cyan-400/15 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/25">Reply</button>
-                  <button type="button" onClick={() => markResolved(item)} disabled={updating} className="rounded-full bg-emerald-400/15 px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/25 disabled:opacity-60">Resolved</button>
-                  <button type="button" onClick={() => deleteItem(item)} disabled={updating} className="rounded-full bg-rose-400/15 px-3 py-2 text-xs font-semibold text-rose-100 transition hover:bg-rose-400/25 disabled:opacity-60">Delete</button>
+                <div className="max-w-[36ch] text-sm leading-6 text-slate-700">{item.message}</div>
+                <div className="text-sm font-semibold text-cyan-700">{String(item.status || "").replace("_", " ")}</div>
+                <div className="min-w-0 truncate text-sm text-slate-700" title={item.email}>{item.email}</div>
+                <div className="text-sm text-slate-700">{String(item.source || "").replace("_", " ")}</div>
+                <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{formatDate(item.createdAt)}</div>
+                <div className="flex flex-nowrap items-center gap-2 whitespace-nowrap">
+                  <button type="button" onClick={() => setSelectedItem(item)} className="rounded-full border border-slate-200/90 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">View</button>
+                  <button type="button" onClick={() => { setSelectedItem(item); setReplyMessage(item.replyMessage || ""); }} className="rounded-full bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:bg-cyan-500/20">Reply</button>
+                  <button type="button" onClick={() => markResolved(item)} disabled={updating} className="rounded-full bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-500/20 disabled:opacity-60">Resolved</button>
+                  <button type="button" onClick={() => deleteItem(item)} disabled={updating} className="rounded-full bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-500/20 disabled:opacity-60">Delete</button>
                 </div>
               </div>
             )) : (
-              <div className="rounded-[24px] border border-white/8 bg-white/4 p-6 text-sm text-white/55">Nothing to show yet.</div>
+              <div className="rounded-[24px] border border-slate-200/70 bg-slate-50/90 p-6 text-sm text-slate-600">Nothing to show yet.</div>
             )}
           </div>
         </div>
@@ -1210,11 +1214,11 @@ export function SuperAdminEnquiriesScreen() {
       <Modal open={Boolean(selectedItem)} onClose={() => { setSelectedItem(null); setReplyMessage(""); }} title="Support Ticket">
         {selectedItem ? (
           <div className="grid gap-4">
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/45">{selectedItem.ticketId}</div>
-              <div className="mt-2 text-lg font-semibold text-white">{selectedItem.name}</div>
-              <div className="mt-1 text-sm text-white/55">{selectedItem.email} • {selectedItem.phone || "No phone"}</div>
-              <div className="mt-3 text-sm leading-6 text-white/75">{selectedItem.message}</div>
+            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{selectedItem.ticketId}</div>
+              <div className="mt-2 text-lg font-semibold text-[var(--foreground)]">{selectedItem.name}</div>
+              <div className="mt-1 text-sm text-[var(--muted)]">{selectedItem.email} • {selectedItem.phone || "No phone"}</div>
+              <div className="mt-3 text-sm leading-6 text-slate-700">{selectedItem.message}</div>
             </div>
             <label className="grid gap-2 text-sm">
               <span className="font-medium text-[var(--muted-strong)]">Reply</span>
@@ -1353,25 +1357,25 @@ export function SuperAdminReportsScreen() {
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <label className="grid gap-2 text-sm">
-              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Start Date</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Start Date</span>
               <input
                 type="date"
                 value={startDate}
                 onChange={(event) => setStartDate(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white/85 outline-none transition focus:border-white/20"
+                className="theme-input h-12 w-full rounded-2xl px-4 py-3 text-sm outline-none transition"
               />
             </label>
             <label className="grid gap-2 text-sm">
-              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">End Date</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">End Date</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(event) => setEndDate(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white/85 outline-none transition focus:border-white/20"
+                className="theme-input h-12 w-full rounded-2xl px-4 py-3 text-sm outline-none transition"
               />
             </label>
             <div className="grid gap-2">
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">Quick Range</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Quick Range</div>
               <div className="flex flex-wrap gap-2">
                 <ControlButton variant={range === "daily" ? "primary" : "default"} onClick={() => setRange("daily")}>Daily</ControlButton>
                 <ControlButton variant={range === "weekly" ? "primary" : "default"} onClick={() => setRange("weekly")}>Weekly</ControlButton>
@@ -1412,9 +1416,9 @@ export function SuperAdminReportsScreen() {
                     <stop offset="95%" stopColor="#7c8cff" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                <CartesianGrid stroke="rgba(26,16,53,0.08)" vertical={false} />
+                <XAxis dataKey="label" stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
                 <Area type="monotone" dataKey="value" stroke="#7c8cff" strokeWidth={2.5} fill="url(#reportsGradient)" />
               </AreaChart>
@@ -1431,7 +1435,7 @@ export function SuperAdminReportsScreen() {
                 <div className="text-sm font-semibold">{item.name}</div>
                 <StatusBadge value={item.status} />
               </div>
-              <div className="mt-2 text-sm text-white/55">{item.stores} active stores</div>
+              <div className="mt-2 text-sm text-[var(--muted)]">{item.stores} active stores</div>
             </>
           )}
         />
@@ -1459,6 +1463,11 @@ export function SuperAdminSettingsScreen() {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+  const [passwordTouched, setPasswordTouched] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
   });
 
   const syncLiveProfile = (profile) => {
@@ -1572,22 +1581,28 @@ export function SuperAdminSettingsScreen() {
     }
   };
 
-  const handlePreferenceToggle = async (key) => {
-    const nextPreferences = {
-      ...(data.preferences || {}),
-      [key]: !(data.preferences || {})[key],
-    };
-    try {
-      const response = await superAdminService.updatePreferences(nextPreferences);
-      setData(response);
-      toast.success("Preferences updated");
-    } catch (error) {
-      toast.error(error?.response?.data?.message || error?.message || "Failed to update preferences");
-    }
-  };
-
   const handlePasswordSave = async (event) => {
     event.preventDefault();
+    setPasswordTouched({ currentPassword: true, newPassword: true, confirmPassword: true });
+    const current = passwordForm.currentPassword || "";
+    const next = passwordForm.newPassword || "";
+    const confirm = passwordForm.confirmPassword || "";
+
+    if (!current) {
+      toast.error("Current password is required");
+      return;
+    }
+
+    if (!STRONG_PASSWORD_REGEX.test(next)) {
+      toast.error("New password must include uppercase, lowercase, number, and special character.");
+      return;
+    }
+
+    if (next !== confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
     try {
       await superAdminService.updatePassword(passwordForm);
       toast.success("Password updated");
@@ -1596,10 +1611,29 @@ export function SuperAdminSettingsScreen() {
         newPassword: "",
         confirmPassword: "",
       });
+      setPasswordTouched({ currentPassword: false, newPassword: false, confirmPassword: false });
     } catch (error) {
       toast.error(error?.response?.data?.message || error?.message || "Failed to update password");
     }
   };
+
+  const passwordErrors = {
+    currentPassword: !passwordForm.currentPassword ? "Current password is required." : "",
+    newPassword: !passwordForm.newPassword
+      ? "New password is required."
+      : !STRONG_PASSWORD_REGEX.test(passwordForm.newPassword)
+        ? "Use 8+ chars with uppercase, lowercase, number, and special character."
+        : "",
+    confirmPassword: !passwordForm.confirmPassword
+      ? "Confirm password is required."
+      : passwordForm.newPassword !== passwordForm.confirmPassword
+        ? "Passwords do not match."
+        : "",
+  };
+  const canSubmitPassword =
+    Boolean(passwordForm.currentPassword) &&
+    STRONG_PASSWORD_REGEX.test(passwordForm.newPassword || "") &&
+    passwordForm.newPassword === passwordForm.confirmPassword;
 
   const profileView = isEditing ? draftProfile : data.profile;
   const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "");
@@ -1614,9 +1648,9 @@ export function SuperAdminSettingsScreen() {
   return (
     <div className="grid max-w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <GlassPanel className="p-5 sm:p-6">
-        <SectionHeading eyebrow="Profile" title="Super Admin settings" description="Keep your profile, password, and notification preferences in sync." />
+        <SectionHeading eyebrow="Profile" title="Super Admin settings" description="Keep your profile and password in sync." />
         <form className="mt-6 grid gap-4" onSubmit={handleProfileSave}>
-          <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/90 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/70 bg-gradient-to-br from-cyan-100 via-white to-violet-100 shadow-[0_0_0_4px_rgba(34,211,238,0.08)]">
                 {avatarUrl ? (
@@ -1673,12 +1707,12 @@ export function SuperAdminSettingsScreen() {
               disabled={!isEditing}
             />
             <div className="grid gap-2 text-sm">
-              <span className="font-medium text-white/72">Email</span>
+              <span className="font-medium text-slate-600">Email</span>
               <input
                 readOnly
                 type="email"
                 value={data.profile.email || ""}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white/60 outline-none"
+                className="w-full rounded-2xl border border-slate-200/90 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
             <FormField
@@ -1709,62 +1743,64 @@ export function SuperAdminSettingsScreen() {
           </div>
           <div className="flex justify-start sm:justify-end">
             {!isEditing ? (
-              <ControlButton type="button" variant="primary" onClick={handleEditProfile}>Edit</ControlButton>
+              <ControlButton type="button" variant="primary" onClick={handleEditProfile}>Edit Profile</ControlButton>
             ) : (
               <div className="flex items-center gap-3">
                 <ControlButton type="button" onClick={handleCancelProfile}>Cancel</ControlButton>
-                <ControlButton type="submit" variant="primary">Save Profile</ControlButton>
+                <ControlButton type="submit" variant="primary">Save Changes</ControlButton>
               </div>
             )}
           </div>
         </form>
 
-        <div className="mt-10 border-t border-white/10 pt-8">
-          <SectionHeading eyebrow="Security" title="Change password" description="Set a fresh password for this Super Admin account." />
-          <form className="mt-6 grid gap-4" onSubmit={handlePasswordSave}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <FormField label="Current Password" name="currentPassword" type="password" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))} required />
-              <FormField label="New Password" name="newPassword" type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))} required />
-              <FormField label="Confirm Password" name="confirmPassword" type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))} required />
-            </div>
-            <div className="flex justify-start sm:justify-end">
-              <ControlButton type="submit" variant="primary">Update Password</ControlButton>
-            </div>
-          </form>
-        </div>
       </GlassPanel>
 
       <GlassPanel className="p-5 sm:p-6">
-        <SectionHeading eyebrow="Preferences" title="Notifications & theme" description="Tune alerts and dashboard appearance." />
-        <div className="mt-6 grid gap-3">
-          {[
-            { key: "lowStockAlerts", label: "Low stock alerts", helper: "Surface inventory risk signals." },
-            { key: "planExpiryAlerts", label: "Plan expiry alerts", helper: "Get reminders about renewals." },
-            { key: "paymentAlerts", label: "Payment alerts", helper: "Stay on top of payment status." },
-            { key: "darkMode", label: "Dark mode", helper: "Switch UI theme preference." },
-          ].map((pref) => (
-            <button
-              key={pref.key}
-              type="button"
-              onClick={() => handlePreferenceToggle(pref.key)}
-              className="flex w-full items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/6 p-4 text-left transition hover:bg-white/10"
-            >
-              <div>
-                <div className="text-sm font-semibold text-white/90">{pref.label}</div>
-                <div className="mt-1 text-xs text-white/55">{pref.helper}</div>
-              </div>
-              <div className={[
-                "h-6 w-11 rounded-full border transition",
-                (data.preferences || {})[pref.key] ? "border-cyan-200/50 bg-cyan-400/40" : "border-white/15 bg-white/10",
-              ].join(" ")}>
-                <div className={[
-                  "h-5 w-5 translate-y-[1px] rounded-full bg-white shadow transition",
-                  (data.preferences || {})[pref.key] ? "translate-x-5" : "translate-x-1",
-                ].join(" ")} />
-              </div>
-            </button>
-          ))}
-        </div>
+        <h3 className="text-lg font-semibold">Change Password</h3>
+        <form className="mt-5 grid gap-4" onSubmit={handlePasswordSave}>
+          <PasswordField
+            label="Current Password"
+            name="currentPassword"
+            value={passwordForm.currentPassword}
+            onChange={(event) => {
+              setPasswordTouched((previous) => ({ ...previous, currentPassword: true }));
+              setPasswordForm((previous) => ({ ...previous, currentPassword: event.target.value }));
+            }}
+            required
+            status={passwordTouched.currentPassword ? (passwordErrors.currentPassword ? "error" : "success") : "idle"}
+            helper={passwordTouched.currentPassword ? passwordErrors.currentPassword : ""}
+          />
+          <div className="grid gap-2">
+            <PasswordField
+              label="New Password"
+              name="newPassword"
+              value={passwordForm.newPassword}
+              onChange={(event) => {
+                setPasswordTouched((previous) => ({ ...previous, newPassword: true }));
+                setPasswordForm((previous) => ({ ...previous, newPassword: event.target.value }));
+              }}
+              required
+              status={passwordTouched.newPassword ? (passwordErrors.newPassword ? "error" : "success") : "idle"}
+              helper={passwordTouched.newPassword ? passwordErrors.newPassword : ""}
+            />
+            <PasswordStrengthMeter password={passwordForm.newPassword} />
+          </div>
+          <PasswordField
+            label="Confirm Password"
+            name="confirmPassword"
+            value={passwordForm.confirmPassword}
+            onChange={(event) => {
+              setPasswordTouched((previous) => ({ ...previous, confirmPassword: true }));
+              setPasswordForm((previous) => ({ ...previous, confirmPassword: event.target.value }));
+            }}
+            required
+            status={passwordTouched.confirmPassword ? (passwordErrors.confirmPassword ? "error" : "success") : "idle"}
+            helper={passwordTouched.confirmPassword ? passwordErrors.confirmPassword : ""}
+          />
+          <div className="flex justify-start sm:justify-end">
+            <ControlButton type="submit" variant="primary" disabled={!canSubmitPassword}>Update Password</ControlButton>
+          </div>
+        </form>
       </GlassPanel>
     </div>
   );

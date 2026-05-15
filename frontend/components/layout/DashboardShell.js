@@ -17,21 +17,56 @@ const subscribeToClientSnapshot = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-function SidebarContent({ role, pathname, profile, onNavigate, onLogout, mounted = false }) {
-  const items = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
-  const profileName = profile?.fullName || "MyReport User";
-  const profileInitials = profile?.fullName
-    ? profile.fullName
-        .split(" ")
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join("")
-    : "MR";
-  const profileEmail = profile?.email || "Workspace ready";
+function getProfileInitials(profile) {
+  const name = String(profile?.fullName || "").trim();
+  if (!name) return "MR";
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0] || "")
+    .join("")
+    .toUpperCase();
+}
+
+function getProfileAvatarUrl(profile) {
+  if (!profile?.avatarUrl) return null;
+  if (String(profile.avatarUrl).startsWith("http")) return profile.avatarUrl;
   const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "");
-  const avatarUrl = profile?.avatarUrl
-    ? (String(profile.avatarUrl).startsWith("http") ? profile.avatarUrl : `${apiBase}${profile.avatarUrl}`)
-    : null;
+  return `${apiBase}${profile.avatarUrl}`;
+}
+
+function ProfileChip({ profile, mounted, size = "sm" }) {
+  const avatarUrl = getProfileAvatarUrl(profile);
+  const avatarSize = size === "md" ? "40px" : "32px";
+
+  return (
+    <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2 text-right">
+      <div className="flex items-center gap-2">
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
+          {mounted && avatarUrl ? (
+            <Image src={avatarUrl} alt="Profile avatar" fill sizes={avatarSize} className="object-cover" unoptimized />
+          ) : (
+            <span suppressHydrationWarning className="text-xs font-semibold">
+              {getProfileInitials(profile)}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <div suppressHydrationWarning className="truncate text-sm font-semibold">
+            {profile?.fullName || "MyReport User"}
+          </div>
+          <div suppressHydrationWarning className="truncate text-xs text-[var(--muted)]">
+            {profile?.email || "Workspace ready"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SidebarContent({ role, pathname, profile, mounted = false, onNavigate, onLogout }) {
+  const items = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
@@ -50,27 +85,8 @@ function SidebarContent({ role, pathname, profile, onNavigate, onLogout, mounted
         </div>
       </div>
 
-      <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-white/70 px-4 py-3 shadow-lg backdrop-blur-xl sm:mb-8">
-        <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/25 blur-2xl" />
-        <div className="relative z-10 flex w-full items-center gap-3">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70">
-            {mounted && avatarUrl ? (
-              <Image src={avatarUrl} alt="Profile avatar" fill sizes="40px" className="object-cover" unoptimized />
-            ) : (
-              <span suppressHydrationWarning className="text-sm font-semibold">
-                {profileInitials}
-              </span>
-            )}
-          </div>
-          <div className="min-w-0">
-            <div suppressHydrationWarning className="truncate text-base font-semibold text-slate-900">
-              {profileName}
-            </div>
-            <div suppressHydrationWarning className="truncate text-sm text-slate-500">
-              {profileEmail}
-            </div>
-          </div>
-        </div>
+      <div className="mb-6 sm:mb-8">
+        <ProfileChip profile={profile} mounted={mounted} size="md" />
       </div>
 
       <nav className="relative grid gap-1.5">
@@ -231,39 +247,7 @@ export function DashboardShell({ role, children }) {
                       </div>
                     </div>
                     <div className="hidden min-w-0 items-center gap-3 sm:flex">
-                      <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2 text-right">
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
-                            {mounted && profile?.avatarUrl ? (
-                              <Image
-                                src={String(profile.avatarUrl).startsWith("http") ? profile.avatarUrl : `${(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "")}${profile.avatarUrl}`}
-                                alt="Profile avatar"
-                                fill
-                                sizes="32px"
-                                className="object-cover"
-                                unoptimized
-                              />
-                            ) : (
-                              <span className="text-xs font-semibold">
-                                {String(profile?.fullName || "MR")
-                                  .split(" ")
-                                  .slice(0, 2)
-                                  .map((part) => part[0] || "")
-                                  .join("")
-                                  .toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div suppressHydrationWarning className="truncate text-sm font-semibold">
-                              {profile?.fullName || "MyReport User"}
-                            </div>
-                            <div suppressHydrationWarning className="truncate text-xs text-[var(--muted)]">
-                              {profile?.email || "Workspace ready"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <ProfileChip profile={profile} mounted={mounted} />
                     </div>
                   </div>
                 </div>

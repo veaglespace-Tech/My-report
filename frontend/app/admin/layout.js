@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
 
-  if (pathname === "/admin/login" || pathname === "/admin/signup") {
+  if (pathname === "/admin/login" || pathname === "/admin/signup" || pathname === "/admin/register") {
     return children;
   }
 

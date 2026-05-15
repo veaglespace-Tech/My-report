@@ -10,6 +10,7 @@ function shouldHideMarketingNavbar(pathname) {
   if (
     pathname === "/admin/login" ||
     pathname === "/admin/signup" ||
+    pathname === "/admin/register" ||
     pathname === "/superadmin/login" ||
     pathname === "/login" ||
     pathname === "/register"

@@ -27,7 +27,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
             const visibleColumns = columns.filter((column) => column.key !== "actions");
 
             return (
-              <div key={key} className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-sm transition hover:border-cyan-300/30">
+              <div key={key} className="rounded-3xl border border-slate-200/80 bg-white/70 p-4 shadow-sm transition hover:border-cyan-300/40">
                 <div className="grid gap-3">
                   {visibleColumns.map((column) => (
                     <div key={column.key} className="grid gap-1.5 sm:grid-cols-[120px_1fr] sm:gap-3">
@@ -50,7 +50,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
             );
           })
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-8 text-center text-sm text-[var(--muted)]">
+          <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 px-5 py-8 text-center text-sm text-[var(--muted)]">
             {emptyMessage}
           </div>
         )}
@@ -60,7 +60,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
         <div className={`${isScrollable ? "max-h-[68vh]" : ""} overflow-auto scrollbar-thin`}>
           <table className="min-w-[760px] lg:min-w-full">
           <thead>
-            <tr className="sticky top-0 z-10 border-b border-white/8 bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-xl">
+            <tr className="sticky top-0 z-10 border-b border-slate-200/80 bg-[color-mix(in_srgb,var(--panel-strong)_92%,transparent)] backdrop-blur-xl">
               {columns.map((column) => (
                 <th
                   key={column.key}
@@ -74,7 +74,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
           <tbody>
             {visibleRows.length ? (
               visibleRows.map((row, index) => (
-                <tr key={rowKey(row, index)} className="border-b border-white/6 last:border-0">
+                <tr key={rowKey(row, index)} className="border-b border-slate-200/60 last:border-0">
                   {columns.map((column) => (
                     <td
                       key={column.key}
@@ -97,21 +97,22 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
         </div>
       </div>
       {shouldPaginate ? (
-        <div className="flex flex-col items-center justify-center gap-4 border-t border-white/8 px-4 py-6 sm:flex-row sm:justify-between">
-          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
-            Showing <span className="text-white/70">{visibleRows.length}</span> of <span className="text-white/70">{rows.length}</span> items
+        <div className="flex flex-col items-center justify-center gap-4 border-t border-slate-200/80 px-4 py-6 sm:flex-row sm:justify-between">
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+            Showing <span className="text-[var(--muted-strong)]">{visibleRows.length}</span> of{" "}
+            <span className="text-[var(--muted-strong)]">{rows.length}</span> items
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               type="button"
               disabled={currentPage <= 1}
               onClick={() => setPage((previous) => Math.max(1, previous - 1))}
-              className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
             >
               Prev
             </button>
-            
+
             <div className="flex items-center gap-1.5 px-2">
               {pageNumbers.map((pageNumber) => (
                 <button
@@ -120,8 +121,8 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
                   onClick={() => setPage(pageNumber)}
                   className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300 ${
                     currentPage === pageNumber
-                      ? "bg-white text-slate-950 shadow-xl shadow-white/10 scale-105"
-                      : "text-white/50 hover:bg-white/8 hover:text-white"
+                      ? "scale-105 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   {pageNumber}
@@ -133,13 +134,13 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
-              className="inline-flex h-10 px-4 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
             >
               Next
             </button>
           </div>
 
-          <div className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-white/40 sm:block">
+          <div className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] sm:block">
             Page {currentPage} / {totalPages}
           </div>
         </div>

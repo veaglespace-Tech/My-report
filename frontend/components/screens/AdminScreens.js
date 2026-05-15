@@ -172,7 +172,7 @@ function ChartCard({ title, description, children }) {
     <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <div className="mb-6">
         <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-white/55">{description}</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
       </div>
       {children}
     </GlassPanel>
@@ -296,9 +296,9 @@ export function AdminDashboardScreen() {
                     <stop offset="95%" stopColor="#4fd1c5" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+                <CartesianGrid stroke="rgba(26,16,53,0.08)" vertical={false} />
+                <XAxis dataKey="label" stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
                 <Area type="monotone" dataKey="value" stroke="#4fd1c5" strokeWidth={2.5} fill="url(#adminRevenueGradient)" />
               </AreaChart>
@@ -339,15 +339,15 @@ export function AdminDashboardScreen() {
           <h3 className="text-lg font-semibold">Workspace Highlights</h3>
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.highlights.map((highlight) => (
-              <div key={highlight} className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72">
+              <div key={highlight} className="rounded-2xl border border-slate-200/80 bg-white/70 p-4 text-sm text-slate-700 shadow-sm">
                 {highlight}
               </div>
             ))}
           </div>
-          <div className="mt-6 rounded-3xl border border-cyan-300/12 bg-cyan-300/8 p-5">
-            <div className="text-xs uppercase tracking-[0.24em] text-cyan-200/75">Current plan</div>
+          <div className="mt-6 rounded-3xl border border-cyan-200/50 bg-cyan-50/40 p-5">
+            <div className="text-xs uppercase tracking-[0.24em] text-teal-800">Current plan</div>
             <div className="mt-2 text-2xl font-semibold">{data.store.plan}</div>
-            <div className="mt-1 text-sm text-white/55">Renews on {formatDate(data.store.planExpiresAt)}</div>
+            <div className="mt-1 text-sm text-[var(--muted)]">Renews on {formatDate(data.store.planExpiresAt)}</div>
           </div>
         </GlassPanel>
       </div>
@@ -580,20 +580,20 @@ export function AdminCustomersScreen() {
       <GlassPanel className="p-5">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
           <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-cyan-200/40 bg-gradient-to-r from-cyan-100/30 via-white/20 to-violet-100/25 px-4 py-3 shadow-[0_6px_20px_rgba(148,163,184,0.16)] transition-all duration-300 focus-within:border-cyan-300/80 focus-within:shadow-[0_0_0_4px_rgba(34,211,238,0.15)]">
-            <Search size={18} className="shrink-0 text-cyan-100/80" />
+            <Search size={18} className="shrink-0 text-teal-600" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search customer, city, email, or mobile"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-white/45"
+              className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-500"
             />
           </div>
-          <label className="flex items-center gap-2 rounded-2xl border border-cyan-200/45 bg-gradient-to-r from-cyan-100/30 via-white/15 to-violet-100/30 px-3 py-2.5 text-sm text-white/80 shadow-[0_6px_20px_rgba(148,163,184,0.14)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)] focus-within:border-cyan-300/80 focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.12)]">
-            <span className="shrink-0 text-xs font-semibold tracking-[0.12em] text-white/70">Sort By</span>
+          <label className="flex items-center gap-2 rounded-2xl border border-cyan-200/45 bg-gradient-to-r from-cyan-100/30 via-white/15 to-violet-100/30 px-3 py-2.5 text-sm text-slate-700 shadow-[0_6px_20px_rgba(148,163,184,0.14)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)] focus-within:border-cyan-300/80 focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.12)]">
+            <span className="shrink-0 text-xs font-semibold tracking-[0.12em] text-slate-600">Sort By</span>
             <select
               value={nameSort}
               onChange={(event) => setNameSort(event.target.value)}
-              className="w-full bg-transparent text-sm font-semibold outline-none"
+              className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none"
             >
               <option value="asc" className="bg-slate-900 text-white">Name (A-Z)</option>
               <option value="desc" className="bg-slate-900 text-white">Name (Z-A)</option>
@@ -619,14 +619,14 @@ export function AdminCustomersScreen() {
                 <div className="flex min-w-max items-center gap-[10px]">
                   <Link
                     href={`/admin/customers/${row.id}`}
-                    className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-white/12 bg-white/8 px-3.5 text-xs font-semibold text-white/80 transition-all duration-300 hover:-translate-y-[2px] hover:bg-white/12"
+                    className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200/90 bg-white/80 px-3.5 text-xs font-semibold text-slate-700 transition-all duration-300 hover:-translate-y-[2px] hover:bg-white"
                   >
                     View Details
                   </Link>
                   <button
                     type="button"
                     onClick={() => openEdit(row)}
-                    className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-white/12 bg-white/8 px-3.5 text-xs font-semibold text-white/80 transition-all duration-300 hover:-translate-y-[2px] hover:bg-white/12"
+                    className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200/90 bg-white/80 px-3.5 text-xs font-semibold text-slate-700 transition-all duration-300 hover:-translate-y-[2px] hover:bg-white"
                   >
                     Edit
                   </button>
@@ -638,7 +638,7 @@ export function AdminCustomersScreen() {
                       "hover:-translate-y-[2px]",
                       row.blocked
                         ? "border border-indigo-300/35 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-white shadow-[0_6px_14px_rgba(59,130,246,0.28)] hover:brightness-105 hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)]"
-                        : "border border-white/12 bg-white/8 text-white/80 hover:bg-white/12 hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)]",
+                        : "border border-slate-200/90 bg-white/80 text-slate-700 hover:bg-white hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)]",
                     ].join(" ")}
                   >
                     {row.blocked ? "Unblock" : "Block"}
@@ -744,7 +744,7 @@ export function AdminCustomersScreen() {
               helper={touched.city || submitted ? fieldErrors.city : ""}
             />
           </div>
-          <label className="flex items-center gap-3 text-sm text-white/68">
+          <label className="flex items-center gap-3 text-sm text-slate-600">
             <input type="checkbox" checked={form.blocked} onChange={(event) => setForm((previous) => ({ ...previous, blocked: event.target.checked }))} />
             Mark customer as blocked
           </label>
@@ -909,13 +909,13 @@ export function AdminProductsScreen() {
       />
 
       <GlassPanel className="p-5">
-        <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
-          <Search size={16} className="text-white/45" />
+        <div className="flex items-center gap-3 overflow-hidden rounded-2xl border border-cyan-200/40 bg-gradient-to-r from-cyan-100/30 via-white/20 to-violet-100/25 px-4 py-3 shadow-[0_6px_20px_rgba(148,163,184,0.16)]">
+          <Search size={16} className="shrink-0 text-teal-600" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search products..."
-            className="w-full bg-transparent text-sm outline-none placeholder:text-white/35"
+            className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
           />
         </div>
       </GlassPanel>
@@ -938,7 +938,7 @@ export function AdminProductsScreen() {
             cellClassName: "text-right",
             render: (_, row) => (
               <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                <button type="button" onClick={() => openEdit(row)} className="rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold text-white/75">
+                <button type="button" onClick={() => openEdit(row)} className="rounded-xl border border-slate-200/80 bg-white/75 px-3 py-2 text-xs font-semibold text-slate-700">
                   Edit
                 </button>
                 <button
@@ -970,7 +970,7 @@ export function AdminProductsScreen() {
               options={["KG", "GRAM", "LITRE", "ML", "PIECE", "BOX"].map((unit) => ({ label: unit, value: unit }))}
             />
           </div>
-          <label className="mt-1 inline-flex items-center gap-3 text-sm text-white/70">
+          <label className="mt-1 inline-flex items-center gap-3 text-sm text-slate-600">
             <input type="checkbox" checked={form.active} onChange={(event) => setForm((previous) => ({ ...previous, active: event.target.checked }))} className="h-4 w-4 rounded border border-cyan-300/60 accent-cyan-400" />
             Product is active
           </label>
@@ -1224,7 +1224,7 @@ export function AdminBillingScreen() {
           </div>
 
           {rows.map((row, index) => (
-            <div key={row.id} className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 lg:grid-cols-[1.4fr_0.6fr_auto]">
+            <div key={row.id} className="grid gap-4 rounded-3xl border border-slate-200/80 bg-slate-50/80 p-4 lg:grid-cols-[1.4fr_0.6fr_auto]">
               <SelectField
                 label={`Product ${index + 1}`}
                 name="productId"
@@ -1363,32 +1363,32 @@ export function AdminBillingScreen() {
         <div className="mt-6 grid gap-4">
           {lineItems.length ? (
             lineItems.map((item) => (
-              <div key={`${item.productName}-${item.id}`} className="flex flex-col gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <div key={`${item.productName}-${item.id}`} className="flex flex-col gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/90 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="font-semibold">{item.productName}</div>
-                  <div className="text-white/55">{item.quantity} x {formatCurrency(item.rate)}</div>
+                  <div className="text-[var(--muted)]">{item.quantity} x {formatCurrency(item.rate)}</div>
                 </div>
                 <div className="font-semibold">{formatCurrency(item.total)}</div>
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-white/8 bg-white/4 p-4 text-sm text-white/55">Add products to build a bill.</div>
+            <div className="rounded-2xl border border-slate-200/70 bg-slate-50/90 p-4 text-sm text-[var(--muted)]">Add products to build a bill.</div>
           )}
 
-          <div className="rounded-3xl border border-white/10 bg-white/6 p-5">
-            <div className="flex items-center justify-between text-sm text-white/65"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-            <div className="mt-3 flex items-center justify-between text-sm text-white/65"><span>GST</span><span>{formatCurrency(taxAmount)}</span></div>
-            <div className="mt-3 flex items-center justify-between text-sm text-white/65"><span>Discount</span><span>{formatCurrency(discountAmount)}</span></div>
-            <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4 text-lg font-semibold"><span>Total</span><span>{formatCurrency(totalAmount)}</span></div>
+          <div className="rounded-3xl border border-slate-200/80 bg-white/75 p-5">
+            <div className="flex items-center justify-between text-sm text-slate-600"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
+            <div className="mt-3 flex items-center justify-between text-sm text-slate-600"><span>GST</span><span>{formatCurrency(taxAmount)}</span></div>
+            <div className="mt-3 flex items-center justify-between text-sm text-slate-600"><span>Discount</span><span>{formatCurrency(discountAmount)}</span></div>
+            <div className="mt-4 flex items-center justify-between border-t border-slate-200/80 pt-4 text-lg font-semibold text-[var(--foreground)]"><span>Total</span><span>{formatCurrency(totalAmount)}</span></div>
           </div>
 
           {invoiceResult ? (
             <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-5">
-              <div className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-100">
+              <div className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800">
                 <CheckCircle2 size={16} />
                 Invoice created: {invoiceResult.invoiceNumber}
               </div>
-              <div className="mt-2 text-sm text-white/65">Grand total {formatCurrency(invoiceResult.totalAmount || totalAmount)}</div>
+              <div className="mt-2 text-sm text-slate-600">Grand total {formatCurrency(invoiceResult.totalAmount || totalAmount)}</div>
             </div>
           ) : null}
         </div>
@@ -1623,39 +1623,39 @@ export function AdminPlanScreen() {
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600">Current Plan</div>
             <div className="mt-2 text-lg font-bold text-gray-900">{data.plan.name}</div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600">Plan Duration</div>
             <div className="mt-2 text-lg font-bold text-gray-900">{data.plan.duration}</div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600">{data.plan.freeTrial ? "Expiry Date" : "Renewal Date"}</div>
             <div className="mt-2 text-lg font-bold text-gray-900">{formatDate(data.plan.expiresAt)}</div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600">Days Left</div>
             <div className="mt-2 text-lg font-bold text-gray-900">{data.plan.daysLeft}</div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600">Plan Started</div>
             <div className="mt-2 text-sm font-bold text-gray-900">{formatDate(data.plan.startedAt)}</div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm font-semibold text-gray-700">Products limit: <span className="font-bold text-gray-900">{data.plan.maxProducts}</span></div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm font-semibold text-gray-700">Customers limit: <span className="font-bold text-gray-900">{data.plan.maxCustomers}</span></div>
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm font-semibold leading-6 text-gray-700 sm:col-span-2">{data.plan.features}</div>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 text-sm font-semibold text-gray-700">Products limit: <span className="font-bold text-gray-900">{data.plan.maxProducts}</span></div>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 text-sm font-semibold text-gray-700">Customers limit: <span className="font-bold text-gray-900">{data.plan.maxCustomers}</span></div>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 text-sm font-semibold leading-6 text-gray-700 sm:col-span-2">{data.plan.features}</div>
         </div>
       </GlassPanel>
 
       <GlassPanel className="p-5 sm:p-6">
         <SectionHeading eyebrow="Razorpay" title="Renew or upgrade" description="The backend creates a live order when keys are configured, and falls back to demo mode otherwise." />
         <div className="mt-6 grid gap-4">
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4 text-sm text-white/72">
-            Days left on current plan: <span className="font-semibold text-white">{data.plan.daysLeft}</span>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 p-4 text-sm text-slate-600">
+            Days left on current plan: <span className="font-semibold text-[var(--foreground)]">{data.plan.daysLeft}</span>
           </div>
           <ControlButton variant="primary" className="w-full sm:w-auto" onClick={openRenewModal}>
             {data.plan.freeTrial ? "Upgrade Plan" : "Renew with Razorpay"}
           </ControlButton>
           {orderState ? (
-            <div className="rounded-3xl border border-white/10 bg-white/6 p-5 text-sm text-white/65">
+            <div className="rounded-3xl border border-slate-200/80 bg-white/75 p-5 text-sm text-slate-600">
               <div>Mode: {orderState.mode || (orderState.configured ? "live" : "demo")}</div>
               <div className="mt-2">Order ID: {orderState.orderId || orderState.gatewayResponse?.id || "Created"}</div>
               <div className="mt-2">Key ID: {orderState.keyId}</div>
@@ -1667,7 +1667,7 @@ export function AdminPlanScreen() {
       <Modal open={plansModalOpen} onClose={() => setPlansModalOpen(false)} title="Choose Plan">
         <div className="grid gap-4">
           {plansLoading ? (
-            <div className="text-sm text-white/70">Loading plans...</div>
+            <div className="text-sm text-slate-600">Loading plans...</div>
           ) : (
             <div className="grid gap-3">
               {availablePlans.map((plan) => {
@@ -1679,15 +1679,15 @@ export function AdminPlanScreen() {
                     key={plan.id}
                     type="button"
                     onClick={() => setSelectedRenewPlanId(String(plan.id))}
-                    className={`rounded-2xl border p-4 text-left transition ${isActive ? "border-cyan-300/70 bg-cyan-300/12" : "border-white/12 bg-white/6 hover:bg-white/10"}`}
+                    className={`rounded-2xl border p-4 text-left transition ${isActive ? "border-cyan-300/70 bg-cyan-300/12" : "border-slate-200/90 bg-white/80 hover:bg-white"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-lg font-semibold">{plan.planName || plan.name}</div>
                       {isCurrent ? <span className="rounded-full border border-emerald-300/40 bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-100">Current Plan</span> : null}
                     </div>
-                    <div className="mt-2 text-sm text-white/70">{plan.duration || (isFree ? "7 Days" : "1 Month")}</div>
+                    <div className="mt-2 text-sm text-slate-600">{plan.duration || (isFree ? "7 Days" : "1 Month")}</div>
                     <div className="mt-2 text-xl font-bold">{isFree ? "Rs. 0 / 7 Days" : `${formatCurrency(plan.monthlyPrice ?? plan.price ?? 0)} / month`}</div>
-                    <div className="mt-2 text-sm text-white/60">{plan.description}</div>
+                    <div className="mt-2 text-sm text-slate-600">{plan.description}</div>
                   </button>
                 );
               })}
@@ -1899,7 +1899,7 @@ export function AdminReportsScreen() {
                     "ring-1 ring-white/10 backdrop-blur-md",
                     active
                       ? "bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 text-white shadow-lg shadow-indigo-500/25 ring-white/20"
-                      : "bg-white/6 text-white/80 hover:bg-white/10 hover:text-white hover:shadow-lg hover:shadow-indigo-500/10",
+                      : "bg-white/6 text-slate-700 hover:bg-white/10 hover:text-slate-900 hover:shadow-lg hover:shadow-indigo-500/10",
                   ].join(" ")}
                   style={active ? { boxShadow: "0 0 0 1px rgba(255,255,255,0.16), 0 16px 40px rgba(99,102,241,0.28)" } : undefined}
                 >
@@ -1928,9 +1928,9 @@ export function AdminReportsScreen() {
                   <stop offset="95%" stopColor="#7c8cff" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-              <XAxis dataKey="label" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+              <CartesianGrid stroke="rgba(26,16,53,0.08)" vertical={false} />
+              <XAxis dataKey="label" stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
               <Area type="monotone" dataKey="value" stroke="#7c8cff" strokeWidth={2.5} fill="url(#adminReportsGradient)" />
             </AreaChart>
@@ -2102,7 +2102,7 @@ export function AdminSettingsScreen() {
       <GlassPanel className="p-5 sm:p-6">
         <SectionHeading eyebrow="Profile" title="Workspace settings" description="Keep your store profile and password in sync." />
         <form className="mt-6 grid gap-4" onSubmit={handleProfileSave}>
-          <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-4">
               <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/70 bg-gradient-to-br from-cyan-100 via-white to-violet-100 shadow-[0_0_0_4px_rgba(34,211,238,0.08)]">
                 {avatarUrl ? (
@@ -2146,12 +2146,12 @@ export function AdminSettingsScreen() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Full Name" name="fullName" value={profileView?.fullName || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, fullName: event.target.value }))} required disabled={!isEditing} />
               <div className="grid gap-2 text-sm">
-                <span className="font-medium text-white/72">Email</span>
+                <span className="font-medium text-slate-600">Email</span>
                 <input
                   readOnly
                   type="email"
                   value={data.profile.email || ""}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white/60 outline-none"
+                  className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-slate-600 outline-none"
                 />
               </div>
             <FormField label="Mobile Number" name="mobileNumber" value={profileView?.mobileNumber || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value }))} required disabled={!isEditing} />

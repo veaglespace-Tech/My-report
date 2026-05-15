@@ -53,9 +53,9 @@ export function MetricCard({ item, index = 0 }) {
     >
       <GlassPanel className="relative overflow-hidden p-6">
         <div className={clsx("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", accentMap[item.accent] || accentMap.cyan)} />
-        <div className="text-xs font-medium uppercase tracking-[0.24em] text-white/55">{item.label}</div>
-        <div className="mt-4 text-3xl font-semibold tracking-tight">{animatedValue}</div>
-        <div className="mt-3 text-sm text-white/55">{item.helper}</div>
+        <div className="text-xs font-medium uppercase tracking-[0.24em] text-[var(--muted)]">{item.label}</div>
+        <div className="mt-4 text-3xl font-semibold tracking-tight text-[var(--muted-strong)]">{animatedValue}</div>
+        <div className="mt-3 text-sm text-[var(--muted)]">{item.helper}</div>
       </GlassPanel>
     </motion.div>
   );

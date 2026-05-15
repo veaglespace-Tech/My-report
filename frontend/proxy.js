@@ -12,7 +12,10 @@ export function proxy(request) {
   const isSuperAdminArea = pathname.startsWith("/superadmin");
   const isAdminArea = pathname.startsWith("/admin");
   const isSuperAdminAuth = pathname === "/superadmin/login";
-  const isAdminAuth = pathname === "/admin/login" || pathname === "/admin/signup";
+  const isAdminAuth =
+    pathname === "/admin/login" ||
+    pathname === "/admin/signup" ||
+    pathname === "/admin/register";
 
   if ((isSuperAdminAuth || isAdminAuth || pathname === "/") && token && role) {
     return NextResponse.redirect(new URL(getHomeForRole(role), request.url));

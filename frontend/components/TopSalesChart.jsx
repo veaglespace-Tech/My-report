@@ -32,10 +32,10 @@ export function TopSalesChart({ items = [], loading = false }) {
     <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Top Sales</h3>
-          <p className="mt-1 text-sm text-white/55">Best-performing products based on sales.</p>
+          <h3 className="text-lg font-semibold text-[var(--foreground)]">Top Sales</h3>
+          <p className="mt-1 text-sm text-[var(--muted)]">Best-performing products based on sales.</p>
         </div>
-        <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold tracking-wide text-white/60 sm:block">
+        <div className="hidden rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-xs font-semibold tracking-wide text-slate-600 sm:block">
           {loading ? "Loading" : `${chartData.length} products`}
         </div>
       </div>
@@ -51,11 +51,11 @@ export function TopSalesChart({ items = [], loading = false }) {
                   <stop offset="100%" stopColor="color-mix(in srgb, var(--secondary) 40%, transparent)" stopOpacity={0.28} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-              <XAxis dataKey="name" stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.45)" tickLine={false} axisLine={false} />
+              <CartesianGrid stroke="rgba(26,16,53,0.08)" vertical={false} />
+              <XAxis dataKey="name" stroke="rgba(26,16,53,0.45)" tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(26,16,53,0.45)" tickLine={false} axisLine={false} />
               <Tooltip
-                cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                cursor={{ fill: "rgba(26,16,53,0.06)" }}
                 contentStyle={{
                   background: "rgba(8,14,28,0.96)",
                   border: "1px solid rgba(255,255,255,0.1)",
@@ -78,7 +78,7 @@ export function TopSalesChart({ items = [], loading = false }) {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-white/12 bg-white/[0.03] px-6 text-center text-sm font-medium text-white/58">
+          <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-200/90 bg-slate-50/80 px-6 text-center text-sm font-medium text-slate-600">
             No sales data available yet.
           </div>
         )}

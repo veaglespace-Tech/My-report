@@ -369,95 +369,16 @@ input:-webkit-autofill:focus {
   max-width: 1400px;
 }
 
-/* ══════════════════════════════════════════════
-   GLOBAL: FORCE ALL TEXT TO DARK NAVY
-   ══════════════════════════════════════════════ */
-
-/* White text classes → dark navy */
-.text-white {
-  color: #1a1035 !important;
-}
-
-[class*="text-white\\/"] {
-  color: #1a1035 !important;
-}
-
-/* All Tailwind color text classes → dark navy */
-[class*="text-cyan-"] { color: #1a1035 !important; }
-[class*="text-violet-"] { color: #1a1035 !important; }
-[class*="text-amber-"] { color: #1a1035 !important; }
-[class*="text-emerald-"] { color: #1a1035 !important; }
-[class*="text-indigo-"] { color: #1a1035 !important; }
-[class*="text-purple-"] { color: #1a1035 !important; }
-[class*="text-blue-"] { color: #1a1035 !important; }
-[class*="text-teal-"] { color: #1a1035 !important; }
-[class*="text-fuchsia-"] { color: #1a1035 !important; }
-[class*="text-pink-"] { color: #1a1035 !important; }
-[class*="text-rose-"] { color: #1a1035 !important; }
-[class*="text-red-"] { color: #1a1035 !important; }
-[class*="text-orange-"] { color: #1a1035 !important; }
-[class*="text-yellow-"] { color: #1a1035 !important; }
-[class*="text-lime-"] { color: #1a1035 !important; }
-[class*="text-green-"] { color: #1a1035 !important; }
-[class*="text-sky-"] { color: #1a1035 !important; }
-[class*="text-slate-"] { color: #1a1035 !important; }
-[class*="text-gray-"] { color: #1a1035 !important; }
-[class*="text-zinc-"] { color: #1a1035 !important; }
-[class*="text-neutral-"] { color: #1a1035 !important; }
-[class*="text-stone-"] { color: #1a1035 !important; }
-
-/* Gradient text (text-transparent with bg-clip-text) must stay transparent */
+/* Gradient headings: keep text clip working */
 .bg-clip-text.text-transparent,
 [class*="bg-clip-text"][class*="text-transparent"] {
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
 }
 
-/* Buttons with gradient backgrounds keep white text */
-.bg-gradient-to-r.text-white,
-.bg-gradient-to-br.text-white,
-[class*="bg-gradient"][class*="text-white"] {
-  color: #ffffff !important;
-}
-
-/* Background overrides for white-alpha classes */
-.bg-white\/4,
-.bg-white\/5,
-.bg-white\/6,
-.bg-white\/8,
-.bg-white\/10 {
-  background: rgba(255, 255, 255, 0.5) !important;
-}
-
-.bg-black\/10,
-.bg-black\/20,
-.bg-black\/30,
-.bg-black\/40 {
-  background: rgba(255, 255, 255, 0.55) !important;
-}
-
-.border-white\/6,
-.border-white\/8,
-.border-white\/10,
-.border-white\/12,
-.border-white\/15,
-.border-white\/20 {
-  border-color: rgba(109, 76, 165, 0.12) !important;
-}
-
-.placeholder\:text-white\/35::placeholder,
-.placeholder\:text-white\/45::placeholder,
-.placeholder\:text-white\/55::placeholder {
-  color: rgba(26, 16, 53, 0.45) !important;
-}
-
 select option {
   background: #ffffff;
   color: #1a1035;
-}
-
-.bg-black\/55 {
-  background: rgba(240, 237, 246, 0.82) !important;
 }
 
 /* ══════════════════════════════════════════════

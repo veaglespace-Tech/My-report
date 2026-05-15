@@ -277,8 +277,8 @@ export function LoginScreen({ role }) {
       role === "SUPER_ADMIN"
         ? {
             headline: "SuperAdmin access",
-            title: "Control the business from a premium command center.",
-            description: "Fixed enterprise credentials with secure JWT authentication.",
+            title: "Login for SuperAdmin",
+            description: "Login for SuperAdmin",
           }
         : {
             headline: "Admin access",
@@ -353,8 +353,8 @@ export function LoginScreen({ role }) {
   return (
     <AuthShell
       headline={copy.headline}
-      title={role === "SUPER_ADMIN" ? "Super Admin Login" : "Admin Login"}
-      description={role === "ADMIN" ? "Login to manage your store" : copy.description}
+      title={role === "SUPER_ADMIN" ? "SuperAdmin Login" : "Admin Login"}
+      description={role === "ADMIN" ? "Login to manage your store" : "Login for SuperAdmin"}
       hidePromo
       containerClassName="max-w-md"
       footer={
