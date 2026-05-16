@@ -57,10 +57,10 @@ export function RootChrome({ children }) {
         <div className="absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-indigo-400/10 blur-3xl" />
       </div>
       {authPage ? null : <MarketingNavbar />}
-      <main className={`relative z-10 mx-auto w-full max-w-[1280px] px-6 ${authPage ? "flex-1 pb-10 pt-10" : "flex-1 pb-12 pt-[120px]"}`}>
+      <main className={`relative z-10 mx-auto w-full px-6 ${authPage ? "flex min-h-screen max-w-none items-center justify-center py-10" : "max-w-[1280px] flex-1 pb-12 pt-[120px]"}`}>
         {children}
       </main>
-      <SiteFooter />
+      {authPage ? null : <SiteFooter />}
     </div>
   );
 }

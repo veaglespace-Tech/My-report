@@ -15,7 +15,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
 
   const rowKey = (row, index) => row.id ?? row.invoiceNumber ?? row.name ?? `${currentPage}-${index}`;
   const isScrollable = shouldPaginate || rows.length > 8;
-  const scrollClass = isScrollable ? "max-h-[62vh] overflow-y-auto pr-1 scrollbar-thin" : "";
+  const scrollClass = isScrollable ? "max-h-[430px] overflow-y-auto pr-1 scrollbar-thin" : "";
 
   return (
     <GlassPanel className="max-w-full overflow-hidden">
@@ -57,7 +57,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
       </div>
 
       <div className="hidden w-full overflow-x-auto md:block">
-        <div className={`${isScrollable ? "max-h-[68vh]" : ""} overflow-auto scrollbar-thin`}>
+        <div className={`${isScrollable ? "max-h-[470px]" : ""} overflow-auto scrollbar-thin`}>
           <table className="min-w-[760px] lg:min-w-full">
           <thead>
             <tr className="sticky top-0 z-10 border-b border-slate-200/80 bg-[color-mix(in_srgb,var(--panel-strong)_92%,transparent)] backdrop-blur-xl">
@@ -103,7 +103,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
             <span className="text-[var(--muted-strong)]">{rows.length}</span> items
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-full items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin">
             <button
               type="button"
               disabled={currentPage <= 1}

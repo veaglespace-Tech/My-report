@@ -43,6 +43,12 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function inferExcelAlign(value, column) {
+  if (column.align) return column.align;
+  if (column.type === "date") return "center";
+  return /^-?(?:Rs\.\s*)?[\d,]+(?:\.\d+)?%?$/.test(safeText(value).trim()) ? "right" : "left";
+}
+
 function truncateForWidth(value, width, fontSize) {
   const text = safeText(value);
   const maxChars = Math.max(4, Math.floor(width / (fontSize * 0.52)));
@@ -153,8 +159,18 @@ export async function exportTablePdf({ fileName, reportTitle, companyName = "MyR
 export async function exportTableExcel({ fileName, sheetName, rows, columns }) {
   const headers = columns.map((column) => column.label);
   const data = rows.map((row) => columns.map((column) => getCellValue(row, column)));
-  const tableRows = [headers, ...data]
-    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+  const colGroup = columns
+    .map((column) => `<col style="width:${Number(column.excelWidth || column.width) || 150}px" />`)
+    .join("");
+  const headerRow = `<tr>${headers
+    .map((cell) => `<th class="header-cell">${escapeHtml(cell)}</th>`)
+    .join("")}</tr>`;
+  const bodyRows = data
+    .map((row) =>
+      `<tr>${row
+        .map((cell, index) => `<td class="data-cell" style="text-align:${inferExcelAlign(cell, columns[index])};">${escapeHtml(cell)}</td>`)
+        .join("")}</tr>`
+    )
     .join("");
   const workbookHtml = `<!doctype html>
 <html>
@@ -162,13 +178,23 @@ export async function exportTableExcel({ fileName, sheetName, rows, columns }) {
   <meta charset="utf-8" />
   <meta name="ProgId" content="Excel.Sheet" />
   <style>
-    table { border-collapse: collapse; }
-    td { border: 1px solid #cbd5e1; padding: 6px; font-family: Arial, sans-serif; font-size: 12px; }
-    tr:first-child td { background: #0f172a; color: #ffffff; font-weight: bold; }
+    body { font-family: Arial, sans-serif; color: #0f172a; }
+    table { border-collapse: collapse; table-layout: fixed; }
+    .title-cell { background: #eef2ff; color: #312e81; border: 1px solid #c7d2fe; padding: 12px; font-size: 16px; font-weight: 700; text-align: left; }
+    .meta-cell { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 8px 12px; font-size: 11px; text-align: left; }
+    .header-cell { background: #312e81; color: #ffffff; border: 1px solid #c7d2fe; padding: 10px 12px; font-size: 12px; font-weight: 700; text-align: center; vertical-align: middle; white-space: nowrap; }
+    .data-cell { border: 1px solid #cbd5e1; padding: 8px 12px; font-size: 12px; vertical-align: middle; mso-number-format: "\\@"; }
+    tr:nth-child(even) .data-cell { background: #f8fafc; }
   </style>
 </head>
 <body>
-  <table data-sheet-name="${escapeHtml(sheetName || "Report")}">${tableRows}</table>
+  <table data-sheet-name="${escapeHtml(sheetName || "Report")}">
+    ${colGroup}
+    <tr><td class="title-cell" colspan="${columns.length}">${escapeHtml(sheetName || "MyReport Export")}</td></tr>
+    <tr><td class="meta-cell" colspan="${columns.length}">Exported: ${escapeHtml(new Date().toLocaleString())}</td></tr>
+    ${headerRow}
+    ${bodyRows}
+  </table>
 </body>
 </html>`;
   const safeFileName = fileName.replace(/\.xlsx$/i, ".xls");

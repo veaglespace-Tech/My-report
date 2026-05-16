@@ -27,7 +27,7 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { Modal } from "@/components/common/Modal";
 import { SectionHeading } from "@/components/common/SectionHeading";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { downloadCsv, formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
 import { updateStoredProfile } from "@/lib/session";
 import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
@@ -165,7 +165,7 @@ function PaginationFooter({ currentPage, totalPages, visibleCount, totalCount, o
         <span className="text-[var(--muted-strong)]">{totalCount}</span> items
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex max-w-full items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin">
         <button
           type="button"
           disabled={currentPage <= 1}
@@ -221,7 +221,7 @@ function ActivityList({ title, items, render, pageSize = null }) {
   return (
     <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <h3 className="text-lg font-semibold">{title}</h3>
-      <div className="mt-5 grid gap-3">
+      <div className={`mt-5 grid gap-3 ${shouldPaginate ? "max-h-[430px] overflow-y-auto pr-1 scrollbar-thin" : ""}`}>
         {visibleItems?.length ? (
           visibleItems.map((item, index) => (
             <div key={`${item.title || item.storeName}-${index}`} className="rounded-2xl border border-slate-200/70 bg-white/70 p-4">
@@ -561,6 +561,7 @@ export function SuperAdminAdminsScreen() {
         columns={[
           { key: "fullName", label: "Admin" },
           { key: "email", label: "Email" },
+          { key: "storeCode", label: "Store ID" },
           { key: "storeName", label: "Store" },
           { key: "plan", label: "Plan" },
           { key: "status", label: "Status", render: (value) => <StatusBadge value={value} /> },
@@ -712,6 +713,7 @@ export function SuperAdminStoresScreen() {
       <DataTable
         columns={[
           { key: "name", label: "Store" },
+          { key: "storeCode", label: "Store ID" },
           { key: "storeType", label: "Store Type" },
           { key: "owner", label: "Owner" },
           { key: "ownerEmail", label: "Email" },
@@ -1132,6 +1134,30 @@ export function SuperAdminInvoicesScreen() {
     }
   };
 
+  const exportInvoicesExcel = async () => {
+    setExporting("excel");
+    try {
+      await exportTableExcel({
+        fileName: "myreport-superadmin-invoices.xlsx",
+        sheetName: "Platform Invoices",
+        rows: data.items || [],
+        columns: [
+          { key: "invoiceNumber", label: "Invoice Number" },
+          { key: "store", label: "Store" },
+          { key: "customerName", label: "Customer" },
+          { key: "totalAmount", label: "Amount", value: (row) => formatCurrency(row.totalAmount), align: "right" },
+          { key: "status", label: "Status" },
+          { key: "createdAt", label: "Created Date", type: "date" },
+        ],
+      });
+      toast.success("Excel downloaded successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to export Excel");
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (loading) {
     return <LoadingSkeleton rows={3} />;
   }
@@ -1145,7 +1171,7 @@ export function SuperAdminInvoicesScreen() {
         action={
           <DownloadToolbar
             onRefresh={reloadInvoices}
-            onExportExcel={() => downloadCsv("myreport-superadmin-invoices.csv", data.items || [])}
+            onExportExcel={exportInvoicesExcel}
             onExportPdf={exportInvoicesPdf}
             exporting={exporting}
             downloadDisabled={!data?.items?.length}
@@ -1338,8 +1364,8 @@ export function SuperAdminEnquiriesScreen() {
           </label>
         </div>
 
-        <div className="mt-6 overflow-x-auto rounded-[28px] border border-slate-200/80 bg-white/60">
-          <div className="grid min-w-[1280px] grid-cols-[1.05fr_1.25fr_1.25fr_0.9fr_1.35fr_0.9fr_0.8fr_2fr] gap-0 border-b border-slate-200/80 bg-slate-100/90 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+        <div className="mt-6 max-h-[520px] overflow-auto rounded-[28px] border border-slate-200/80 bg-white/60 scrollbar-thin">
+          <div className="sticky top-0 z-10 grid min-w-[1280px] grid-cols-[1.05fr_1.25fr_1.25fr_0.9fr_1.35fr_0.9fr_0.8fr_2fr] gap-0 border-b border-slate-200/80 bg-slate-100/95 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 backdrop-blur">
             <div>Ticket ID</div>
             <div>Contact Name</div>
             <div>Message</div>

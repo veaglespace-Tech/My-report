@@ -9,6 +9,12 @@ export function proxy(request) {
   const token = request.cookies.get("myreport_token")?.value;
   const role = request.cookies.get("myreport_role")?.value;
 
+  if (pathname === "/payment/payu/return") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/payment/payu/callback";
+    return NextResponse.rewrite(url);
+  }
+
   const isSuperAdminArea = pathname.startsWith("/superadmin");
   const isAdminArea = pathname.startsWith("/admin");
   const isSuperAdminAuth = pathname === "/superadmin/login";
@@ -37,5 +43,5 @@ export function proxy(request) {
 }
 
 export const config = {
-  matcher: ["/", "/superadmin/:path*", "/admin/:path*"],
+  matcher: ["/", "/superadmin/:path*", "/admin/:path*", "/payment/payu/return"],
 };

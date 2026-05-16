@@ -21,6 +21,7 @@ import com.myreport.backend.repository.PlanRepository;
 import com.myreport.backend.repository.ProductRepository;
 import com.myreport.backend.repository.StoreRepository;
 import com.myreport.backend.repository.UserAccountRepository;
+import com.myreport.backend.service.StoreCodeService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -44,6 +45,7 @@ public class DataSeeder implements CommandLineRunner {
     private final InvoiceRepository invoiceRepository;
     private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StoreCodeService storeCodeService;
 
     @Value("${app.super-admin.email}")
     private String superAdminEmail;
@@ -63,6 +65,16 @@ public class DataSeeder implements CommandLineRunner {
         if (seedDemoWorkspaces && userAccountRepository.countByRole(Role.ADMIN) == 0) {
             seedAdminWorkspaces();
         }
+        backfillMissingStoreCodes();
+    }
+
+    private void backfillMissingStoreCodes() {
+        storeRepository.findAll().stream()
+                .filter(store -> store.getStoreCode() == null || store.getStoreCode().isBlank())
+                .forEach(store -> {
+                    store.setStoreCode(storeCodeService.generateUniqueStoreCode());
+                    storeRepository.save(store);
+                });
     }
 
     private void seedSuperAdmin() {
@@ -195,6 +207,7 @@ public class DataSeeder implements CommandLineRunner {
 
         Store approvedStore = storeRepository.save(Store.builder()
                 .name("GlowMart")
+                .storeCode("MR-DEMO0001")
                 .storeType("Grocery Shop")
                 .city("Mumbai")
                 .address("Bandra West, Mumbai")
@@ -209,6 +222,7 @@ public class DataSeeder implements CommandLineRunner {
 
         Store pendingStore = storeRepository.save(Store.builder()
                 .name("Urban Basket")
+                .storeCode("MR-DEMO0002")
                 .storeType("Grocery Shop")
                 .city("Ahmedabad")
                 .address("Satellite Road, Ahmedabad")
@@ -223,6 +237,7 @@ public class DataSeeder implements CommandLineRunner {
 
         Store secondStore = storeRepository.save(Store.builder()
                 .name("Craft Avenue")
+                .storeCode("MR-DEMO0003")
                 .storeType("Accessories Shop")
                 .city("Bengaluru")
                 .address("Indiranagar, Bengaluru")

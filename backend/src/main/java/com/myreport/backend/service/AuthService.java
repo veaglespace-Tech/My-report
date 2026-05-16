@@ -53,6 +53,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PlanDateService planDateService;
+    private final StoreCodeService storeCodeService;
 
     @Value("${app.frontend-origin}")
     private String frontendOrigin;
@@ -62,17 +63,14 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> login(LoginRequest request) {
-        String normalizedEmail = request.email().trim().toLowerCase();
-
-        UserAccount user = userAccountRepository.findByEmailIgnoreCase(normalizedEmail)
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
+        UserAccount user = resolveLoginUser(request.email().trim(), request.role());
 
         if (user.getRole() != request.role()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Selected role does not match this account");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid login ID or password");
         }
 
         if (user.getRole() == Role.ADMIN && !user.isEmailVerified()) {
@@ -124,6 +122,7 @@ public class AuthService {
         LocalDate planStartedAt = LocalDate.now();
         Store store = Store.builder()
                 .name(request.organization().organizationName())
+                .storeCode(storeCodeService.generateUniqueStoreCode())
                 .storeType(request.organization().storeType())
                 .city(request.organization().city())
                 .state(request.organization().state())
@@ -175,6 +174,7 @@ public class AuthService {
         LocalDate planStartedAt = LocalDate.now();
         Store store = Store.builder()
                 .name(request.storeName())
+                .storeCode(storeCodeService.generateUniqueStoreCode())
                 .storeType("Grocery Shop")
                 .city(request.city())
                 .address(request.address())
@@ -194,6 +194,7 @@ public class AuthService {
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("email", admin.getEmail());
+        data.put("storeCode", store.getStoreCode());
         data.put("status", admin.getStatus());
         data.put("emailVerified", admin.isEmailVerified());
         data.put("pendingApproval", true);
@@ -295,6 +296,7 @@ public class AuthService {
         if (store != null) {
             Map<String, Object> storeData = new LinkedHashMap<>();
             storeData.put("id", store.getId());
+            storeData.put("storeCode", store.getStoreCode());
             storeData.put("name", store.getName());
             storeData.put("status", store.getStatus());
             storeData.put("city", store.getCity());
@@ -316,6 +318,22 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
+    private UserAccount resolveLoginUser(String identifier, Role role) {
+        if (role == Role.ADMIN && !identifier.contains("@")) {
+            Store store = storeRepository.findByStoreCodeIgnoreCase(identifier)
+                    .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid login ID or password"));
+
+            if (store.getOwner() == null) {
+                throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid login ID or password");
+            }
+
+            return store.getOwner();
+        }
+
+        return userAccountRepository.findByEmailIgnoreCase(identifier)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid login ID or password"));
+    }
+
     private void createSuperAdminNotifications(String title, String message, NotificationType type) {
         List<UserAccount> superAdmins = userAccountRepository.findByRole(Role.SUPER_ADMIN);
         for (UserAccount superAdmin : superAdmins) {
@@ -332,25 +350,29 @@ public class AuthService {
         try {
             String loginLink = frontendBaseUrl() + "/login";
             String storeName = store != null && store.getName() != null ? store.getName() : admin.getStoreName();
+            String storeCode = store != null && store.getStoreCode() != null ? store.getStoreCode() : "Will be shared soon";
             String planName = plan != null && plan.getName() != null ? plan.getName() : "Your selected plan";
             String statusMessage = admin.getStatus() == UserStatus.PENDING_APPROVAL
                     ? "Your account is currently waiting for SuperAdmin approval."
                     : "Your account is active and ready to use.";
+            String plainBody = "Hello " + admin.getFullName() + ",\n\n"
+                    + "Congratulations! Your registration was successful and your MyReport store has been created.\n\n"
+                    + "Store Details:\n"
+                    + "Store Name: " + storeName + "\n"
+                    + "Store ID: " + storeCode + "\n"
+                    + "Plan: " + planName + "\n"
+                    + "Status: " + statusMessage + "\n\n"
+                    + "Login options: Email ID (" + admin.getEmail() + ") or Store ID (" + storeCode + ")\n"
+                    + "Login here:\n" + loginLink + "\n\n"
+                    + "Thank you for choosing MyReport.\n\n"
+                    + "Regards,\n"
+                    + "MyReport Team";
 
-            emailService.sendEmail(
+            emailService.sendHtmlEmail(
                     admin.getEmail(),
                     "Registration Successful - Your MyReport Store Is Created",
-                    "Hello " + admin.getFullName() + ",\n\n"
-                            + "Congratulations! Your registration was successful and your MyReport store has been created.\n\n"
-                            + "Store Details:\n"
-                            + "Store Name: " + storeName + "\n"
-                            + "Plan: " + planName + "\n"
-                            + "Status: " + statusMessage + "\n\n"
-                            + "You can use MyReport to manage billing, inventory, invoices, customers, and reports from one workspace.\n\n"
-                            + "Login here:\n" + loginLink + "\n\n"
-                            + "Thank you for choosing MyReport.\n\n"
-                            + "Regards,\n"
-                            + "MyReport Team");
+                    plainBody,
+                    registrationEmailHtml(admin.getFullName(), admin.getEmail(), storeName, storeCode, planName, statusMessage, loginLink));
         } catch (Exception exception) {
             log.warn("Registration success email could not be sent to {}: {}", admin.getEmail(), exception.getMessage());
         }
@@ -358,15 +380,111 @@ public class AuthService {
 
     private void sendResetPasswordEmailSafely(String email, String resetLink) {
         try {
-            emailService.sendEmail(
+            String plainBody = "Click below link to reset password:\n"
+                    + resetLink
+                    + "\n\nThis link expires in 15 minutes.";
+            emailService.sendHtmlEmail(
                     email,
                     "Reset Your MyReport Password",
-                    "Click below link to reset password:\n"
-                            + resetLink
-                            + "\n\nThis link expires in 15 minutes.");
+                    plainBody,
+                    resetPasswordEmailHtml(resetLink));
         } catch (Exception exception) {
             log.warn("Reset password email could not be sent to {}: {}", email, exception.getMessage());
         }
+    }
+
+    private String registrationEmailHtml(String fullName, String adminEmail, String storeName, String storeCode, String planName, String statusMessage, String loginLink) {
+        return emailShell(
+                "Registration Successful",
+                "Your MyReport store is ready",
+                "Hi " + fullName + ", your workspace has been created. Keep this Store ID safe because you can now log in with Email ID or Store ID.",
+                detailPanel(
+                        "Store Access Details",
+                        "Use this Store ID for login, profile reference, and support.",
+                        detailRow("Store ID", storeCode)
+                                + detailRow("Email ID", adminEmail)
+                                + detailRow("Store Name", storeName)
+                                + detailRow("Plan", planName)
+                                + detailRow("Status", statusMessage)
+                                + detailRow("Login Options", "Store ID or Email ID"))
+                        + "<p style=\"margin:0 0 24px;color:#c7d2fe;font-size:14px;line-height:1.7;\">MyReport is ready for billing, inventory, invoices, customers, and reports from one clean workspace.</p>"
+                        + ctaButton("Login to MyReport", loginLink));
+    }
+
+    private String resetPasswordEmailHtml(String resetLink) {
+        return emailShell(
+                "Password Reset",
+                "Reset your MyReport password",
+                "We received a password reset request for your account. This secure link expires in 15 minutes.",
+                detailPanel(
+                        "Security Details",
+                        "Use the button below to create a new password.",
+                        detailRow("Request", "Password reset")
+                                + detailRow("Expiry", "15 minutes"))
+                        + ctaButton("Reset Password", resetLink)
+                        + "<p style=\"margin:22px 0 0;color:#93a4bf;font-size:13px;line-height:1.6;\">If you did not request this, you can safely ignore this email.</p>");
+    }
+
+    private String emailShell(String eyebrow, String title, String intro, String body) {
+        return "<!doctype html><html><body style=\"margin:0;padding:0;background:#030712;font-family:Arial,Helvetica,sans-serif;color:#f8fbff;\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#030712;padding:34px 12px;\">"
+                + "<tr><td align=\"center\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:620px;background:#071225;border:1px solid rgba(96,165,250,0.28);border-radius:28px;overflow:hidden;box-shadow:0 26px 80px rgba(15,23,42,0.55);\">"
+                + "<tr><td style=\"background:#08142c;padding:0;\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:linear-gradient(135deg,#08142c 0%,#0d2553 52%,#2f7cf6 100%);border-bottom:1px solid rgba(125,211,252,0.25);\">"
+                + "<tr><td style=\"padding:36px 36px 32px;color:#ffffff;\">"
+                + "<div style=\"font-size:12px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:#7dd3fc;\">" + escapeHtml(eyebrow) + "</div>"
+                + "<div style=\"margin-top:14px;font-size:30px;line-height:1.2;font-weight:800;color:#ffffff;\">" + escapeHtml(title) + "</div>"
+                + "<div style=\"margin-top:14px;max-width:520px;color:#dbeafe;font-size:15px;line-height:1.75;\">" + escapeHtml(intro) + "</div>"
+                + "</td></tr></table>"
+                + "</td></tr>"
+                + "<tr><td style=\"padding:32px 34px;background:linear-gradient(180deg,#071225 0%,#030a18 100%);\">"
+                + body
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:30px;border-top:1px solid rgba(96,165,250,0.18);\">"
+                + "<tr><td style=\"padding-top:18px;color:#93a4bf;font-size:12px;line-height:1.6;\">Regards,<br><strong style=\"color:#e0f2fe;\">MyReport Team</strong></td></tr>"
+                + "</table>"
+                + "</td></tr></table>"
+                + "</td></tr></table></body></html>";
+    }
+
+    private String detailPanel(String title, String subtitle, String rows) {
+        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin:0 0 24px;border-radius:22px;background:#07142b;border:1px solid rgba(96,165,250,0.22);\">"
+                + "<tr><td style=\"padding:22px 22px 8px;\">"
+                + "<div style=\"font-size:13px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#7dd3fc;\">" + escapeHtml(title) + "</div>"
+                + "<div style=\"margin-top:8px;color:#93a4bf;font-size:13px;line-height:1.6;\">" + escapeHtml(subtitle) + "</div>"
+                + "</td></tr>"
+                + "<tr><td style=\"padding:2px 22px 18px;\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">"
+                + rows
+                + "</table>"
+                + "</td></tr></table>";
+    }
+
+    private String detailRow(String label, String value) {
+        return "<tr>"
+                + "<td style=\"width:160px;padding:13px 0;border-bottom:1px solid rgba(96,165,250,0.14);color:#8fb9ff;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;\">" + escapeHtml(label) + "</td>"
+                + "<td align=\"right\" style=\"padding:13px 0;border-bottom:1px solid rgba(96,165,250,0.14);color:#f8fbff;font-size:14px;font-weight:800;\">" + escapeHtml(value) + "</td>"
+                + "</tr>";
+    }
+
+    private String ctaButton(String label, String href) {
+        String safeHref = escapeHtml(href);
+        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:6px;\"><tr><td style=\"border-radius:14px;background:#2f7cf6;box-shadow:0 14px 34px rgba(47,124,246,0.34);\">"
+                + "<a href=\"" + safeHref + "\" style=\"display:inline-block;border-radius:14px;background:linear-gradient(135deg,#2f7cf6,#06b6d4);color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:14px 22px;\">"
+                + escapeHtml(label)
+                + "</a></td></tr></table>";
+    }
+
+    private String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
     private String createAvatarUrl(String fullName) {

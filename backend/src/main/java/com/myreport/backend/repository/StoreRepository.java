@@ -14,5 +14,9 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
 
     Optional<Store> findByOwnerId(Long ownerId);
 
+    Optional<Store> findByStoreCodeIgnoreCase(String storeCode);
+
+    boolean existsByStoreCode(String storeCode);
+
     List<Store> findByPlanExpiresAtBetween(LocalDate startDate, LocalDate endDate);
 }

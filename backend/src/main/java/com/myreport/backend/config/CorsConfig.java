@@ -44,8 +44,7 @@ public class CorsConfig {
                 "null",
                 "https://test.payu.in",
                 "https://secure.payu.in",
-                "https://*.payu.in"
-        ));
+                "https://*.payu.in"));
         configuration.setAllowedOriginPatterns(origins);
         return configuration;
     }

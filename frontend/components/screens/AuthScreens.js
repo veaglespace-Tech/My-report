@@ -15,7 +15,7 @@ import { GlassPanel } from "@/components/common/GlassPanel";
 import { clearSession, persistSession } from "@/lib/session";
 import { persistThemeMode } from "@/lib/theme";
 import { createSignupPayUOrder, login, register } from "@/services/authService";
-import { publicPlanService } from "@/services/publicPlanService";
+import { fallbackPublicPlans, getPublicPlanItems, publicPlanService } from "@/services/publicPlanService";
 import { clearAuth, setCredentials } from "@/redux/slices/authSlice";
 import { setThemeMode } from "@/redux/slices/uiSlice";
 import { PENDING_PAYU_SIGNUP_KEY, submitPayUCheckout } from "@/lib/payuCheckout";
@@ -29,6 +29,7 @@ const NAME_REGEX = /^[A-Za-z][A-Za-z .'-]*[A-Za-z]$/;
 const STORE_NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9 &'().-]*[A-Za-z0-9]$/;
 const PLACE_REGEX = /^[A-Za-z][A-Za-z .'-]*[A-Za-z]$/;
 const PHONE_REGEX = /^[0-9]{10}$/;
+const STORE_ID_REGEX = /^MR-[A-Z0-9]{8}$/i;
 
 function isDummyText(value) {
   const compact = String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -178,14 +179,14 @@ function AuthShell({ headline, title, description, children, footer, hidePromo =
     <div
       className={[
         "relative flex w-full justify-center overflow-hidden",
-        isMarketingAuth ? "min-h-0 items-start bg-transparent" : "min-h-screen items-center bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100",
+        isMarketingAuth ? "min-h-0 items-start bg-transparent" : "min-h-[calc(100vh-5rem)] items-center bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100",
       ].join(" ")}
     >
       <AuthBackdrop />
       <div
         className={[
           hidePromo
-            ? ["relative z-10 w-full max-w-2xl", containerClassName].filter(Boolean).join(" ")
+            ? ["relative z-10 mx-auto w-full max-w-2xl", containerClassName].filter(Boolean).join(" ")
             : "content-max relative z-10 grid gap-6 lg:grid-cols-[1.15fr_0.95fr]",
         ].join(" ")}
       >
@@ -349,6 +350,7 @@ export function LoginScreen({ role }) {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [loginMode, setLoginMode] = useState("email");
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -371,6 +373,8 @@ export function LoginScreen({ role }) {
     [role]
   );
 
+  const isStoreIdLogin = role === "ADMIN" && loginMode === "storeId";
+
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     setTouched(true);
@@ -380,11 +384,25 @@ export function LoginScreen({ role }) {
     }));
   };
 
+  const handleLoginModeChange = (nextMode) => {
+    setLoginMode(nextMode);
+    setTouched(false);
+    setForm((previous) => ({
+      ...previous,
+      email: "",
+    }));
+  };
+
   const errors = useMemo(() => {
     const nextErrors = {};
-    const emailError = getEmailValidationError(form.email, role === "ADMIN" ? "Admin email" : "Email");
+    const identifier = form.email.trim();
+    const emailError = isStoreIdLogin ? null : getEmailValidationError(identifier, role === "ADMIN" ? "Admin email" : "Email");
 
-    if (emailError) {
+    if (isStoreIdLogin && !identifier) {
+      nextErrors.email = "Store ID is required.";
+    } else if (isStoreIdLogin && !STORE_ID_REGEX.test(identifier)) {
+      nextErrors.email = "Enter a valid Store ID like MR-ABCD2345.";
+    } else if (emailError) {
       nextErrors.email = emailError;
     }
 
@@ -395,7 +413,7 @@ export function LoginScreen({ role }) {
     }
 
     return nextErrors;
-  }, [form.email, form.password, role]);
+  }, [form.email, form.password, isStoreIdLogin, role]);
 
   const isValid = Object.keys(errors).length === 0;
 
@@ -410,9 +428,9 @@ export function LoginScreen({ role }) {
     startTransition(async () => {
       try {
         clearSession();
-        const normalizedEmail = form.email.trim().toLowerCase();
+        const loginIdentifier = isStoreIdLogin ? form.email.trim().toUpperCase() : form.email.trim().toLowerCase();
         const payload = await login({
-          email: normalizedEmail,
+          email: loginIdentifier,
           password: form.password,
           role,
           rememberMe: form.rememberMe,
@@ -454,16 +472,38 @@ export function LoginScreen({ role }) {
       }
     >
       <form className="grid gap-5" onSubmit={handleSubmit} autoComplete="off">
+        {role === "ADMIN" ? (
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-1 dark:border-white/10 dark:bg-white/5">
+            {[
+              { key: "email", label: "Email ID", icon: Mail },
+              { key: "storeId", label: "Store ID", icon: Store },
+            ].map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleLoginModeChange(key)}
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${
+                  loginMode === key
+                    ? "bg-white text-slate-950 shadow-sm dark:bg-slate-900 dark:text-white"
+                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                }`}
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <AuthFormField
-          label="Email"
+          label={isStoreIdLogin ? "Store ID" : "Email"}
           name="email"
-          type="email"
+          type={isStoreIdLogin ? "text" : "email"}
           value={form.email}
           onChange={handleChange}
           required
-          placeholder="Enter your email"
+          placeholder={isStoreIdLogin ? "Enter your Store ID" : "Enter your email"}
           autoComplete="off"
-          helper={touched && errors.email ? errors.email : undefined}
+          helper={touched && errors.email ? errors.email : isStoreIdLogin ? "Use the Store ID from your registration email." : undefined}
           status={
             touched
               ? errors.email
@@ -542,7 +582,7 @@ export function AdminSignupScreen() {
   const [loading, setLoading] = useState(false);
   const [attemptedNext, setAttemptedNext] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
-  const [availablePlans, setAvailablePlans] = useState([]);
+  const [availablePlans, setAvailablePlans] = useState(fallbackPublicPlans);
 
   // Allow selecting a plan from `/pricing` and jumping directly to plan selection.
   // Supported input:
@@ -612,24 +652,21 @@ export function AdminSignupScreen() {
     async function loadPlans() {
       try {
         const response = await publicPlanService.getPlans();
-        const items =
-          (Array.isArray(response) && response) ||
-          response?.items ||
-          response?.data?.items ||
-          [];
+        const items = getPublicPlanItems(response);
         if (active && Array.isArray(items)) {
-          setAvailablePlans(items);
+          const nextPlans = items.length ? items : fallbackPublicPlans;
+          setAvailablePlans(nextPlans);
           setForm((previous) =>
-            previous.planId || !items.length
+            previous.planId || !nextPlans.length
               ? previous
               : {
                   ...previous,
-                  planId: String(items[0].id),
+                  planId: String(nextPlans[0].id),
                 }
           );
         }
       } catch {
-        if (active) setAvailablePlans([]);
+        if (active) setAvailablePlans(fallbackPublicPlans);
       }
     }
     loadPlans();

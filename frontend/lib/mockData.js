@@ -21,6 +21,15 @@ export const mockAdminProfile = {
   city: "Mumbai",
   address: "Bandra West, Mumbai",
   storeName: "GlowMart",
+  store: {
+    id: 1,
+    storeCode: "MR-DEMO0001",
+    name: "GlowMart",
+    status: "ACTIVE",
+    city: "Mumbai",
+    planExpiresAt: "2026-05-17",
+    planName: "Starter",
+  },
   avatarUrl: "https://ui-avatars.com/api/?background=2563EB&color=fff&name=Neha+Sharma",
 };
 
@@ -64,16 +73,16 @@ export const mockSuperAdminData = {
   },
   admins: {
     items: [
-      { id: 1, fullName: "Neha Sharma", email: "admin@myreport.com", mobileNumber: "9876543210", status: "ACTIVE", emailVerified: true, storeName: "GlowMart", city: "Mumbai", plan: "Starter", planExpiresAt: "2026-05-17", createdAt: "2026-03-18T11:00:00Z" },
-      { id: 2, fullName: "Riya Kapoor", email: "riya@myreport.com", mobileNumber: "9001100220", status: "ACTIVE", emailVerified: true, storeName: "Craft Avenue", city: "Bengaluru", plan: "Growth", planExpiresAt: "2026-06-08", createdAt: "2026-03-27T11:00:00Z" },
-      { id: 3, fullName: "Arjun Mehta", email: "pending@myreport.com", mobileNumber: "9123456780", status: "PENDING_APPROVAL", emailVerified: true, storeName: "Urban Basket", city: "Ahmedabad", plan: "Starter", planExpiresAt: "2026-05-29", createdAt: "2026-04-27T11:00:00Z" },
+      { id: 1, fullName: "Neha Sharma", email: "admin@myreport.com", mobileNumber: "9876543210", status: "ACTIVE", emailVerified: true, storeCode: "MR-DEMO0001", storeName: "GlowMart", city: "Mumbai", plan: "Starter", planExpiresAt: "2026-05-17", createdAt: "2026-03-18T11:00:00Z" },
+      { id: 2, fullName: "Riya Kapoor", email: "riya@myreport.com", mobileNumber: "9001100220", status: "ACTIVE", emailVerified: true, storeCode: "MR-DEMO0003", storeName: "Craft Avenue", city: "Bengaluru", plan: "Growth", planExpiresAt: "2026-06-08", createdAt: "2026-03-27T11:00:00Z" },
+      { id: 3, fullName: "Arjun Mehta", email: "pending@myreport.com", mobileNumber: "9123456780", status: "PENDING_APPROVAL", emailVerified: true, storeCode: "MR-DEMO0002", storeName: "Urban Basket", city: "Ahmedabad", plan: "Starter", planExpiresAt: "2026-05-29", createdAt: "2026-04-27T11:00:00Z" },
     ],
   },
   stores: {
     items: [
-      { id: 1, name: "GlowMart", storeType: "Grocery Shop", city: "Mumbai", status: "ACTIVE", plan: "Starter", planExpiresAt: "2026-05-17", owner: "Neha Sharma", ownerEmail: "admin@myreport.com" },
-      { id: 2, name: "Craft Avenue", storeType: "Accessories Shop", city: "Bengaluru", status: "ACTIVE", plan: "Growth", planExpiresAt: "2026-06-08", owner: "Riya Kapoor", ownerEmail: "riya@myreport.com" },
-      { id: 3, name: "Urban Basket", storeType: "Grocery Shop", city: "Ahmedabad", status: "PENDING", plan: "Starter", planExpiresAt: "2026-05-29", owner: "Arjun Mehta", ownerEmail: "arjun@myreport.com" },
+      { id: 1, storeCode: "MR-DEMO0001", name: "GlowMart", storeType: "Grocery Shop", city: "Mumbai", status: "ACTIVE", plan: "Starter", planExpiresAt: "2026-05-17", owner: "Neha Sharma", ownerEmail: "admin@myreport.com" },
+      { id: 2, storeCode: "MR-DEMO0003", name: "Craft Avenue", storeType: "Accessories Shop", city: "Bengaluru", status: "ACTIVE", plan: "Growth", planExpiresAt: "2026-06-08", owner: "Riya Kapoor", ownerEmail: "riya@myreport.com" },
+      { id: 3, storeCode: "MR-DEMO0002", name: "Urban Basket", storeType: "Grocery Shop", city: "Ahmedabad", status: "PENDING", plan: "Starter", planExpiresAt: "2026-05-29", owner: "Arjun Mehta", ownerEmail: "arjun@myreport.com" },
     ],
   },
   plans: {
@@ -138,6 +147,7 @@ export const mockAdminData = {
       { id: 2, title: "Plan expiry", message: "Starter plan renews in 18 days.", type: "PLAN_EXPIRY", createdAt: "2026-04-27T09:00:00Z" },
     ],
     store: {
+      storeCode: "MR-DEMO0001",
       name: "GlowMart",
       city: "Mumbai",
       plan: "Starter",

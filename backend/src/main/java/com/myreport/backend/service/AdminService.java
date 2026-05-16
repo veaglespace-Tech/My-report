@@ -92,6 +92,7 @@ public class AdminService {
         data.put("topSales", buildTopSales(admin.getId()));
         LocalDate planExpiresAt = calculatePlanExpiry(store);
         data.put("store", Map.of(
+                "storeCode", store.getStoreCode() == null ? "" : store.getStoreCode(),
                 "name", store.getName(),
                 "city", store.getCity(),
                 "plan", store.getPlan() != null ? store.getPlan().getName() : null,
@@ -435,6 +436,7 @@ public class AdminService {
         profile.put("mobileNumber", admin.getMobileNumber());
         profile.put("city", admin.getCity());
         profile.put("address", admin.getAddress());
+        profile.put("storeCode", store.getStoreCode() == null ? "" : store.getStoreCode());
         profile.put("storeName", store.getName());
         profile.put("avatarUrl", admin.getAvatarUrl());
         return Map.of("profile", profile);

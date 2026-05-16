@@ -59,6 +59,7 @@ public class SuperAdminService {
     private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
     private final PlanDateService planDateService;
+    private final StoreCodeService storeCodeService;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDashboard(String email) {
@@ -94,6 +95,7 @@ public class SuperAdminService {
         List<UserAccount> admins = userAccountRepository.findAllByRoleOrderByCreatedAtDesc(Role.ADMIN);
         List<Map<String, Object>> items = admins.stream()
                 .map(this::mapAdmin)
+                .sorted(Comparator.comparing(item -> String.valueOf(item.getOrDefault("storeCode", ""))))
                 .toList();
         return Map.of("items", items, "total", items.size());
     }
@@ -127,6 +129,7 @@ public class SuperAdminService {
         LocalDate planStartedAt = LocalDate.now();
         Store store = Store.builder()
                 .name(request.storeName())
+                .storeCode(storeCodeService.generateUniqueStoreCode())
                 .storeType("Grocery Shop")
                 .city(request.city())
                 .address(request.address())
@@ -241,9 +244,11 @@ public class SuperAdminService {
                 ? storeRepository.findAllByOrderByCreatedAtDesc()
                 : storeRepository.findAllByStoreTypeIgnoreCaseOrderByCreatedAtDesc(storeType))
                 .stream()
+                .sorted(Comparator.comparing(store -> store.getStoreCode() == null ? "" : store.getStoreCode()))
                 .map(store -> {
                     Map<String, Object> data = new LinkedHashMap<>();
                     data.put("id", store.getId());
+                    data.put("storeCode", store.getStoreCode());
                     data.put("name", store.getName());
                     data.put("storeType", store.getStoreType());
                     data.put("city", store.getCity());
@@ -387,6 +392,7 @@ public class SuperAdminService {
     public Map<String, Object> createStore(StoreCreateRequest request) {
         Store store = Store.builder()
                 .name(request.name())
+                .storeCode(storeCodeService.generateUniqueStoreCode())
                 .storeType(request.storeType())
                 .businessEmail(request.email().toLowerCase())
                 .phone(request.phone())
@@ -399,6 +405,7 @@ public class SuperAdminService {
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("id", store.getId());
+        data.put("storeCode", store.getStoreCode());
         data.put("name", store.getName());
         data.put("storeType", store.getStoreType());
         data.put("city", store.getCity());
@@ -529,6 +536,7 @@ public class SuperAdminService {
         data.put("mobileNumber", admin.getMobileNumber());
         data.put("status", admin.getStatus());
         data.put("emailVerified", admin.isEmailVerified());
+        data.put("storeCode", store != null ? store.getStoreCode() : null);
         data.put("storeName", store != null ? store.getName() : admin.getStoreName());
         data.put("city", admin.getCity());
         data.put("plan", store != null && store.getPlan() != null ? store.getPlan().getName() : null);
@@ -559,12 +567,15 @@ public class SuperAdminService {
     }
 
     private Map<String, Object> settingsPayload(UserAccount user) {
+        Store store = user.getRole() == Role.ADMIN ? storeRepository.findByOwnerId(user.getId()).orElse(null) : null;
         Map<String, Object> profile = new LinkedHashMap<>();
         profile.put("fullName", user.getFullName());
         profile.put("email", user.getEmail());
         profile.put("mobileNumber", user.getMobileNumber());
         profile.put("city", user.getCity());
         profile.put("address", user.getAddress());
+        profile.put("storeCode", store != null ? store.getStoreCode() : null);
+        profile.put("storeName", store != null ? store.getName() : user.getStoreName());
         profile.put("avatarUrl", user.getAvatarUrl());
 
         Map<String, Object> preferences = Map.of(

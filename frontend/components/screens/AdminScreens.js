@@ -40,7 +40,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { TopSalesChart } from "@/components/TopSalesChart";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
-import { downloadCsv, formatCurrency, formatDate, printPage } from "@/lib/format";
+import { formatCurrency, formatDate, printPage } from "@/lib/format";
 import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
 import { printInvoice } from "@/lib/printInvoice";
 import { submitPayUCheckout } from "@/lib/payuCheckout";
@@ -365,7 +365,7 @@ export function AdminDashboardScreen() {
       <SectionHeading
         eyebrow="Store performance"
         title={data.store?.name || "MyReport"}
-        description="Stay on top of daily cashflow, fast movers, inventory risk, and plan usage."
+        description={`${data.store?.storeCode ? `Store ID: ${data.store.storeCode} | ` : ""}Stay on top of daily cashflow, fast movers, inventory risk, and plan usage.`}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {data.metrics.map((item, index) => (
@@ -434,6 +434,7 @@ export function AdminDashboardScreen() {
           <div className="mt-6 rounded-3xl border border-cyan-200/50 bg-cyan-50/40 p-5">
             <div className="text-xs uppercase tracking-[0.24em] text-teal-800">Current plan</div>
             <div className="mt-2 text-2xl font-semibold">{data.store.plan}</div>
+            {data.store?.storeCode ? <div className="mt-1 text-sm font-semibold text-[var(--primary)]">Store ID: {data.store.storeCode}</div> : null}
             <div className="mt-1 text-sm text-[var(--muted)]">Renews on {formatDate(data.store.planExpiresAt)}</div>
           </div>
         </GlassPanel>
@@ -2388,16 +2389,24 @@ export function AdminSettingsScreen() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Full Name" name="fullName" value={profileView?.fullName || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, fullName: event.target.value }))} required disabled={!isEditing} />
-              <div className="grid gap-2 text-sm">
-                <span className="font-medium text-slate-600">Email</span>
-                <input
-                  readOnly
-                  type="email"
-                  value={data.profile.email || ""}
-                  className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-slate-600 outline-none"
-                />
-              </div>
+            <div className="grid gap-2 text-sm">
+              <span className="font-medium text-slate-600">Email</span>
+              <input
+                readOnly
+                type="email"
+                value={data.profile.email || ""}
+                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-slate-600 outline-none"
+              />
+            </div>
             <FormField label="Mobile Number" name="mobileNumber" value={profileView?.mobileNumber || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value.replace(/\D/g, "").slice(0, 10) }))} required disabled={!isEditing} />
+            <div className="grid gap-2 text-sm">
+              <span className="font-medium text-slate-600">Store ID</span>
+              <input
+                readOnly
+                value={profileView?.storeCode || data.profile.storeCode || ""}
+                className="w-full rounded-2xl border border-cyan-200/80 bg-cyan-50/70 px-4 py-3 font-semibold tracking-[0.12em] text-slate-800 outline-none"
+              />
+            </div>
             <FormField label="Store Name" name="storeName" value={profileView?.storeName || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, storeName: event.target.value }))} required disabled={!isEditing} />
             <FormField label="City" name="city" value={profileView?.city || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, city: event.target.value }))} required disabled={!isEditing} />
             <FormField label="Address" name="address" value={profileView?.address || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, address: event.target.value }))} required disabled={!isEditing} />
