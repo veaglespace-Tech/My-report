@@ -221,7 +221,7 @@ function ActivityList({ title, items, render, pageSize = null }) {
   return (
     <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
       <h3 className="text-lg font-semibold">{title}</h3>
-      <div className={`mt-5 grid gap-3 ${shouldPaginate ? "max-h-[430px] overflow-y-auto pr-1 scrollbar-thin" : ""}`}>
+      <div className={`mt-5 grid gap-3 ${shouldPaginate ? "max-h-[430px] overflow-y-scroll pr-1 scrollbar-thin" : ""}`}>
         {visibleItems?.length ? (
           visibleItems.map((item, index) => (
             <div key={`${item.title || item.storeName}-${index}`} className="rounded-2xl border border-slate-200/70 bg-white/70 p-4">
@@ -1364,7 +1364,7 @@ export function SuperAdminEnquiriesScreen() {
           </label>
         </div>
 
-        <div className="mt-6 max-h-[520px] overflow-auto rounded-[28px] border border-slate-200/80 bg-white/60 scrollbar-thin">
+        <div className="mt-6 max-h-[520px] overflow-x-auto overflow-y-scroll rounded-[28px] border border-slate-200/80 bg-white/60 scrollbar-thin">
           <div className="sticky top-0 z-10 grid min-w-[1280px] grid-cols-[1.05fr_1.25fr_1.25fr_0.9fr_1.35fr_0.9fr_0.8fr_2fr] gap-0 border-b border-slate-200/80 bg-slate-100/95 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 backdrop-blur">
             <div>Ticket ID</div>
             <div>Contact Name</div>

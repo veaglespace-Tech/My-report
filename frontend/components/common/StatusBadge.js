@@ -5,7 +5,9 @@ const toneMap = {
   PENDING: "bg-amber-500/16 text-amber-100 ring-1 ring-amber-400/30",
   PENDING_APPROVAL: "bg-amber-500/16 text-amber-100 ring-1 ring-amber-400/30",
   BLOCKED: "text-[#dc2626] ring-1 ring-rose-500/20",
-  PAID: "bg-cyan-500/16 text-cyan-100 ring-1 ring-cyan-400/30",
+  PAID: "ring-1 ring-cyan-500/25",
+  OVERDUE: "ring-1 ring-rose-500/25",
+  FAILED: "ring-1 ring-rose-500/25",
   LOW: "bg-rose-500/16 text-rose-200 ring-1 ring-rose-400/30",
 };
 
@@ -14,6 +16,9 @@ const toneStyleMap = {
   PENDING: { backgroundColor: "rgba(245,158,11,0.16)", color: "#b45309" },
   PENDING_APPROVAL: { backgroundColor: "rgba(245,158,11,0.16)", color: "#b45309" },
   BLOCKED: { backgroundColor: "rgba(239,68,68,0.14)" },
+  PAID: { backgroundColor: "rgba(34,211,238,0.20)", color: "#0f766e" },
+  OVERDUE: { backgroundColor: "rgba(239,68,68,0.14)", color: "#be123c" },
+  FAILED: { backgroundColor: "rgba(239,68,68,0.14)", color: "#be123c" },
 };
 
 const labelMap = {

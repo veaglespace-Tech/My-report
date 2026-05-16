@@ -15,7 +15,8 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
 
   const rowKey = (row, index) => row.id ?? row.invoiceNumber ?? row.name ?? `${currentPage}-${index}`;
   const isScrollable = shouldPaginate || rows.length > 8;
-  const scrollClass = isScrollable ? "max-h-[430px] overflow-y-auto pr-1 scrollbar-thin" : "";
+  const scrollClass = isScrollable ? "max-h-[430px] overflow-y-scroll pr-1 scrollbar-thin" : "";
+  const tableScrollClass = isScrollable ? "max-h-[470px] overflow-x-auto overflow-y-scroll scrollbar-thin" : "overflow-x-auto";
 
   return (
     <GlassPanel className="max-w-full overflow-hidden">
@@ -57,7 +58,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
       </div>
 
       <div className="hidden w-full overflow-x-auto md:block">
-        <div className={`${isScrollable ? "max-h-[470px]" : ""} overflow-auto scrollbar-thin`}>
+        <div className={tableScrollClass}>
           <table className="min-w-[760px] lg:min-w-full">
           <thead>
             <tr className="sticky top-0 z-10 border-b border-slate-200/80 bg-[color-mix(in_srgb,var(--panel-strong)_92%,transparent)] backdrop-blur-xl">

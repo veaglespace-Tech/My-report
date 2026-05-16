@@ -407,7 +407,7 @@ public class AuthService {
                                 + detailRow("Plan", planName)
                                 + detailRow("Status", statusMessage)
                                 + detailRow("Login Options", "Store ID or Email ID"))
-                        + "<p style=\"margin:0 0 24px;color:#c7d2fe;font-size:14px;line-height:1.7;\">MyReport is ready for billing, inventory, invoices, customers, and reports from one clean workspace.</p>"
+                        + "<p style=\"margin:0 0 24px;color:#6b5b8a;font-size:14px;line-height:1.7;\">MyReport is ready for billing, inventory, invoices, customers, and reports from one clean workspace.</p>"
                         + ctaButton("Login to MyReport", loginLink));
     }
 
@@ -422,36 +422,36 @@ public class AuthService {
                         detailRow("Request", "Password reset")
                                 + detailRow("Expiry", "15 minutes"))
                         + ctaButton("Reset Password", resetLink)
-                        + "<p style=\"margin:22px 0 0;color:#93a4bf;font-size:13px;line-height:1.6;\">If you did not request this, you can safely ignore this email.</p>");
+                        + "<p style=\"margin:22px 0 0;color:#6b5b8a;font-size:13px;line-height:1.6;\">If you did not request this, you can safely ignore this email.</p>");
     }
 
     private String emailShell(String eyebrow, String title, String intro, String body) {
-        return "<!doctype html><html><body style=\"margin:0;padding:0;background:#030712;font-family:Arial,Helvetica,sans-serif;color:#f8fbff;\">"
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#030712;padding:34px 12px;\">"
+        return "<!doctype html><html><body style=\"margin:0;padding:0;background:#f0edf6;font-family:Arial,Helvetica,sans-serif;color:#1a1035;\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:linear-gradient(165deg,#ede9f8 0%,#e8e0f4 34%,#ddd6f3 66%,#e0daf5 100%);padding:34px 12px;\">"
                 + "<tr><td align=\"center\">"
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:620px;background:#071225;border:1px solid rgba(96,165,250,0.28);border-radius:28px;overflow:hidden;box-shadow:0 26px 80px rgba(15,23,42,0.55);\">"
-                + "<tr><td style=\"background:#08142c;padding:0;\">"
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:linear-gradient(135deg,#08142c 0%,#0d2553 52%,#2f7cf6 100%);border-bottom:1px solid rgba(125,211,252,0.25);\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:620px;background:#ffffff;border:1px solid rgba(109,76,165,0.16);border-radius:28px;overflow:hidden;box-shadow:0 26px 80px rgba(109,76,165,0.22);\">"
+                + "<tr><td style=\"background:#7c3aed;padding:0;\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:linear-gradient(135deg,#7c3aed 0%,#3b82f6 58%,#06b6d4 100%);border-bottom:1px solid rgba(255,255,255,0.28);\">"
                 + "<tr><td style=\"padding:36px 36px 32px;color:#ffffff;\">"
-                + "<div style=\"font-size:12px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:#7dd3fc;\">" + escapeHtml(eyebrow) + "</div>"
+                + "<div style=\"font-size:12px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:#fff7d6;\">" + escapeHtml(eyebrow) + "</div>"
                 + "<div style=\"margin-top:14px;font-size:30px;line-height:1.2;font-weight:800;color:#ffffff;\">" + escapeHtml(title) + "</div>"
-                + "<div style=\"margin-top:14px;max-width:520px;color:#dbeafe;font-size:15px;line-height:1.75;\">" + escapeHtml(intro) + "</div>"
+                + "<div style=\"margin-top:14px;max-width:520px;color:#eef6ff;font-size:15px;line-height:1.75;\">" + escapeHtml(intro) + "</div>"
                 + "</td></tr></table>"
                 + "</td></tr>"
-                + "<tr><td style=\"padding:32px 34px;background:linear-gradient(180deg,#071225 0%,#030a18 100%);\">"
+                + "<tr><td style=\"padding:32px 34px;background:linear-gradient(180deg,#ffffff 0%,#fbf8ff 100%);\">"
                 + body
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:30px;border-top:1px solid rgba(96,165,250,0.18);\">"
-                + "<tr><td style=\"padding-top:18px;color:#93a4bf;font-size:12px;line-height:1.6;\">Regards,<br><strong style=\"color:#e0f2fe;\">MyReport Team</strong></td></tr>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:30px;border-top:1px solid rgba(109,76,165,0.14);\">"
+                + "<tr><td style=\"padding-top:18px;color:#6b5b8a;font-size:12px;line-height:1.6;\">Regards,<br><strong style=\"color:#2d1f4e;\">MyReport Team</strong></td></tr>"
                 + "</table>"
                 + "</td></tr></table>"
                 + "</td></tr></table></body></html>";
     }
 
     private String detailPanel(String title, String subtitle, String rows) {
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin:0 0 24px;border-radius:22px;background:#07142b;border:1px solid rgba(96,165,250,0.22);\">"
+        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin:0 0 24px;border-radius:22px;background:linear-gradient(180deg,#f8f5ff 0%,#eef6ff 100%);border:1px solid rgba(124,58,237,0.18);\">"
                 + "<tr><td style=\"padding:22px 22px 8px;\">"
-                + "<div style=\"font-size:13px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#7dd3fc;\">" + escapeHtml(title) + "</div>"
-                + "<div style=\"margin-top:8px;color:#93a4bf;font-size:13px;line-height:1.6;\">" + escapeHtml(subtitle) + "</div>"
+                + "<div style=\"font-size:13px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#7c3aed;\">" + escapeHtml(title) + "</div>"
+                + "<div style=\"margin-top:8px;color:#6b5b8a;font-size:13px;line-height:1.6;\">" + escapeHtml(subtitle) + "</div>"
                 + "</td></tr>"
                 + "<tr><td style=\"padding:2px 22px 18px;\">"
                 + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">"
@@ -462,15 +462,15 @@ public class AuthService {
 
     private String detailRow(String label, String value) {
         return "<tr>"
-                + "<td style=\"width:160px;padding:13px 0;border-bottom:1px solid rgba(96,165,250,0.14);color:#8fb9ff;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;\">" + escapeHtml(label) + "</td>"
-                + "<td align=\"right\" style=\"padding:13px 0;border-bottom:1px solid rgba(96,165,250,0.14);color:#f8fbff;font-size:14px;font-weight:800;\">" + escapeHtml(value) + "</td>"
+                + "<td style=\"width:160px;padding:13px 0;border-bottom:1px solid rgba(109,76,165,0.12);color:#6b5b8a;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;\">" + escapeHtml(label) + "</td>"
+                + "<td align=\"right\" style=\"padding:13px 0;border-bottom:1px solid rgba(109,76,165,0.12);color:#1a1035;font-size:14px;font-weight:800;\">" + escapeHtml(value) + "</td>"
                 + "</tr>";
     }
 
     private String ctaButton(String label, String href) {
         String safeHref = escapeHtml(href);
-        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:6px;\"><tr><td style=\"border-radius:14px;background:#2f7cf6;box-shadow:0 14px 34px rgba(47,124,246,0.34);\">"
-                + "<a href=\"" + safeHref + "\" style=\"display:inline-block;border-radius:14px;background:linear-gradient(135deg,#2f7cf6,#06b6d4);color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:14px 22px;\">"
+        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:6px;\"><tr><td style=\"border-radius:14px;background:#7c3aed;box-shadow:0 14px 34px rgba(124,58,237,0.28);\">"
+                + "<a href=\"" + safeHref + "\" style=\"display:inline-block;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#3b82f6,#06b6d4);color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:14px 22px;\">"
                 + escapeHtml(label)
                 + "</a></td></tr></table>";
     }

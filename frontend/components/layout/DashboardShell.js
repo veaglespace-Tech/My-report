@@ -170,9 +170,6 @@ export function DashboardShell({ role, children }) {
 
   return (
     <div className="dashboard-shell relative overflow-x-hidden">
-      <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-[600px] w-[1000px] -translate-x-1/2 opacity-20 blur-[100px]">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/30 via-violet-500/10 to-transparent" />
-      </div>
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
         <aside className="theme-sidebar hidden w-[280px] shrink-0 p-6 backdrop-blur-2xl lg:block xl:w-[300px]">
           <SidebarContent role={role} pathname={pathname} profile={profile} mounted={mounted} onLogout={handleLogout} />
@@ -217,7 +214,7 @@ export function DashboardShell({ role, children }) {
               transition={{ duration: 0.32 }}
               className="content-max mx-auto flex max-w-full flex-col gap-4 sm:gap-6"
             >
-              <div className="theme-navbar frost-line overflow-hidden rounded-[28px] px-4 py-4 shadow-[0_16px_40px_rgba(3,10,25,0.18)] sm:px-5 lg:px-6">
+              <div className="theme-navbar overflow-hidden rounded-[28px] px-4 py-4 shadow-[0_16px_40px_rgba(3,10,25,0.18)] sm:px-5 lg:px-6">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between gap-3 sm:items-center">
                     <div className="flex min-w-0 items-start gap-3 sm:items-center">
@@ -234,10 +231,7 @@ export function DashboardShell({ role, children }) {
                           <PageIcon size={18} />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
-                            {role === "SUPER_ADMIN" ? "Platform command" : "Store workspace"}
-                          </div>
-                          <h1 className="mt-1 truncate text-xl font-semibold tracking-tight sm:text-2xl">
+                          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
                             {pageMeta.title}
                           </h1>
                           <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted)]">
@@ -245,9 +239,6 @@ export function DashboardShell({ role, children }) {
                           </p>
                         </div>
                       </div>
-                    </div>
-                    <div className="hidden min-w-0 items-center gap-3 sm:flex">
-                      <ProfileChip profile={profile} mounted={mounted} />
                     </div>
                   </div>
                 </div>
