@@ -44,11 +44,11 @@ import { formatCurrency, formatDate, printPage } from "@/lib/format";
 import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
 import { printInvoice } from "@/lib/printInvoice";
 import { submitPayUCheckout } from "@/lib/payuCheckout";
-import { updateStoredProfile } from "@/lib/session";
+import { persistSession, updateStoredProfile } from "@/lib/session";
 import { adminService } from "@/services/adminService";
 import { createPayUOrder } from "@/services/paymentService";
 import { publicPlanService } from "@/services/publicPlanService";
-import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
+import { setCredentials, updateProfile as syncProfile } from "@/redux/slices/authSlice";
 
 const CUSTOMER_NAME_REGEX = /^[A-Za-z ]{3,40}$/;
 const CUSTOMER_CITY_REGEX = /^[A-Za-z ]{3,30}$/;
@@ -2226,13 +2226,18 @@ export function AdminSettingsScreen() {
     event.preventDefault();
     const payload = {
       fullName: String(draftProfile.fullName || "").trim(),
+      email: String(draftProfile.email || "").trim().toLowerCase(),
       mobileNumber: String(draftProfile.mobileNumber || "").trim(),
       city: String(draftProfile.city || "").trim(),
       address: String(draftProfile.address || "").trim(),
       storeName: String(draftProfile.storeName || "").trim(),
     };
-    if (!payload.fullName || !payload.city || !payload.address || !payload.storeName) {
+    if (!payload.fullName || !payload.email || !payload.city || !payload.address || !payload.storeName) {
       toast.error("Please complete all required profile fields");
+      return;
+    }
+    if (!STRONG_EMAIL_REGEX.test(payload.email)) {
+      toast.error("Please enter a valid .com email address.");
       return;
     }
     if (!/^[0-9]{10}$/.test(payload.mobileNumber)) {
@@ -2243,12 +2248,21 @@ export function AdminSettingsScreen() {
       toast.error("Please enter a full address with at least 10 characters.");
       return;
     }
-    const response = await adminService.updateProfile(payload);
-    setData(response);
-    dispatch(syncProfile(response.profile));
-    updateStoredProfile(response.profile);
-    setIsEditing(false);
-    toast.success("Profile updated successfully");
+    try {
+      const response = await adminService.updateProfile(payload);
+      setData(response);
+      if (response.token) {
+        persistSession({ token: response.token, role: response.role || "ADMIN", profile: response.profile });
+        dispatch(setCredentials({ token: response.token, role: response.role || "ADMIN", profile: response.profile }));
+      } else {
+        dispatch(syncProfile(response.profile));
+        updateStoredProfile(response.profile);
+      }
+      setIsEditing(false);
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error(error?.message || "Failed to update profile");
+    }
   };
 
   const handlePhotoUpload = async (event) => {
@@ -2392,10 +2406,11 @@ export function AdminSettingsScreen() {
             <div className="grid gap-2 text-sm">
               <span className="font-medium text-slate-600">Email</span>
               <input
-                readOnly
                 type="email"
-                value={data.profile.email || ""}
-                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-slate-600 outline-none"
+                value={profileView?.email || ""}
+                onChange={(event) => setDraftProfile((previous) => ({ ...previous, email: event.target.value.slice(0, 160) }))}
+                disabled={!isEditing}
+                className="w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-slate-800 outline-none transition disabled:bg-slate-50/80 disabled:text-slate-600 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
             <FormField label="Mobile Number" name="mobileNumber" value={profileView?.mobileNumber || ""} onChange={(event) => setDraftProfile((previous) => ({ ...previous, mobileNumber: event.target.value.replace(/\D/g, "").slice(0, 10) }))} required disabled={!isEditing} />

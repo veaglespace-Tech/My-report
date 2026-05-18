@@ -29,8 +29,8 @@ import { SectionHeading } from "@/components/common/SectionHeading";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { exportTableExcel, exportTablePdf } from "@/lib/exportReports";
-import { updateStoredProfile } from "@/lib/session";
-import { updateProfile as syncProfile } from "@/redux/slices/authSlice";
+import { persistSession, updateStoredProfile } from "@/lib/session";
+import { setCredentials, updateProfile as syncProfile } from "@/redux/slices/authSlice";
 import { superAdminService } from "@/services/superAdminService";
 
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -1763,6 +1763,15 @@ export function SuperAdminSettingsScreen() {
     updateStoredProfile(profile);
   };
 
+  const syncProfileSession = (response) => {
+    if (response?.token) {
+      persistSession({ token: response.token, role: response.role || "SUPER_ADMIN", profile: response.profile });
+      dispatch(setCredentials({ token: response.token, role: response.role || "SUPER_ADMIN", profile: response.profile }));
+      return;
+    }
+    syncLiveProfile(response?.profile);
+  };
+
   const handleEditProfile = () => {
     setDraftProfile({
       fullName: data.profile?.fullName || "",
@@ -1790,6 +1799,7 @@ export function SuperAdminSettingsScreen() {
   const handleProfileSave = async (event) => {
     event.preventDefault();
     const validationError = getContactValidationError({
+      email: draftProfile.email,
       phone: draftProfile.mobileNumber,
       address: draftProfile.address,
     });
@@ -1800,6 +1810,7 @@ export function SuperAdminSettingsScreen() {
     try {
       const response = await superAdminService.updateProfile({
         fullName: draftProfile.fullName,
+        email: String(draftProfile.email || "").trim().toLowerCase(),
         mobileNumber: draftProfile.mobileNumber,
         city: draftProfile.city,
         address: draftProfile.address,
@@ -1813,7 +1824,7 @@ export function SuperAdminSettingsScreen() {
         email: response.profile?.email || "",
         avatarUrl: response.profile?.avatarUrl || "",
       });
-      syncLiveProfile(response.profile);
+      syncProfileSession(response);
       setIsEditing(false);
       toast.success("Profile updated");
     } catch (error) {
@@ -2004,10 +2015,11 @@ export function SuperAdminSettingsScreen() {
             <div className="grid gap-2 text-sm">
               <span className="font-medium text-slate-600">Email</span>
               <input
-                readOnly
                 type="email"
-                value={data.profile.email || ""}
-                className="w-full rounded-2xl border border-slate-200/90 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                value={profileView?.email || ""}
+                onChange={(event) => setDraftProfile((previous) => ({ ...previous, email: event.target.value.slice(0, 160) }))}
+                disabled={!isEditing}
+                className="w-full rounded-2xl border border-slate-200/90 bg-white px-4 py-3 text-slate-800 outline-none transition disabled:bg-slate-50/80 disabled:text-slate-600 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
             <FormField

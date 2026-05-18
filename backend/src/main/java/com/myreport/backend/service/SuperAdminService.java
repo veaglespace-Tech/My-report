@@ -22,6 +22,7 @@ import com.myreport.backend.repository.NotificationRepository;
 import com.myreport.backend.repository.PlanRepository;
 import com.myreport.backend.repository.StoreRepository;
 import com.myreport.backend.repository.UserAccountRepository;
+import com.myreport.backend.security.JwtService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
@@ -60,6 +61,7 @@ public class SuperAdminService {
     private final PasswordEncoder passwordEncoder;
     private final PlanDateService planDateService;
     private final StoreCodeService storeCodeService;
+    private final JwtService jwtService;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getDashboard(String email) {
@@ -429,12 +431,23 @@ public class SuperAdminService {
     @Transactional
     public Map<String, Object> updateProfile(String email, SuperAdminProfileUpdateRequest request) {
         UserAccount user = getUser(email, Role.SUPER_ADMIN);
+        String normalizedEmail = normalizeEmail(request.email());
+        boolean emailChanged = !user.getEmail().equalsIgnoreCase(normalizedEmail);
+        if (emailChanged) {
+            ensureEmailAvailable(normalizedEmail, user.getId());
+            user.setEmail(normalizedEmail);
+        }
         user.setFullName(request.fullName());
         user.setMobileNumber(request.mobileNumber());
         user.setCity(request.city());
         user.setAddress(request.address());
         userAccountRepository.save(user);
-        return getSettings(email);
+        Map<String, Object> response = new LinkedHashMap<>(getSettings(normalizedEmail));
+        if (emailChanged) {
+            response.put("token", jwtService.generateToken(user, true));
+            response.put("role", user.getRole().name());
+        }
+        return response;
     }
 
     @Transactional
@@ -516,6 +529,18 @@ public class SuperAdminService {
             throw new ApiException(HttpStatus.FORBIDDEN, "Access denied");
         }
         return user;
+    }
+
+    private String normalizeEmail(String email) {
+        return String.valueOf(email).trim().toLowerCase();
+    }
+
+    private void ensureEmailAvailable(String email, Long currentUserId) {
+        userAccountRepository.findByEmailIgnoreCase(email)
+                .filter(existing -> !existing.getId().equals(currentUserId))
+                .ifPresent(existing -> {
+                    throw new ApiException(HttpStatus.CONFLICT, "An account already exists for this email");
+                });
     }
 
     private UserAccount getAdmin(Long adminId) {

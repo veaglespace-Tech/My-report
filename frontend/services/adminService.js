@@ -68,14 +68,8 @@ export const adminService = {
     return response.data.data;
   },
   updateProfile: async (payload) => {
-    try {
-      const response = await axiosInstance.put("/admin/settings/profile", payload);
-      return response.data.data;
-    } catch (error) {
-      return {
-        profile: payload,
-      };
-    }
+    const response = await axiosInstance.put("/admin/settings/profile", payload);
+    return response.data.data;
   },
   uploadProfilePhoto: async (file) => {
     const formData = new FormData();
