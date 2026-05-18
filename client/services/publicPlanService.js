@@ -80,19 +80,25 @@ export function getPublicPlanItems(response) {
 
 export const publicPlanService = {
   getPlans: async () => {
-    const response = await fetch("/api/public/plans", {
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      const response = await fetch("/api/public/plans", {
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!response.ok) {
-      const message = await response.text().catch(() => "");
-      const isHtmlError = /^\s*<!doctype html/i.test(message) || /^\s*<html/i.test(message);
-      throw new Error(isHtmlError || !message ? `Failed to load plans (${response.status})` : message);
+      if (!response.ok) {
+        const message = await response.text().catch(() => "");
+        const isHtmlError = /^\s*<!doctype html/i.test(message) || /^\s*<html/i.test(message);
+        throw new Error(isHtmlError || !message ? `Failed to load plans (${response.status})` : message);
+      }
+
+      const data = await response.json();
+      const items = getPublicPlanItems(data);
+      return items.length ? data : { success: true, data: { items: fallbackPublicPlans } };
+    } catch {
+      return { success: true, data: { items: fallbackPublicPlans } };
     }
-
-    return response.json();
   },
 };

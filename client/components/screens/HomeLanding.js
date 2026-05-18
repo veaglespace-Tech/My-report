@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Check, Footprints, Gem, Glasses, Shirt, ShoppingBag, Sparkles, Watch } from "lucide-react";
 import { GlassPanel } from "@/components/common/GlassPanel";
-import { publicPlanService } from "@/services/publicPlanService";
+import { fallbackPublicPlans, getPublicPlanItems, publicPlanService } from "@/services/publicPlanService";
 
 const HERO_BACKGROUNDS = {
   grocery:
@@ -92,21 +92,12 @@ export function HomeLanding() {
       try {
         const response = await publicPlanService.getPlans();
         if (active) {
-          let fetchedPlans = [];
-          if (Array.isArray(response)) {
-            fetchedPlans = response;
-          } else if (response && Array.isArray(response.items)) {
-            fetchedPlans = response.items;
-          } else if (response && Array.isArray(response.data)) {
-            fetchedPlans = response.data;
-          } else if (response && response.data && Array.isArray(response.data.items)) {
-            fetchedPlans = response.data.items;
-          }
-          setPlans(fetchedPlans);
+          const fetchedPlans = getPublicPlanItems(response);
+          setPlans(fetchedPlans.length ? fetchedPlans : fallbackPublicPlans);
         }
       } catch (error) {
         if (active) {
-          setPlans([]);
+          setPlans(fallbackPublicPlans);
         }
       } finally {
         if (active) {

@@ -47,7 +47,7 @@ import { submitPayUCheckout } from "@/lib/payuCheckout";
 import { persistSession, updateStoredProfile } from "@/lib/session";
 import { adminService } from "@/services/adminService";
 import { createPayUOrder } from "@/services/paymentService";
-import { publicPlanService } from "@/services/publicPlanService";
+import { getPublicPlanItems, publicPlanService } from "@/services/publicPlanService";
 import { setCredentials, updateProfile as syncProfile } from "@/redux/slices/authSlice";
 
 const CUSTOMER_NAME_REGEX = /^[A-Za-z ]{3,40}$/;
@@ -1781,11 +1781,7 @@ export function AdminPlanScreen() {
     setPlansLoading(true);
     try {
       const response = await publicPlanService.getPlans();
-      const plans =
-        (Array.isArray(response) && response) ||
-        response?.items ||
-        response?.data?.items ||
-        [];
+      const plans = getPublicPlanItems(response);
       setAvailablePlans(plans);
       const defaultSelected =
         plans.find((item) => String(item.name || "").toUpperCase() === currentPlanName)?.id ||

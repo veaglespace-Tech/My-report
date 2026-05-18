@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { publicPlanService } from "@/services/publicPlanService";
+import { fallbackPublicPlans, getPublicPlanItems, publicPlanService } from "@/services/publicPlanService";
 
 const container = {
   hidden: { opacity: 0 },
@@ -25,7 +25,7 @@ const features = [
   "Chat Support",
 ];
 
-const fallbackPlans = [];
+const fallbackPlans = fallbackPublicPlans;
 
 function formatInr(amount) {
   const value = Number(amount || 0);
@@ -131,22 +131,13 @@ export default function PricingClient() {
       try {
         const response = await publicPlanService.getPlans();
         if (active) {
-          let fetchedPlans = [];
-          if (Array.isArray(response)) {
-            fetchedPlans = response;
-          } else if (response && Array.isArray(response.items)) {
-            fetchedPlans = response.items;
-          } else if (response && Array.isArray(response.data)) {
-            fetchedPlans = response.data;
-          } else if (response && response.data && Array.isArray(response.data.items)) {
-            fetchedPlans = response.data.items;
-          }
-          setPlans(fetchedPlans);
+          const fetchedPlans = getPublicPlanItems(response);
+          setPlans(fetchedPlans.length ? fetchedPlans : fallbackPlans);
         }
       } catch (error) {
         console.error("Failed to load plans:", error);
         if (active) {
-          setPlans([]);
+          setPlans(fallbackPlans);
         }
       } finally {
         if (active) {
