@@ -77,13 +77,14 @@ export function MarketingNavbar() {
           <button
             type="button"
             onClick={() => router.push("/login")}
-            className="btn btn-sm group relative overflow-hidden rounded-full border-0 bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 px-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition duration-300 before:absolute before:inset-0 before:-translate-x-full before:bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.36),transparent)] before:transition-transform before:duration-700 before:content-[''] after:absolute after:inset-[1px] after:rounded-full after:bg-slate-950/12 after:opacity-0 after:transition-opacity after:content-[''] hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-[0_14px_32px_rgba(99,102,241,0.32),0_0_0_1px_rgba(255,255,255,0.35)] hover:before:translate-x-full hover:after:opacity-100 active:scale-[0.98]"
+            className="btn btn-sm group relative isolate overflow-hidden rounded-full border-0 bg-slate-950 px-[1px] text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition duration-300 before:absolute before:inset-[-120%] before:-z-10 before:animate-[spin_3.8s_linear_infinite] before:bg-[conic-gradient(from_90deg,#22d3ee,#6366f1,#d946ef,#facc15,#22d3ee)] before:content-[''] hover:-translate-y-0.5 hover:scale-[1.04] hover:shadow-[0_16px_36px_rgba(99,102,241,0.34),0_0_0_1px_rgba(255,255,255,0.4)] active:scale-[0.98]"
             suppressHydrationWarning={true}
           >
-            <span className="relative z-10 flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25 transition duration-300 group-hover:rotate-6 group-hover:bg-white/30">
-                <LogIn size={14} />
+            <span className="relative z-10 flex h-full items-center gap-2 rounded-full bg-[linear-gradient(135deg,rgba(15,23,42,0.92),rgba(30,41,59,0.72))] px-3.5 backdrop-blur-xl transition group-hover:bg-[linear-gradient(135deg,rgba(8,47,73,0.86),rgba(49,46,129,0.76))]">
+              <span className="relative flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-white/15 ring-1 ring-white/25 transition duration-300 group-hover:translate-x-0.5 group-hover:bg-white/25">
+                <LogIn size={14} className="transition duration-300 group-hover:translate-x-0.5" />
               </span>
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.95)] transition group-hover:scale-125" />
               Login
             </span>
           </button>
@@ -139,12 +140,13 @@ export function MarketingNavbar() {
                   setMobileOpen(false);
                   router.push("/login");
                 }}
-                className="btn group relative justify-start overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 px-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition before:absolute before:inset-0 before:-translate-x-full before:bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.34),transparent)] before:transition-transform before:duration-700 before:content-[''] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/25 hover:before:translate-x-full active:scale-[0.99]"
+                className="btn group relative isolate justify-start overflow-hidden rounded-2xl border-0 bg-slate-950 p-[1px] text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition before:absolute before:inset-[-140%] before:-z-10 before:animate-[spin_4s_linear_infinite] before:bg-[conic-gradient(from_90deg,#22d3ee,#6366f1,#d946ef,#facc15,#22d3ee)] before:content-[''] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/25 active:scale-[0.99]"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25 transition group-hover:rotate-6 group-hover:bg-white/30">
-                    <LogIn size={15} />
+                <span className="relative z-10 flex h-full w-full items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,rgba(15,23,42,0.92),rgba(30,41,59,0.72))] px-4 backdrop-blur-xl">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 transition group-hover:translate-x-0.5 group-hover:bg-white/25">
+                    <LogIn size={15} className="transition group-hover:translate-x-0.5" />
                   </span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(103,232,249,0.95)] transition group-hover:scale-125" />
                   Login
                 </span>
               </button>
