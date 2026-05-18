@@ -18,16 +18,11 @@ export function persistThemeMode(themeMode) {
 }
 
 export function resolveThemeMode(preference) {
-  const storedTheme = getStoredThemeMode();
-  if (storedTheme) {
-    return storedTheme;
-  }
-
   if (typeof preference === "boolean") {
     return preference ? "dark" : "light";
   }
 
-  return "dark";
+  return "light";
 }
 
 export function applyThemeMode(themeMode) {

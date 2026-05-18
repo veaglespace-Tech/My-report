@@ -1,80 +1,97 @@
 @import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark, corporate, emerald;
+}
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   /* ── NEW PREMIUM COLOR SCHEME ── */
-  --background: #f0edf6;
-  --foreground: #1a1035;
+  --background: #f6f8fb;
+  --foreground: #111827;
   --font-geist-sans: var(--font-outfit), "Inter", system-ui, sans-serif;
   --font-geist-mono: "JetBrains Mono", "Cascadia Code", monospace;
 
   /* Soft lavender-to-lilac gradient background */
   --body-landscape:
-    radial-gradient(ellipse at 0% 0%, rgba(167, 139, 250, 0.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 0%, rgba(96, 165, 250, 0.14) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 100%, rgba(244, 114, 182, 0.1) 0%, transparent 50%),
-    linear-gradient(165deg, #ede9f8 0%, #e8e0f4 30%, #ddd6f3 60%, #e0daf5 100%);
+    linear-gradient(135deg, rgba(236, 253, 245, 0.94) 0%, rgba(239, 246, 255, 0.95) 45%, rgba(255, 251, 235, 0.9) 100%);
   --dashboard-landscape:
-    radial-gradient(ellipse at 20% 15%, rgba(167, 139, 250, 0.12) 0%, transparent 40%),
-    radial-gradient(ellipse at 85% 10%, rgba(96, 165, 250, 0.1) 0%, transparent 35%),
-    linear-gradient(180deg, #f0edf6 0%, #e8e2f2 50%, #e3dcef 100%);
+    linear-gradient(180deg, #f7fafc 0%, #eef7f7 48%, #f8f4ea 100%);
 
   /* Text colors */
-  --muted: #6b5b8a;
-  --muted-strong: #2d1f4e;
+  --muted: #64748b;
+  --muted-strong: #1f2937;
 
   /* Panel & surface */
-  --panel: rgba(255, 255, 255, 0.55);
-  --panel-strong: rgba(255, 255, 255, 0.78);
-  --stroke: rgba(109, 76, 165, 0.12);
-  --surface-soft: rgba(255, 255, 255, 0.4);
-  --surface-strong: rgba(255, 255, 255, 0.6);
-  --surface-sidebar: rgba(255, 255, 255, 0.7);
-  --surface-sidebar-strong: rgba(255, 255, 255, 0.92);
-  --overlay-backdrop: rgba(26, 16, 53, 0.15);
-  --grid-line: rgba(109, 76, 165, 0.03);
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.9);
+  --stroke: rgba(15, 23, 42, 0.1);
+  --surface-soft: rgba(255, 255, 255, 0.64);
+  --surface-strong: rgba(255, 255, 255, 0.82);
+  --surface-sidebar: rgba(255, 255, 255, 0.84);
+  --surface-sidebar-strong: rgba(255, 255, 255, 0.96);
+  --overlay-backdrop: rgba(15, 23, 42, 0.28);
+  --grid-line: rgba(15, 23, 42, 0.035);
 
   /* Interactive */
-  --primary-hover-bg: #2d1f4e;
+  --primary-hover-bg: #0f766e;
   --primary-hover-text: #ffffff;
   --theme-primary-button-text: #ffffff;
 
   /* Accent palette */
-  --primary: #7c3aed;
-  --secondary: #3b82f6;
+  --primary: #0f766e;
+  --secondary: #2563eb;
   --accent: #f59e0b;
-  --danger: #ef4444;
-  --success: #10b981;
-  --shadow-xl: 0 20px 40px -8px rgba(109, 76, 165, 0.15);
+  --danger: #dc2626;
+  --success: #059669;
+  --shadow-xl: 0 20px 40px -12px rgba(15, 23, 42, 0.18);
 }
 
 html[data-theme="light"] {
-  --background: #f0edf6;
-  --foreground: #1a1035;
+  --background: #f6f8fb;
+  --foreground: #111827;
   --body-landscape:
-    radial-gradient(ellipse at 0% 0%, rgba(167, 139, 250, 0.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 0%, rgba(96, 165, 250, 0.14) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 100%, rgba(244, 114, 182, 0.1) 0%, transparent 50%),
-    linear-gradient(165deg, #ede9f8 0%, #e8e0f4 30%, #ddd6f3 60%, #e0daf5 100%);
+    linear-gradient(135deg, rgba(236, 253, 245, 0.94) 0%, rgba(239, 246, 255, 0.95) 45%, rgba(255, 251, 235, 0.9) 100%);
   --dashboard-landscape:
-    radial-gradient(ellipse at 20% 15%, rgba(167, 139, 250, 0.12) 0%, transparent 40%),
-    radial-gradient(ellipse at 85% 10%, rgba(96, 165, 250, 0.1) 0%, transparent 35%),
-    linear-gradient(180deg, #f0edf6 0%, #e8e2f2 50%, #e3dcef 100%);
-  --muted: #6b5b8a;
-  --muted-strong: #2d1f4e;
-  --panel: rgba(255, 255, 255, 0.55);
-  --panel-strong: rgba(255, 255, 255, 0.78);
-  --stroke: rgba(109, 76, 165, 0.12);
-  --surface-soft: rgba(255, 255, 255, 0.4);
-  --surface-strong: rgba(255, 255, 255, 0.6);
-  --surface-sidebar: rgba(255, 255, 255, 0.7);
-  --surface-sidebar-strong: rgba(255, 255, 255, 0.92);
-  --overlay-backdrop: rgba(26, 16, 53, 0.15);
-  --grid-line: rgba(109, 76, 165, 0.03);
-  --primary-hover-bg: #2d1f4e;
+    linear-gradient(180deg, #f7fafc 0%, #eef7f7 48%, #f8f4ea 100%);
+  --muted: #64748b;
+  --muted-strong: #1f2937;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.9);
+  --stroke: rgba(15, 23, 42, 0.1);
+  --surface-soft: rgba(255, 255, 255, 0.64);
+  --surface-strong: rgba(255, 255, 255, 0.82);
+  --surface-sidebar: rgba(255, 255, 255, 0.84);
+  --surface-sidebar-strong: rgba(255, 255, 255, 0.96);
+  --overlay-backdrop: rgba(15, 23, 42, 0.28);
+  --grid-line: rgba(15, 23, 42, 0.035);
+  --primary-hover-bg: #0f766e;
   --primary-hover-text: #ffffff;
   --theme-primary-button-text: #ffffff;
-  --shadow-xl: 0 20px 40px -8px rgba(109, 76, 165, 0.12);
+  --shadow-xl: 0 20px 40px -12px rgba(15, 23, 42, 0.14);
+}
+
+html[data-theme="dark"] {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --body-landscape:
+    linear-gradient(135deg, #0f172a 0%, #102a2e 48%, #2a2112 100%);
+  --dashboard-landscape:
+    linear-gradient(180deg, #0f172a 0%, #13272a 52%, #1e293b 100%);
+  --muted: #94a3b8;
+  --muted-strong: #e2e8f0;
+  --panel: rgba(15, 23, 42, 0.72);
+  --panel-strong: rgba(15, 23, 42, 0.88);
+  --stroke: rgba(148, 163, 184, 0.16);
+  --surface-soft: rgba(30, 41, 59, 0.72);
+  --surface-strong: rgba(30, 41, 59, 0.88);
+  --surface-sidebar: rgba(15, 23, 42, 0.86);
+  --surface-sidebar-strong: rgba(15, 23, 42, 0.96);
+  --overlay-backdrop: rgba(2, 6, 23, 0.62);
+  --grid-line: rgba(148, 163, 184, 0.035);
+  --primary-hover-bg: #14b8a6;
+  --primary-hover-text: #042f2e;
+  --theme-primary-button-text: #ffffff;
+  --shadow-xl: 0 20px 46px -14px rgba(0, 0, 0, 0.45);
 }
 
 @theme inline {
@@ -183,13 +200,13 @@ textarea {
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #1a1035;
+  -webkit-text-fill-color: var(--foreground);
   transition: background-color 5000s ease-in-out 0s;
   box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.95) inset;
 }
 
 ::selection {
-  background: rgba(124, 58, 237, 0.2);
+  background: rgba(20, 184, 166, 0.22);
 }
 
 .glass-panel {
@@ -197,15 +214,15 @@ input:-webkit-autofill:focus {
   border: 1px solid var(--stroke);
   box-shadow: var(--shadow-xl);
   backdrop-filter: blur(24px);
-  border-radius: 28px;
+  border-radius: 1rem;
 }
 
 .glass-card {
   background: linear-gradient(180deg, var(--panel-strong), var(--panel));
   border: 1px solid var(--stroke);
-  box-shadow: 0 16px 40px rgba(109, 76, 165, 0.1);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.1);
   backdrop-filter: blur(18px);
-  border-radius: 24px;
+  border-radius: 1rem;
 }
 
 .frost-line {
@@ -244,7 +261,7 @@ input:-webkit-autofill:focus {
 
 .theme-input {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--surface-strong);
   color: var(--foreground);
 }
 
@@ -253,9 +270,9 @@ input:-webkit-autofill:focus {
 }
 
 .theme-input:focus {
-  border-color: rgba(124, 58, 237, 0.35);
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
+  border-color: rgba(20, 184, 166, 0.45);
+  background: var(--panel-strong);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
 }
 
 .theme-soft-panel {
@@ -282,16 +299,16 @@ input:-webkit-autofill:focus {
 }
 
 .theme-primary-button {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%);
+  background: linear-gradient(135deg, #0f766e 0%, #2563eb 58%, #f59e0b 100%);
   color: #ffffff;
-  box-shadow: 0 12px 30px rgba(124, 58, 237, 0.28);
+  box-shadow: 0 12px 30px rgba(15, 118, 110, 0.24);
   transition: transform 240ms ease, filter 240ms ease, box-shadow 240ms ease;
 }
 
 .theme-primary-button:hover {
   filter: brightness(1.08);
   transform: translateY(-2px);
-  box-shadow: 0 16px 36px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.26);
 }
 
 .theme-nav-link {

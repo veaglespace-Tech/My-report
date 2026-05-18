@@ -89,13 +89,13 @@ function useAsyncLoader(loader, initialState) {
 function ControlButton({ children, variant = "default", className = "", ...props }) {
   const base =
     variant === "primary"
-      ? "theme-primary-button"
-      : "theme-action-button";
+      ? "btn-primary shadow-lg shadow-primary/20"
+      : "btn-outline btn-neutral bg-base-100/75";
 
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${base} ${className}`}
+      className={`btn min-h-11 rounded-box px-4 text-sm font-bold ${base} ${className}`}
       {...props}
     >
       {children}
@@ -106,7 +106,7 @@ function ControlButton({ children, variant = "default", className = "", ...props
 function FormField({ label, name, value, onChange, placeholder, type = "text", required = false, disabled = false, className = "", inputClassName = "" }) {
   return (
     <label className={`grid gap-2 text-sm ${className}`}>
-      <span className="font-medium text-[var(--muted-strong)]">{label}</span>
+      <span className="font-medium text-base-content/70">{label}</span>
       <input
         required={required}
         name={name}
@@ -115,7 +115,7 @@ function FormField({ label, name, value, onChange, placeholder, type = "text", r
         type={type}
         placeholder={placeholder}
         disabled={disabled}
-        className={`theme-input w-full rounded-2xl px-4 py-3 outline-none transition ${disabled ? "cursor-not-allowed opacity-70" : ""} ${inputClassName}`}
+        className={`input input-bordered w-full bg-base-100/80 shadow-sm transition focus:border-primary focus:ring-2 focus:ring-primary/20 ${disabled ? "cursor-not-allowed opacity-70" : ""} ${inputClassName}`}
       />
     </label>
   );
@@ -124,12 +124,12 @@ function FormField({ label, name, value, onChange, placeholder, type = "text", r
 function SelectField({ label, name, value, onChange, options }) {
   return (
     <label className="grid gap-2 text-sm">
-      <span className="font-medium text-[var(--muted-strong)]">{label}</span>
+      <span className="font-medium text-base-content/70">{label}</span>
       <select
         name={name}
         value={value}
         onChange={onChange}
-        className="theme-input w-full rounded-2xl px-4 py-3 outline-none transition"
+        className="select select-bordered w-full bg-base-100/80 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -143,12 +143,14 @@ function SelectField({ label, name, value, onChange, options }) {
 
 function ChartCard({ title, description, children }) {
   return (
-    <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
+    <GlassPanel className="max-w-full overflow-hidden">
+      <div className="card-body p-5 sm:p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+        <h3 className="text-lg font-bold text-base-content">{title}</h3>
+        <p className="mt-1 text-sm text-base-content/60">{description}</p>
       </div>
       {children}
+      </div>
     </GlassPanel>
   );
 }
@@ -159,33 +161,29 @@ function PaginationFooter({ currentPage, totalPages, visibleCount, totalCount, o
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 border-t border-slate-200/80 px-4 py-6 sm:flex-row sm:justify-between">
-      <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
-        Showing <span className="text-[var(--muted-strong)]">{visibleCount}</span> of{" "}
-        <span className="text-[var(--muted-strong)]">{totalCount}</span> items
+    <div className="flex flex-col items-center justify-center gap-4 border-t border-base-300/70 bg-base-100/70 px-4 py-5 sm:flex-row sm:justify-between">
+      <div className="badge badge-outline border-base-300 px-3 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-base-content/65">
+        Showing <span className="text-base-content">{visibleCount}</span> of{" "}
+        <span className="text-base-content">{totalCount}</span>
       </div>
 
-      <div className="flex max-w-full items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin">
+      <div className="join max-w-full overflow-x-auto px-1 pb-1 scrollbar-thin">
         <button
           type="button"
           disabled={currentPage <= 1}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+          className="btn btn-sm join-item"
         >
           Prev
         </button>
 
-        <div className="flex items-center gap-1.5 px-2">
+        <div className="join">
           {pageNumbers.map((pageNumber) => (
             <button
               key={pageNumber}
               type="button"
               onClick={() => onPageChange(pageNumber)}
-              className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300 ${
-                currentPage === pageNumber
-                  ? "scale-105 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
+              className={`btn btn-sm join-item w-10 ${currentPage === pageNumber ? "btn-primary" : "btn-ghost"}`}
             >
               {pageNumber}
             </button>
@@ -196,13 +194,13 @@ function PaginationFooter({ currentPage, totalPages, visibleCount, totalCount, o
           type="button"
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+          className="btn btn-sm join-item"
         >
           Next
         </button>
       </div>
 
-      <div className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] sm:block">
+      <div className="hidden text-[11px] font-bold uppercase tracking-[0.18em] text-base-content/55 sm:block">
         Page {currentPage} / {totalPages}
       </div>
     </div>
@@ -995,7 +993,7 @@ export function SuperAdminPlansScreen() {
               <div className="mt-2 text-sm text-[var(--muted)]">{formatCurrency(plan.yearlyPrice)} annual billing</div>
               <div className="mt-5 grid gap-2 text-sm text-slate-600">
                 <div>Products: {plan.maxProducts}</div>
-                <div>Users: {plan.maxUsers}</div>
+                <div>Users: {plan.maxUsers || "Unlimited"}</div>
                 <div>Customers: {plan.maxCustomers}</div>
                 {plan.trialAvailable ? <div className="text-teal-700">Free trial available</div> : null}
                 {plan.popular ? <div className="text-violet-700">Most popular</div> : null}

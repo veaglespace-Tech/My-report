@@ -19,7 +19,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${outfit.variable} h-full antialiased`}>
+    <html lang="en" data-theme="light" data-scroll-behavior="smooth" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)] font-outfit">
         <AppProviders>
           <RootChrome>{children}</RootChrome>

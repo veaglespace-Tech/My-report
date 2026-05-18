@@ -29,13 +29,14 @@ export function TopSalesChart({ items = [], loading = false }) {
   const hasSalesData = chartData.length > 0;
 
   return (
-    <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
+    <GlassPanel className="max-w-full overflow-hidden">
+      <div className="card-body p-5 sm:p-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[var(--foreground)]">Top Sales</h3>
-          <p className="mt-1 text-sm text-[var(--muted)]">Best-performing products based on sales.</p>
+          <h3 className="text-lg font-bold text-base-content">Top Sales</h3>
+          <p className="mt-1 text-sm text-base-content/60">Best-performing products based on sales.</p>
         </div>
-        <div className="hidden rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-xs font-semibold tracking-wide text-slate-600 sm:block">
+        <div className="badge badge-info badge-outline hidden px-3 py-3 text-xs font-semibold tracking-wide sm:inline-flex">
           {loading ? "Loading" : `${chartData.length} products`}
         </div>
       </div>
@@ -78,10 +79,11 @@ export function TopSalesChart({ items = [], loading = false }) {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-200/90 bg-slate-50/80 px-6 text-center text-sm font-medium text-slate-600">
+          <div className="flex h-full items-center justify-center rounded-box border border-dashed border-base-300 bg-base-200/70 px-6 text-center text-sm font-medium text-base-content/60">
             No sales data available yet.
           </div>
         )}
+      </div>
       </div>
     </GlassPanel>
   );

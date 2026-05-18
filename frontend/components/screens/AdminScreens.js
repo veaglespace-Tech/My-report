@@ -103,13 +103,13 @@ function useAsyncLoader(loader, initialState) {
 function ControlButton({ children, variant = "default", className = "", ...props }) {
   const base =
     variant === "primary"
-      ? "theme-primary-button"
-      : "theme-action-button";
+      ? "btn-primary shadow-lg shadow-primary/20"
+      : "btn-outline btn-neutral bg-base-100/75";
 
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${base} ${className}`}
+      className={`btn min-h-11 rounded-box px-4 text-sm font-bold ${base} ${className}`}
       {...props}
     >
       {children}
@@ -132,7 +132,7 @@ function FormField({
 }) {
   return (
     <label className={`grid gap-2 text-sm ${className}`}>
-      <span className="font-medium text-[var(--muted-strong)]">{label}</span>
+      <span className="font-medium text-base-content/70">{label}</span>
       <input
         required={required}
         name={name}
@@ -140,10 +140,10 @@ function FormField({
         onChange={onChange}
         type={type}
         placeholder={placeholder}
-        className={`theme-input w-full rounded-2xl px-4 py-3 outline-none transition duration-300 focus:border-cyan-300/70 focus:ring-2 focus:ring-cyan-300/40 ${inputClassName}`}
+        className={`input input-bordered w-full bg-base-100/80 shadow-sm transition duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${inputClassName}`}
         {...inputProps}
       />
-      {helper ? <span className="text-xs text-red-400">{helper}</span> : null}
+      {helper ? <span className="text-xs text-error">{helper}</span> : null}
     </label>
   );
 }
@@ -151,12 +151,12 @@ function FormField({
 function SelectField({ label, name, value, onChange, options }) {
   return (
     <label className="grid gap-2 text-sm">
-      <span className="font-medium text-[var(--muted-strong)]">{label}</span>
+      <span className="font-medium text-base-content/70">{label}</span>
       <select
         name={name}
         value={value}
         onChange={onChange}
-        className="theme-input w-full rounded-2xl px-4 py-3 outline-none transition"
+        className="select select-bordered w-full bg-base-100/80 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -183,7 +183,7 @@ function ProductSearchField({
 }) {
   return (
     <label className="grid gap-2 text-sm">
-      <span className="font-medium text-[var(--muted-strong)]">{label}</span>
+      <span className="font-medium text-base-content/70">{label}</span>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
@@ -193,33 +193,33 @@ function ProductSearchField({
           onBlur={onBlur}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
-          className="theme-input w-full rounded-2xl px-10 py-3 outline-none transition duration-300 focus:border-cyan-300/70 focus:ring-2 focus:ring-cyan-300/40"
+          className="input input-bordered w-full bg-base-100/80 px-10 shadow-sm transition duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20"
         />
         {open ? (
-          <div className="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-cyan-200/70 bg-white p-1 shadow-[0_16px_34px_rgba(15,23,42,0.14)]">
+          <div className="menu absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-xl">
             {options.length ? (
               options.map((product, index) => (
                 <button
                   key={product.id}
                   type="button"
                   onMouseDown={() => onSelect(product)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                  className={`flex w-full items-center justify-between gap-3 rounded-field px-3 py-2.5 text-left text-sm transition ${
                     index === activeIndex
-                      ? "bg-cyan-50 text-teal-800 ring-1 ring-cyan-200/70"
-                      : "text-slate-800 hover:bg-slate-100"
+                      ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+                      : "text-base-content hover:bg-base-200"
                   }`}
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{product.name}</span>
-                    <span className="block text-xs text-slate-500">{formatCurrency(product.price)} / {product.unit}</span>
+                    <span className="block text-xs text-base-content/55">{formatCurrency(product.price)} / {product.unit}</span>
                   </span>
-                  <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                  <span className="badge badge-outline shrink-0 text-xs font-semibold">
                     Stock {Number(product.quantity || 0).toLocaleString("en-IN")}
                   </span>
                 </button>
               ))
             ) : (
-              <div className="px-3 py-2.5 text-sm font-medium text-slate-500">No matching products</div>
+              <div className="px-3 py-2.5 text-sm font-medium text-base-content/55">No matching products</div>
             )}
           </div>
         ) : null}
@@ -230,12 +230,14 @@ function ProductSearchField({
 
 function ChartCard({ title, description, children }) {
   return (
-    <GlassPanel className="max-w-full overflow-hidden p-5 sm:p-6">
+    <GlassPanel className="max-w-full overflow-hidden">
+      <div className="card-body p-5 sm:p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+        <h3 className="text-lg font-bold text-base-content">{title}</h3>
+        <p className="mt-1 text-sm text-base-content/60">{description}</p>
       </div>
       {children}
+      </div>
     </GlassPanel>
   );
 }
@@ -251,27 +253,20 @@ function StockHealthBadge({ quantity }) {
   const status = getStockHealthStatus(quantity);
   const toneClass =
     status === "IN STOCK"
-      ? "text-[#059669] ring-1 ring-emerald-500/20"
+      ? "badge-success"
       : status === "LOW STOCK"
-        ? "text-[#dc2626] ring-1 ring-rose-500/20"
-        : "text-[#374151] ring-1 ring-slate-500/20";
+        ? "badge-warning"
+        : "badge-error";
   const dotClass =
     status === "IN STOCK"
-      ? "bg-emerald-500"
+      ? "bg-success-content"
       : status === "LOW STOCK"
-        ? "bg-orange-500"
-        : "bg-slate-700";
-  const toneStyle =
-    status === "IN STOCK"
-      ? { backgroundColor: "rgba(16,185,129,0.14)" }
-      : status === "LOW STOCK"
-        ? { backgroundColor: "rgba(239,68,68,0.14)" }
-        : { backgroundColor: "rgba(107,114,128,0.14)" };
+        ? "bg-warning-content"
+        : "bg-error-content";
 
   return (
     <span
-      className={`inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-full px-[14px] py-2 text-[12px] font-bold uppercase tracking-[1px] transition-all duration-300 hover:scale-[1.04] hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)] ${toneClass}`}
-      style={toneStyle}
+      className={`badge min-h-8 min-w-[132px] border-0 px-[14px] py-2 text-[12px] font-bold uppercase tracking-[1px] shadow-sm ${toneClass}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
       {status}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Inbox } from "lucide-react";
 import { GlassPanel } from "@/components/common/GlassPanel";
 
 export function DataTable({ columns, rows, emptyMessage = "No data available.", pageSize = null }) {
@@ -19,7 +20,7 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
   const tableScrollClass = isScrollable ? "max-h-[470px] overflow-x-auto overflow-y-scroll scrollbar-thin" : "overflow-x-auto";
 
   return (
-    <GlassPanel className="max-w-full overflow-hidden">
+    <GlassPanel className="max-w-full overflow-hidden border-base-300/70 bg-base-100/85">
       <div className={`grid gap-3 p-4 md:hidden ${scrollClass}`}>
         {visibleRows.length ? (
           visibleRows.map((row, index) => {
@@ -28,14 +29,14 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
             const visibleColumns = columns.filter((column) => column.key !== "actions");
 
             return (
-              <div key={key} className="rounded-3xl border border-slate-200/80 bg-white/70 p-4 shadow-sm transition hover:border-cyan-300/40">
-                <div className="grid gap-3">
+              <div key={key} className="card card-compact border border-base-300 bg-base-100 shadow-sm transition hover:border-primary/35 hover:shadow-md">
+                <div className="card-body gap-3">
                   {visibleColumns.map((column) => (
                     <div key={column.key} className="grid gap-1.5 sm:grid-cols-[120px_1fr] sm:gap-3">
-                      <div className="pt-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                      <div className="pt-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/55">
                         {column.label}
                       </div>
-                      <div className="min-w-0 break-words text-sm leading-6 text-[var(--muted-strong)]">
+                      <div className="min-w-0 break-words text-sm leading-6 text-base-content/85">
                         {column.render ? column.render(row[column.key], row) : row[column.key]}
                       </div>
                     </div>
@@ -51,21 +52,22 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
             );
           })
         ) : (
-          <div className="rounded-3xl border border-slate-200/80 bg-slate-50/80 px-5 py-8 text-center text-sm text-[var(--muted)]">
-            {emptyMessage}
+          <div className="card border border-dashed border-base-300 bg-base-200/60 px-5 py-8 text-center text-sm text-base-content/60">
+            <Inbox className="mx-auto mb-3 h-8 w-8 text-base-content/35" />
+            <span>{emptyMessage}</span>
           </div>
         )}
       </div>
 
       <div className="hidden w-full overflow-x-auto md:block">
         <div className={tableScrollClass}>
-          <table className="min-w-[760px] lg:min-w-full">
+          <table className="table table-zebra min-w-[760px] lg:min-w-full">
           <thead>
-            <tr className="sticky top-0 z-10 border-b border-slate-200/80 bg-[color-mix(in_srgb,var(--panel-strong)_92%,transparent)] backdrop-blur-xl">
+            <tr className="sticky top-0 z-10 bg-base-200/95 text-base-content backdrop-blur-xl">
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)] ${column.headerClassName || ""}`}
+                  className={`px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-base-content/60 ${column.headerClassName || ""}`}
                 >
                   {column.label}
                 </th>
@@ -75,11 +77,11 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
           <tbody>
             {visibleRows.length ? (
               visibleRows.map((row, index) => (
-                <tr key={rowKey(row, index)} className="border-b border-slate-200/60 last:border-0">
+                <tr key={rowKey(row, index)} className="border-b border-base-300/50 last:border-0 hover:bg-primary/5">
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={`min-w-0 px-5 py-4 text-sm leading-6 text-[var(--muted-strong)] ${column.cellClassName || ""}`}
+                      className={`min-w-0 px-5 py-4 text-sm leading-6 text-base-content/85 ${column.cellClassName || ""}`}
                     >
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </td>
@@ -88,7 +90,8 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
               ))
             ) : (
               <tr>
-                <td className="px-5 py-8 text-center text-sm text-[var(--muted)]" colSpan={columns.length}>
+                <td className="px-5 py-10 text-center text-sm text-base-content/60" colSpan={columns.length}>
+                  <Inbox className="mx-auto mb-3 h-8 w-8 text-base-content/35" />
                   {emptyMessage}
                 </td>
               </tr>
@@ -98,33 +101,30 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
         </div>
       </div>
       {shouldPaginate ? (
-        <div className="flex flex-col items-center justify-center gap-4 border-t border-slate-200/80 px-4 py-6 sm:flex-row sm:justify-between">
-          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
-            Showing <span className="text-[var(--muted-strong)]">{visibleRows.length}</span> of{" "}
-            <span className="text-[var(--muted-strong)]">{rows.length}</span> items
+        <div className="flex flex-col items-center justify-center gap-4 border-t border-base-300/70 bg-base-100/70 px-4 py-5 sm:flex-row sm:justify-between">
+          <div className="badge badge-outline border-base-300 px-3 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-base-content/65">
+            Showing <span className="text-base-content">{visibleRows.length}</span> of{" "}
+            <span className="text-base-content">{rows.length}</span>
           </div>
 
-          <div className="flex max-w-full items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-thin">
+          <div className="join max-w-full overflow-x-auto px-1 pb-1 scrollbar-thin">
             <button
               type="button"
               disabled={currentPage <= 1}
               onClick={() => setPage((previous) => Math.max(1, previous - 1))}
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+              className="btn btn-sm join-item"
             >
+              <ChevronLeft className="h-4 w-4" />
               Prev
             </button>
 
-            <div className="flex items-center gap-1.5 px-2">
+            <div className="join">
               {pageNumbers.map((pageNumber) => (
                 <button
                   key={pageNumber}
                   type="button"
                   onClick={() => setPage(pageNumber)}
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300 ${
-                    currentPage === pageNumber
-                      ? "scale-105 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                  className={`btn btn-sm join-item w-10 ${currentPage === pageNumber ? "btn-primary" : "btn-ghost"}`}
                 >
                   {pageNumber}
                 </button>
@@ -135,13 +135,14 @@ export function DataTable({ columns, rows, emptyMessage = "No data available.", 
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200/90 bg-white/80 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+              className="btn btn-sm join-item"
             >
               Next
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="hidden text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)] sm:block">
+          <div className="hidden text-[11px] font-bold uppercase tracking-[0.18em] text-base-content/55 sm:block">
             Page {currentPage} / {totalPages}
           </div>
         </div>

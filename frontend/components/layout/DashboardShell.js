@@ -5,13 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogOut, Menu, Sparkles } from "lucide-react";
+import { LogOut, Menu, Store } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { adminNav, resolvePageMeta, superAdminNav } from "@/lib/navigation";
 import { clearSession } from "@/lib/session";
 import { clearAuth } from "@/redux/slices/authSlice";
 import { setSidebarOpen } from "@/redux/slices/uiSlice";
-import { Store } from "lucide-react";
 
 const subscribeToClientSnapshot = () => () => {};
 const getClientSnapshot = () => true;
@@ -41,22 +40,24 @@ function ProfileChip({ profile, mounted, size = "sm" }) {
   const avatarSize = size === "md" ? "40px" : "32px";
 
   return (
-    <div className="theme-soft-panel min-w-0 rounded-2xl px-3 py-2">
+    <div className="card card-compact min-w-0 border border-base-300/70 bg-base-100/75 shadow-sm">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/25 bg-white/20">
-          {mounted && avatarUrl ? (
-            <Image src={avatarUrl} alt="Profile avatar" fill sizes={avatarSize} className="object-cover" unoptimized />
-          ) : (
-            <span suppressHydrationWarning className="text-xs font-semibold">
-              {getProfileInitials(profile)}
-            </span>
-          )}
+        <div className="avatar placeholder p-2">
+          <div className="relative h-9 w-9 overflow-hidden rounded-full bg-primary text-primary-content ring ring-primary/15">
+            {mounted && avatarUrl ? (
+              <Image src={avatarUrl} alt="Profile avatar" fill sizes={avatarSize} className="object-cover" unoptimized />
+            ) : (
+              <span suppressHydrationWarning className="text-xs font-bold">
+                {getProfileInitials(profile)}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="min-w-0 flex-1 text-left leading-tight">
-          <div suppressHydrationWarning className="truncate text-sm font-semibold text-[var(--foreground)]">
+        <div className="min-w-0 flex-1 py-2 pr-3 text-left leading-tight">
+          <div suppressHydrationWarning className="truncate text-sm font-bold text-base-content">
             {profile?.fullName || "MyReport User"}
           </div>
-          <div suppressHydrationWarning className="mt-0.5 truncate text-xs text-[var(--muted)]">
+          <div suppressHydrationWarning className="mt-0.5 truncate text-xs text-base-content/55">
             {profile?.email || "Workspace ready"}
           </div>
         </div>
@@ -71,16 +72,18 @@ function SidebarContent({ role, pathname, profile, mounted = false, onNavigate, 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto pr-1">
       <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-4 rounded-3xl bg-white/75 px-4 py-4 shadow-lg ring-1 ring-white/20 backdrop-blur-xl">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-200 via-indigo-200 to-purple-200 shadow-lg">
-            <Store className="h-9 w-9 text-slate-900" />
+        <div className="card card-compact border border-base-300/70 bg-base-100/85 shadow-xl">
+          <div className="flex items-center gap-4 p-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-box bg-primary text-primary-content shadow-lg shadow-primary/20">
+            <Store className="h-8 w-8" />
           </div>
 
           <div className="flex min-w-0 flex-col leading-tight">
-            <h1 className="truncate text-3xl font-bold text-slate-900">MyReport</h1>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+            <h1 className="truncate text-3xl font-bold text-base-content">MyReport</h1>
+            <p className="text-xs uppercase tracking-[0.32em] text-base-content/55">
               {role === "SUPER_ADMIN" ? "Platform HQ" : "My Store"}
             </p>
+          </div>
           </div>
         </div>
       </div>
@@ -89,7 +92,7 @@ function SidebarContent({ role, pathname, profile, mounted = false, onNavigate, 
         <ProfileChip profile={profile} mounted={mounted} size="md" />
       </div>
 
-      <nav className="relative grid gap-1.5">
+      <nav className="menu relative grid gap-1.5 p-0">
         {items.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
@@ -99,16 +102,16 @@ function SidebarContent({ role, pathname, profile, mounted = false, onNavigate, 
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`relative group flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-300 ${
-                active 
-                  ? "text-white" 
-                  : "text-white/50 hover:bg-white/8 hover:text-white"
+              className={`relative group flex items-center gap-3.5 rounded-box px-4 py-3.5 text-sm font-bold transition-all duration-300 ${
+                active
+                  ? "bg-primary text-primary-content shadow-lg shadow-primary/20"
+                  : "text-base-content/65 hover:bg-base-200 hover:text-base-content"
               }`}
             >
               {active && (
                 <motion.div
                   layoutId="sidebar-active-tab"
-                  className="absolute inset-0 rounded-2xl border border-white/10 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 shadow-sm"
+                  className="absolute inset-0 rounded-box border border-primary-content/10"
                   initial={false}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
@@ -117,7 +120,7 @@ function SidebarContent({ role, pathname, profile, mounted = false, onNavigate, 
                 size={20} 
                 className={`relative z-10 shrink-0 transition-transform duration-300 ${
                   active 
-                    ? "scale-110 text-cyan-300 drop-shadow-[0_0_8px_rgba(103,232,249,0.5)]" 
+                    ? "scale-110 text-primary-content" 
                     : "group-hover:scale-110"
                 }`} 
               />
@@ -131,9 +134,9 @@ function SidebarContent({ role, pathname, profile, mounted = false, onNavigate, 
         <button
           type="button"
           onClick={onLogout}
-          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-400 to-cyan-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:scale-[1.01] hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-[0.99]"
+          className="btn btn-primary w-full gap-2 shadow-lg shadow-primary/20"
         >
-          <LogOut size={16} className="text-white" />
+          <LogOut size={16} />
           <span className="truncate">Secure Logout</span>
         </button>
       </div>
@@ -148,7 +151,6 @@ export function DashboardShell({ role, children }) {
   const mounted = useSyncExternalStore(subscribeToClientSnapshot, getClientSnapshot, getServerSnapshot);
   const profile = useSelector((state) => state.auth.profile);
   const sidebarOpen = useSelector((state) => state.ui.sidebarOpen);
-  const navItems = role === "SUPER_ADMIN" ? superAdminNav : adminNav;
   const pageMeta = resolvePageMeta(pathname, role);
   const PageIcon = pageMeta.icon;
 
@@ -171,7 +173,7 @@ export function DashboardShell({ role, children }) {
   return (
     <div className="dashboard-shell relative overflow-x-hidden">
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
-        <aside className="theme-sidebar hidden w-[280px] shrink-0 p-6 backdrop-blur-2xl lg:block xl:w-[300px]">
+        <aside className="theme-sidebar hidden w-[280px] shrink-0 bg-base-100/80 p-6 backdrop-blur-2xl lg:block xl:w-[300px]">
           <SidebarContent role={role} pathname={pathname} profile={profile} mounted={mounted} onLogout={handleLogout} />
         </aside>
 
@@ -189,7 +191,7 @@ export function DashboardShell({ role, children }) {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -24, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 240, damping: 28 }}
-                className="theme-sidebar-strong h-full w-[min(85vw,20rem)] max-w-full p-5 shadow-2xl sm:p-6"
+                className="theme-sidebar-strong h-full w-[min(85vw,20rem)] max-w-full bg-base-100/95 p-5 shadow-2xl sm:p-6"
                 onClick={(event) => event.stopPropagation()}
               >
                 <SidebarContent
@@ -214,27 +216,27 @@ export function DashboardShell({ role, children }) {
               transition={{ duration: 0.32 }}
               className="content-max mx-auto flex max-w-full flex-col gap-4 sm:gap-6"
             >
-              <div className="theme-navbar overflow-hidden rounded-[28px] px-4 py-4 shadow-[0_16px_40px_rgba(3,10,25,0.18)] sm:px-5 lg:px-6">
+              <div className="card border border-base-300/70 bg-base-100/80 px-4 py-4 shadow-xl backdrop-blur-xl sm:px-5 lg:px-6">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between gap-3 sm:items-center">
                     <div className="flex min-w-0 items-start gap-3 sm:items-center">
                       <button
                         type="button"
                         onClick={() => dispatch(setSidebarOpen(true))}
-                        className="theme-action-button inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl lg:hidden"
+                        className="btn btn-square btn-ghost shrink-0 lg:hidden"
                         aria-label="Open navigation menu"
                       >
                         <Menu size={18} />
                       </button>
                       <div className="flex min-w-0 items-start gap-3">
-                        <div className="theme-soft-panel hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-cyan-200 sm:flex">
+                        <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-box bg-primary/10 text-primary sm:flex">
                           <PageIcon size={18} />
                         </div>
                         <div className="min-w-0">
-                          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
+                          <h1 className="truncate text-xl font-bold tracking-tight text-base-content sm:text-2xl">
                             {pageMeta.title}
                           </h1>
-                          <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+                          <p className="mt-1 max-w-2xl text-sm leading-6 text-base-content/60">
                             {pageMeta.subtitle}
                           </p>
                         </div>

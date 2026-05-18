@@ -26,19 +26,13 @@ export function DownloadToolbar({
     return () => document.removeEventListener("mousedown", onDocumentClick);
   }, []);
 
-  const baseButton =
-    "inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-xl transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60";
-
   return (
     <div className={["flex w-full flex-wrap items-center justify-end gap-3", className].filter(Boolean).join(" ")}>
       <button
         type="button"
         onClick={onRefresh}
         disabled={exporting !== null}
-        className={[
-          baseButton,
-          "bg-black/40 text-white/85 backdrop-blur-md ring-1 ring-white/10 hover:scale-[1.02] hover:bg-black/55 hover:shadow-[0_10px_20px_rgba(99,102,241,0.16)]",
-        ].join(" ")}
+        className="btn btn-outline btn-neutral gap-2 shadow-sm"
       >
         <RefreshCw size={16} className={exporting === "refresh" ? "animate-spin" : ""} />
         {exporting === "refresh" ? "Refreshing..." : "Refresh"}
@@ -49,10 +43,7 @@ export function DownloadToolbar({
           type="button"
           onClick={() => setOpen((value) => !value)}
           disabled={downloadDisabled}
-          className={[
-            baseButton,
-            "bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-600 text-white shadow-indigo-500/25 hover:brightness-105 hover:shadow-2xl hover:shadow-indigo-500/30",
-          ].join(" ")}
+          className="btn btn-primary gap-2 shadow-lg shadow-primary/20"
         >
           <Download size={16} />
           Download
@@ -66,7 +57,7 @@ export function DownloadToolbar({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
               transition={{ duration: 0.16 }}
-              className="absolute right-0 z-30 mt-3 w-56 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl backdrop-blur-md"
+              className="menu absolute right-0 z-30 mt-3 w-56 overflow-hidden rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
             >
               <button
                 type="button"
@@ -75,12 +66,12 @@ export function DownloadToolbar({
                   await onExportPdf?.();
                 }}
                 disabled={exporting !== null}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center gap-3 rounded-field px-3 py-3 text-left text-sm font-semibold text-base-content transition hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <FileText size={16} className="text-white/75" />
+                <FileText size={16} className="text-primary" />
                 Export PDF
               </button>
-              <div className="h-px bg-white/10" />
+              <div className="my-1 h-px bg-base-300" />
               <button
                 type="button"
                 onClick={async () => {
@@ -88,9 +79,9 @@ export function DownloadToolbar({
                   await onExportExcel?.();
                 }}
                 disabled={exporting !== null}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center gap-3 rounded-field px-3 py-3 text-left text-sm font-semibold text-base-content transition hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <FileSpreadsheet size={16} className="text-white/75" />
+                <FileSpreadsheet size={16} className="text-success" />
                 Export Excel
               </button>
             </motion.div>
