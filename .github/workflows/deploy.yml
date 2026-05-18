@@ -16,20 +16,29 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          timeout: 60s
+          command_timeout: 30m
+          script_stop: true
 
           script: |
+            set -e
+
             cd ~/My-report
 
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
 
             # Frontend
             cd client
-            npm install
+            npm ci || npm install
             rm -rf .next .next-build
             npm run build
-            pm2 restart myreport-client
+            pm2 restart myreport-client || pm2 start npm --name myreport-client -- start
 
             # Backend
             cd ../server
-            mvn clean package -DskipTests
-            pm2 restart myreport-server
+            chmod +x ./mvnw
+            ./mvnw clean package -DskipTests
+            pm2 restart myreport-server || pm2 start "java -jar target/backend-0.0.1-SNAPSHOT.jar" --name myreport-server
+            pm2 save
