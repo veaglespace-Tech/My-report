@@ -32,7 +32,7 @@ function getProfileInitials(profile) {
 function getProfileAvatarUrl(profile) {
   if (!profile?.avatarUrl) return null;
   if (String(profile.avatarUrl).startsWith("http")) return profile.avatarUrl;
-  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api").replace(/\/api\/?$/, "");
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/?$/, "");
   return `${apiBase}${profile.avatarUrl}`;
 }
 

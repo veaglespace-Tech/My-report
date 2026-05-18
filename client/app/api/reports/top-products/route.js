@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 function getBackendBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api";
+  return process.env.NEXT_PUBLIC_API_BASE_URL;
 }
 
 function normalizeTopItems(items) {

@@ -10,6 +10,7 @@ const LINKS = [
   { label: "ABOUT", href: "/about" },
   { label: "CONTACT", href: "/contact" },
 ];
+const companyWebsite = process.env.NEXT_PUBLIC_COMPANY_WEBSITE;
 
 function isActivePath(pathname, href) {
   if (!pathname) return false;
@@ -61,7 +62,7 @@ export function SiteFooter() {
           <span className="font-['Times_New_Roman',serif] text-[15px] font-normal leading-[1.55] tracking-[0.3px] text-[rgba(55,65,81,0.78)]">
             All Rights Reserved © 2026{" "}
             <a
-              href="https://veaglespace.com/"
+              href={companyWebsite}
               target="_blank"
               rel="noreferrer"
               className="cursor-pointer font-medium text-[rgba(37,99,235,0.9)] transition hover:text-[rgba(29,78,216,1)] hover:underline"

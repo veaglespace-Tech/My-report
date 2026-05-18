@@ -1,7 +1,4 @@
-const BACKEND_BASE_URL =
-  process.env.API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8082/api";
+const BACKEND_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function POST(request) {
   try {

@@ -2202,7 +2202,7 @@ export function AdminSettingsScreen() {
     confirmPassword: false,
   });
 
-  const mediaBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api").replace(/\/api\/?$/, "");
+  const mediaBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/?$/, "");
   const avatarUrl = data.profile?.avatarUrl
     ? (String(data.profile.avatarUrl).startsWith("http") ? data.profile.avatarUrl : `${mediaBaseUrl}${data.profile.avatarUrl}`)
     : null;

@@ -1,5 +1,11 @@
 import OpenAI from "openai";
 
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
+const COMPANY_WEBSITE = process.env.NEXT_PUBLIC_COMPANY_WEBSITE;
+const BACKEND_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+const OPENAI_MODEL = process.env.OPENAI_MODEL;
+
 const KNOWLEDGE_BASE = `ABOUT MYREPORT
 MyReport Store OS is a modern store management platform for retail businesses.
 It helps manage: billing, inventory, reports, customers, products, GST invoices, PDF exports, Excel exports, purchase history, revenue tracking.
@@ -23,9 +29,9 @@ Free Trial: 7 days, Rs. 0, Starter workspace, up to 250 products.
 Launch Plan: 3 months, Rs. 3000, Priority setup, Starter workspace.
 
 SUPPORT
-Email: info@veaglespace.com
-Phone: +91 8237999101
-Website: https://veaglespace.com`;
+Email: ${SUPPORT_EMAIL}
+Phone: ${SUPPORT_PHONE}
+Website: ${COMPANY_WEBSITE}`;
 
 const SYSTEM_PROMPT = `You are "MyReport Assistant", an AI website assistant for MyReport Store OS.
 Subtitle: Ask anything about your store workspace.
@@ -100,7 +106,7 @@ function localAnswer(question) {
   }
 
   if (q.includes("support") || q.includes("contact") || q.includes("help")) {
-    return "Contact support: info@veaglespace.com or +91 8237999101. You can also visit https://veaglespace.com.";
+    return `Contact support: ${SUPPORT_EMAIL} or ${SUPPORT_PHONE}. You can also visit ${COMPANY_WEBSITE}.`;
   }
 
   if (q.includes("register") || q.includes("signup") || q.includes("sign up") || q.includes("login") || q.includes("password")) {
@@ -117,7 +123,7 @@ function localAnswer(question) {
 
 async function createChatbotSupportTicket(message) {
   try {
-    await fetch(`${process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api"}/support/chatbot`, {
+    await fetch(`${BACKEND_BASE_URL}/support/chatbot`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -149,7 +155,7 @@ export async function POST(request) {
     }
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+    const model = OPENAI_MODEL;
 
     const completion = await client.chat.completions.create({
       model,
@@ -172,4 +178,3 @@ export async function POST(request) {
     );
   }
 }
-

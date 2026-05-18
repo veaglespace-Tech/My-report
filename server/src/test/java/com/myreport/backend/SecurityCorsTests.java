@@ -22,21 +22,21 @@ class SecurityCorsTests {
     @Test
     void allowsLoopbackFrontendOriginsForPaymentOrderPreflight() throws Exception {
         mockMvc.perform(options("/api/auth/register/payu/order")
-                        .header("Origin", "http://127.0.0.1:3000")
+                        .header("Origin", "http://127.0.0.1:3004")
                         .header("Access-Control-Request-Method", "POST")
                         .header("Access-Control-Request-Headers", "content-type"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:3000"));
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:3004"));
     }
 
     @Test
     void allowsViteFrontendOriginForPaymentOrderPreflight() throws Exception {
         mockMvc.perform(options("/api/auth/register/payu/order")
-                        .header("Origin", "http://localhost:5173")
+                        .header("Origin", "http://localhost:3004")
                         .header("Access-Control-Request-Method", "POST")
                         .header("Access-Control-Request-Headers", "content-type"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3004"));
     }
 
     @Test
@@ -55,7 +55,7 @@ class SecurityCorsTests {
                         .header("Origin", "null"))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Access-Control-Allow-Origin", "null"))
-                .andExpect(header().string("Location", "http://localhost:3000/payment/payu/return?flow=unknown&txnid=missing&status=missing_txnid&verified=false"));
+                .andExpect(header().string("Location", "http://localhost:3004/payment/payu/return?flow=unknown&txnid=missing&status=missing_txnid&verified=false"));
     }
 
     @Test
@@ -66,13 +66,13 @@ class SecurityCorsTests {
                         .param("txnid", ""))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Access-Control-Allow-Origin", "null"))
-                .andExpect(header().string("Location", "http://localhost:3000/payment/payu/return?flow=unknown&txnid=missing&status=missing_txnid&verified=false"));
+                .andExpect(header().string("Location", "http://localhost:3004/payment/payu/return?flow=unknown&txnid=missing&status=missing_txnid&verified=false"));
     }
 
     @Test
     void allowsDirectBrowserVisitToPayUSuccessCallback() throws Exception {
         mockMvc.perform(get("/api/payments/payu/success"))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location", "http://localhost:3000/payment/payu/return?flow=unknown&txnid=missing&status=missing_txnid&verified=false"));
+                .andExpect(header().string("Location", "http://localhost:3004/payment/payu/return?flow=unknown&txnid=missing&status=missing_txnid&verified=false"));
     }
 }

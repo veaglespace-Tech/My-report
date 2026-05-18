@@ -4,6 +4,8 @@ export const metadata = {
   title: "Privacy Policy · MyReport",
 };
 
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-12 sm:py-16">
@@ -27,8 +29,8 @@ export default function PrivacyPolicyPage() {
             <div className="font-semibold text-slate-900">Contact</div>
             <div className="mt-1">
               For privacy questions, email{" "}
-              <a className="font-semibold text-indigo-700 hover:underline" href="mailto:info@veaglespace.com">
-                info@veaglespace.com
+              <a className="font-semibold text-indigo-700 hover:underline" href={`mailto:${supportEmail}`}>
+                {supportEmail}
               </a>
               .
             </div>
@@ -47,4 +49,3 @@ export default function PrivacyPolicyPage() {
     </div>
   );
 }
-

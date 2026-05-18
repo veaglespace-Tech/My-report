@@ -15,11 +15,10 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-const mapsUrl =
-  "https://www.google.com/maps/place/Veagle+Space+Technology/@18.4664403,73.8212889,826m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3bc2952f1a0d1e2b:0x20c7362429855a2f!8m2!3d18.4664403!4d73.8238638!16s%2Fg%2F11ytd2b7gw?entry=ttu";
-
-const mapEmbedUrl =
-  "https://www.google.com/maps?q=Veagle%20Space%20Technology%2C%20Kudale%20Patil%20Tower%2C%20Vadgaon%20Budruk%2C%20Pune&output=embed";
+const mapsUrl = process.env.NEXT_PUBLIC_CONTACT_MAPS_URL;
+const mapEmbedUrl = process.env.NEXT_PUBLIC_CONTACT_MAP_EMBED_URL;
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
 
 const FIELD_LIMITS = {
   fullName: 60,
@@ -256,8 +255,8 @@ export default function ContactClient() {
             </div>
 
             <div className="mt-7 grid flex-1 content-start gap-3">
-              <ContactInfoItem icon={Mail} label="Email" value="info@veaglespace.com" />
-              <ContactInfoItem icon={Phone} label="Phone" value="+91 8237999101" />
+              <ContactInfoItem icon={Mail} label="Email" value={supportEmail} />
+              <ContactInfoItem icon={Phone} label="Phone" value={supportPhone} />
               <ContactInfoItem
                 icon={MapPin}
                 label="Office Location"

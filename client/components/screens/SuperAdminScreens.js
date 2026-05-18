@@ -1942,7 +1942,7 @@ export function SuperAdminSettingsScreen() {
     passwordForm.newPassword === passwordForm.confirmPassword;
 
   const profileView = isEditing ? draftProfile : data.profile;
-  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api").replace(/\/api\/?$/, "");
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/?$/, "");
   const avatarUrl = profileView?.avatarUrl
     ? (String(profileView.avatarUrl).startsWith("http") ? profileView.avatarUrl : `${apiBase}${profileView.avatarUrl}`)
     : null;
@@ -2112,5 +2112,4 @@ export function SuperAdminSettingsScreen() {
     </div>
   );
 }
-
 

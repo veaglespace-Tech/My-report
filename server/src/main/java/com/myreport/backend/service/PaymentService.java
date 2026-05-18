@@ -65,7 +65,7 @@ public class PaymentService {
     @Value("${app.backend-origin:http://localhost:8082}")
     private String backendOrigin;
 
-    @Value("${app.frontend-origin:http://localhost:3000}")
+    @Value("${app.frontend-origin:http://localhost:3004}")
     private String frontendOrigin;
 
     @Transactional
@@ -598,22 +598,19 @@ public class PaymentService {
 
     private String frontendBaseUrl() {
         if (frontendOrigin == null || frontendOrigin.isBlank()) {
-            return "http://localhost:3000";
+            return "http://localhost:3004";
         }
 
         String[] origins = frontendOrigin.split(",");
         for (String origin : origins) {
             String value = origin.trim().replaceAll("/$", "");
-            if (value.equals("http://localhost:3000") || value.equals("http://127.0.0.1:3000")) {
+            if (value.equals("http://localhost:3004") || value.equals("http://127.0.0.1:3004")) {
                 return value;
             }
         }
 
         String firstOrigin = origins[0].trim().replaceAll("/$", "");
-        if (firstOrigin.equals("http://localhost:5173") || firstOrigin.equals("http://127.0.0.1:5173")) {
-            return firstOrigin.replace(":5173", ":3000");
-        }
-        return firstOrigin.isBlank() ? "http://localhost:3000" : firstOrigin;
+        return firstOrigin.isBlank() ? "http://localhost:3004" : firstOrigin;
     }
 
     private static boolean hasText(String value) {

@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   distDir: ".next-build",
   async rewrites() {
-    const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api";
+    const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
     const backendApiBaseUrl = apiBaseUrl.replace(/\/$/, "");
 
     return [
