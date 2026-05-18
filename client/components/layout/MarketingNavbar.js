@@ -77,11 +77,15 @@ export function MarketingNavbar() {
           <button
             type="button"
             onClick={() => router.push("/login")}
-            className="btn btn-outline btn-sm rounded-full border-cyan-400/55 bg-white/10 px-4 text-sm font-semibold text-cyan-800 shadow-sm shadow-cyan-500/10 transition hover:-translate-y-0.5 hover:border-cyan-500 hover:bg-cyan-500 hover:text-white hover:shadow-lg hover:shadow-cyan-500/20"
+            className="btn btn-sm group relative overflow-hidden rounded-full border-0 bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 px-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition duration-300 before:absolute before:inset-0 before:-translate-x-full before:bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.36),transparent)] before:transition-transform before:duration-700 before:content-[''] after:absolute after:inset-[1px] after:rounded-full after:bg-slate-950/12 after:opacity-0 after:transition-opacity after:content-[''] hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-[0_14px_32px_rgba(99,102,241,0.32),0_0_0_1px_rgba(255,255,255,0.35)] hover:before:translate-x-full hover:after:opacity-100 active:scale-[0.98]"
             suppressHydrationWarning={true}
           >
-            <LogIn size={16} />
-            Login
+            <span className="relative z-10 flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25 transition duration-300 group-hover:rotate-6 group-hover:bg-white/30">
+                <LogIn size={14} />
+              </span>
+              Login
+            </span>
           </button>
           <button
             type="button"
@@ -135,10 +139,14 @@ export function MarketingNavbar() {
                   setMobileOpen(false);
                   router.push("/login");
                 }}
-                className="btn btn-outline justify-start rounded-2xl border-cyan-400/55 bg-white/10 px-4 text-sm font-semibold text-cyan-800 transition hover:border-cyan-500 hover:bg-cyan-500 hover:text-white"
+                className="btn group relative justify-start overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-cyan-400 via-indigo-500 to-fuchsia-500 px-4 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition before:absolute before:inset-0 before:-translate-x-full before:bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.34),transparent)] before:transition-transform before:duration-700 before:content-[''] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/25 hover:before:translate-x-full active:scale-[0.99]"
               >
-                <LogIn size={16} />
-                Login
+                <span className="relative z-10 flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25 transition group-hover:rotate-6 group-hover:bg-white/30">
+                    <LogIn size={15} />
+                  </span>
+                  Login
+                </span>
               </button>
               <button
                 type="button"
