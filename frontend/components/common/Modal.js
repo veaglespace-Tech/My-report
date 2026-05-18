@@ -23,7 +23,7 @@ export function Modal({ open, title, description, onClose, children }) {
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
-                {description ? <p className="mt-1 text-sm text-white/55">{description}</p> : null}
+                {description ? <p className="mt-1 text-sm text-[var(--muted)]">{description}</p> : null}
               </div>
               <button
                 type="button"

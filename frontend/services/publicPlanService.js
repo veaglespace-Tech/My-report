@@ -89,7 +89,8 @@ export const publicPlanService = {
 
     if (!response.ok) {
       const message = await response.text().catch(() => "");
-      throw new Error(message || `Failed to load plans (${response.status})`);
+      const isHtmlError = /^\s*<!doctype html/i.test(message) || /^\s*<html/i.test(message);
+      throw new Error(isHtmlError || !message ? `Failed to load plans (${response.status})` : message);
     }
 
     return response.json();

@@ -38,6 +38,16 @@ const SUPERADMIN_PAGE_SIZE = 5;
 const DOT_COM_EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.com$/;
 const TEN_DIGIT_PHONE_REGEX = /^[0-9]{10}$/;
 const FULL_ADDRESS_REGEX = /^(?=.*[A-Za-z])(?=.*\s).{10,}$/;
+const STORE_TYPE_OPTIONS = [
+  "Shoe Shop",
+  "Clothes Shop",
+  "Grocery Shop",
+  "Electronics Shop",
+  "Beauty Shop",
+  "Accessories Shop",
+  "Medical Shop",
+  "General Shop",
+];
 
 function getContactValidationError({ email, phone, address }) {
   if (email !== undefined && !DOT_COM_EMAIL_REGEX.test(String(email || "").trim())) {
@@ -50,6 +60,47 @@ function getContactValidationError({ email, phone, address }) {
     return "Please enter a full address with at least 10 characters.";
   }
   return null;
+}
+
+function getAdminFormValidationErrors(form, editingItem) {
+  const errors = [];
+  const fullName = String(form.fullName || "").trim();
+  const email = String(form.email || "").trim();
+  const mobileNumber = String(form.mobileNumber || "").trim();
+  const password = String(form.password || "");
+  const storeName = String(form.storeName || "").trim();
+  const city = String(form.city || "").trim();
+  const address = String(form.address || "").trim();
+
+  if (fullName.length < 2) {
+    errors.push("Full name must contain at least 2 characters.");
+  }
+  if (!DOT_COM_EMAIL_REGEX.test(email)) {
+    errors.push("Email must be a valid .com address.");
+  }
+  if (!TEN_DIGIT_PHONE_REGEX.test(mobileNumber)) {
+    errors.push("Mobile number must be exactly 10 digits.");
+  }
+  if (!editingItem && !password.trim()) {
+    errors.push("Password is required for a new admin.");
+  }
+  if (password.trim() && !STRONG_PASSWORD_REGEX.test(password)) {
+    errors.push("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+  }
+  if (storeName.length < 2) {
+    errors.push("Store name must contain at least 2 characters.");
+  }
+  if (city.length < 2 || !/[A-Za-z]/.test(city)) {
+    errors.push("City must contain at least 2 letters.");
+  }
+  if (!FULL_ADDRESS_REGEX.test(address)) {
+    errors.push("Address must be a full address with at least 10 characters and a space.");
+  }
+  if (!form.planId) {
+    errors.push("Please select a plan.");
+  }
+
+  return errors;
 }
 
 function useAsyncLoader(loader, initialState) {
@@ -294,6 +345,7 @@ export function SuperAdminDashboardScreen() {
                   <XAxis dataKey="label" stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
                   <YAxis stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
                   <Tooltip
+                    labelStyle={{ display: "none" }}
                     contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }}
                   />
                   <Area type="monotone" dataKey="value" stroke="#4fd1c5" strokeWidth={2.5} fill="url(#revenueGradient)" />
@@ -347,7 +399,15 @@ export function SuperAdminDashboardScreen() {
                     <CartesianGrid stroke="rgba(26,16,53,0.08)" vertical={false} />
                     <XAxis dataKey="label" stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
                     <YAxis stroke="rgba(26,16,53,0.48)" tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ background: "rgba(8,14,28,0.96)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18 }} />
+                    <Tooltip
+                      labelStyle={{ display: "none" }}
+                      contentStyle={{
+                        background: "rgba(8,14,28,0.96)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 18,
+                        padding: "12px 14px",
+                      }}
+                    />
                     <Bar dataKey="admins" fill="#7c8cff" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="stores" fill="#4fd1c5" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -410,6 +470,7 @@ export function SuperAdminAdminsScreen() {
   const [query, setQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [formErrors, setFormErrors] = useState([]);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -427,6 +488,7 @@ export function SuperAdminAdminsScreen() {
 
   const openCreate = () => {
     setEditingItem(null);
+    setFormErrors([]);
     setForm({
       fullName: "",
       email: "",
@@ -442,6 +504,7 @@ export function SuperAdminAdminsScreen() {
 
   const openEdit = (item) => {
     setEditingItem(item);
+    setFormErrors([]);
     const plan = plansData.items.find((entry) => entry.name === item.plan);
     setForm({
       fullName: item.fullName,
@@ -460,19 +523,17 @@ export function SuperAdminAdminsScreen() {
     const value = ["mobileNumber", "phone"].includes(event.target.name)
       ? event.target.value.replace(/\D/g, "").slice(0, 10)
       : event.target.value;
+    setFormErrors([]);
     setForm((previous) => ({ ...previous, [event.target.name]: value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const validationError = getContactValidationError({
-      email: form.email,
-      phone: form.mobileNumber,
-      address: form.address,
-    });
-    if (validationError) {
-      toast.error(validationError);
+    const validationErrors = getAdminFormValidationErrors(form, editingItem);
+    if (validationErrors.length) {
+      setFormErrors(validationErrors);
+      toast.error("Please fix all highlighted validation errors.");
       return;
     }
 
@@ -528,6 +589,10 @@ export function SuperAdminAdminsScreen() {
   if (loading) {
     return <LoadingSkeleton rows={3} />;
   }
+
+  const selectedPlan = plansData.items.find((plan) => String(plan.id) === String(form.planId));
+  const selectedPlanPrice = Number(selectedPlan?.monthlyPrice || selectedPlan?.price || 0);
+  const selectedPlanIsPaid = selectedPlanPrice > 0;
 
   return (
     <div className="grid max-w-full gap-6">
@@ -621,24 +686,47 @@ export function SuperAdminAdminsScreen() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editingItem ? "Edit Admin" : "Add Admin"}
-        description="Provision a store owner with plan assignment, contact details, and secure access."
+        description="Create the store owner account, assign a plan, and set secure login access."
       >
-        <form className="grid gap-4" onSubmit={handleSubmit}>
+        <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
+          {formErrors.length ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-800">
+              <div className="font-semibold">Please fix these details:</div>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {formErrors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Full Name" name="fullName" value={form.fullName} onChange={handleFormChange} required />
             <FormField label="Email" name="email" type="email" value={form.email} onChange={handleFormChange} required />
             <FormField label="Mobile Number" name="mobileNumber" value={form.mobileNumber} onChange={handleFormChange} required />
-            <FormField label="Password" name="password" value={form.password} onChange={handleFormChange} placeholder={editingItem ? "Leave blank to keep current password" : "Create password"} />
+            <div className="grid gap-2">
+              <FormField label="Password" name="password" value={form.password} onChange={handleFormChange} placeholder={editingItem ? "Leave blank to keep current password" : "Create password"} />
+              {form.password ? <PasswordStrengthMeter password={form.password} /> : null}
+            </div>
             <FormField label="Store Name" name="storeName" value={form.storeName} onChange={handleFormChange} required />
             <FormField label="City" name="city" value={form.city} onChange={handleFormChange} required />
             <FormField label="Address" name="address" value={form.address} onChange={handleFormChange} required />
-            <SelectField
-              label="Plan"
-              name="planId"
-              value={form.planId}
-              onChange={handleFormChange}
-              options={plansData.items.map((plan) => ({ label: plan.name, value: String(plan.id) }))}
-            />
+            <div className="grid gap-2">
+              <SelectField
+                label="Plan"
+                name="planId"
+                value={form.planId}
+                onChange={handleFormChange}
+                options={plansData.items.map((plan) => ({
+                  label: `${plan.name} (${formatCurrency(Number(plan.monthlyPrice || plan.price || 0))}/month)`,
+                  value: String(plan.id),
+                }))}
+              />
+              <p className="text-xs leading-5 text-[var(--muted)]">
+                {selectedPlanIsPaid
+                  ? "No payment is collected on Create Admin. This manually provisions the paid plan; the admin can renew/pay later from their Plan page."
+                  : "This plan can be assigned without payment."}
+              </p>
+            </div>
           </div>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <ControlButton onClick={() => setModalOpen(false)}>Cancel</ControlButton>
@@ -695,9 +783,9 @@ export function SuperAdminStoresScreen() {
               <option value="Grocery Shop">Grocery Shop</option>
               <option value="Clothes Shop">Clothes Shop</option>
               <option value="Shoe Shop">Shoe Shop</option>
-              <option value="Electronics">Electronics</option>
+              <option value="Electronics Shop">Electronics Shop</option>
               <option value="Beauty Shop">Beauty Shop</option>
-              <option value="Accessories">Accessories</option>
+              <option value="Accessories Shop">Accessories Shop</option>
             </select>
           </div>
           <button
@@ -771,18 +859,19 @@ export function SuperAdminStoresScreen() {
             <FormField label="Store Name" name="name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
             <label className="grid gap-2 text-sm">
               <span className="font-medium text-[var(--muted-strong)]">Store Type</span>
-              <select
+              <input
+                list="superadmin-store-types"
                 value={form.storeType}
-                onChange={(e) => setForm((p) => ({ ...p, storeType: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, storeType: e.target.value.slice(0, 60) }))}
+                placeholder="Select or type shop type"
+                maxLength={60}
                 className="h-12 w-full rounded-2xl border border-black/10 bg-white/90 px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
-              >
-                <option value="Grocery Shop">Grocery Shop</option>
-                <option value="Clothes Shop">Clothes Shop</option>
-                <option value="Shoe Shop">Shoe Shop</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Beauty Shop">Beauty Shop</option>
-                <option value="Accessories">Accessories</option>
-              </select>
+              />
+              <datalist id="superadmin-store-types">
+                {STORE_TYPE_OPTIONS.map((option) => (
+                  <option key={option} value={option} />
+                ))}
+              </datalist>
             </label>
             <FormField label="Email" name="email" type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} required />
             <FormField label="Phone" name="phone" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} required />
@@ -814,7 +903,7 @@ export function SuperAdminPlansScreen() {
     monthlyPrice: "",
     yearlyPrice: "",
     maxProducts: "",
-    maxUsers: "",
+    maxUsers: "1",
     maxCustomers: "",
     features: "",
     trialAvailable: false,
@@ -834,7 +923,7 @@ export function SuperAdminPlansScreen() {
       monthlyPrice: "",
       yearlyPrice: "",
       maxProducts: "",
-      maxUsers: "",
+      maxUsers: "1",
       maxCustomers: "",
       features: "",
       trialAvailable: false,
@@ -856,7 +945,7 @@ export function SuperAdminPlansScreen() {
       monthlyPrice: item.monthlyPrice,
       yearlyPrice: item.yearlyPrice,
       maxProducts: item.maxProducts,
-      maxUsers: item.maxUsers,
+      maxUsers: item.maxUsers || "1",
       maxCustomers: item.maxCustomers,
       features: item.features,
       trialAvailable: Boolean(item.trialAvailable),
@@ -877,7 +966,7 @@ export function SuperAdminPlansScreen() {
       monthlyPrice: Number(form.monthlyPrice || form.price || 0),
       yearlyPrice: Number(form.yearlyPrice || 0),
       maxProducts: Number(form.maxProducts || 0),
-      maxUsers: Number(form.maxUsers || 0),
+      maxUsers: Number(form.maxUsers || 1),
       maxCustomers: Number(form.maxCustomers || 0),
     };
 
@@ -1047,9 +1136,7 @@ export function SuperAdminPlansScreen() {
             <FormField label="Yearly Price" name="yearlyPrice" type="number" value={form.yearlyPrice} onChange={(event) => setForm((previous) => ({ ...previous, yearlyPrice: event.target.value }))} required />
             <FormField label="Max Products" name="maxProducts" type="number" value={form.maxProducts} onChange={(event) => setForm((previous) => ({ ...previous, maxProducts: event.target.value }))} required />
             <FormField label="Max Customers" name="maxCustomers" type="number" value={form.maxCustomers} onChange={(event) => setForm((previous) => ({ ...previous, maxCustomers: event.target.value }))} required />
-            <FormField label="Max Users" name="maxUsers" type="number" value={form.maxUsers} onChange={(event) => setForm((previous) => ({ ...previous, maxUsers: event.target.value }))} required />
-            <FormField label="Button Text" name="buttonText" value={form.buttonText} onChange={(event) => setForm((previous) => ({ ...previous, buttonText: event.target.value }))} placeholder="Select Plan" />
-            <FormField label="Theme Color" name="themeColor" value={form.themeColor} onChange={(event) => setForm((previous) => ({ ...previous, themeColor: event.target.value }))} placeholder="indigo / cyan / violet" />
+            <FormField className="sm:col-span-2" label="Button Text" name="buttonText" value={form.buttonText} onChange={(event) => setForm((previous) => ({ ...previous, buttonText: event.target.value }))} placeholder="Select Plan" />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

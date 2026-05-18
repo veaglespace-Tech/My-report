@@ -2,6 +2,8 @@ package com.myreport.backend.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.io.UnsupportedEncodingException;
+import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -18,9 +20,15 @@ public class EmailService {
     @Value("${app.email:mg@info.veaglespace.com}")
     private String fromEmail;
 
+    @Value("${app.email.from-name:MyReport}")
+    private String fromName;
+
+    @Value("${spring.mail.username:}")
+    private String smtpUsername;
+
     public void sendEmail(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(hasText(fromEmail) ? fromEmail : "no-reply@myreport.local");
+        message.setFrom(effectiveFromEmail());
         message.setTo(to);
         message.setSubject(subject);
         message.setText(body);
@@ -30,11 +38,42 @@ public class EmailService {
     public void sendHtmlEmail(String to, String subject, String plainBody, String htmlBody) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        helper.setFrom(hasText(fromEmail) ? fromEmail : "no-reply@myreport.local");
+        setFrom(helper);
         helper.setTo(to);
+        helper.setReplyTo(effectiveFromEmail());
         helper.setSubject(subject);
         helper.setText(plainBody, htmlBody);
+        helper.setSentDate(new Date());
+        addTransactionalHeaders(message);
         mailSender.send(message);
+    }
+
+    private void setFrom(MimeMessageHelper helper) throws MessagingException {
+        String from = effectiveFromEmail();
+        try {
+            helper.setFrom(from, effectiveFromName());
+        } catch (UnsupportedEncodingException exception) {
+            helper.setFrom(from);
+        }
+    }
+
+    private String effectiveFromEmail() {
+        if (hasText(fromEmail)) {
+            return fromEmail.trim();
+        }
+        if (hasText(smtpUsername)) {
+            return smtpUsername.trim();
+        }
+        return "no-reply@myreport.local";
+    }
+
+    private String effectiveFromName() {
+        return hasText(fromName) ? fromName.trim() : "MyReport";
+    }
+
+    private void addTransactionalHeaders(MimeMessage message) throws MessagingException {
+        message.addHeader("Auto-Submitted", "auto-generated");
+        message.addHeader("X-Auto-Response-Suppress", "All");
     }
 
     private static boolean hasText(String value) {

@@ -227,7 +227,7 @@ export function DashboardShell({ role, children }) {
                         <Menu size={18} />
                       </button>
                       <div className="flex min-w-0 items-start gap-3">
-                        <div className="theme-soft-panel hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-cyan-200 sm:flex">
+                        <div className="theme-soft-panel hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-black sm:flex">
                           <PageIcon size={18} />
                         </div>
                         <div className="min-w-0">

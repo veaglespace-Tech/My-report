@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +21,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
         ProductUnit getUnit();
     }
+
+    @Modifying
+    @Query("""
+            delete from Order o
+            where o.customer.id = :customerId
+              and o.store.owner.id = :ownerId
+            """)
+    int deleteByCustomerIdAndOwnerId(@Param("customerId") Long customerId, @Param("ownerId") Long ownerId);
 
     @Query("""
             select o from Order o

@@ -168,6 +168,7 @@ public class AdminService {
     public void deleteCustomer(String email, Long customerId) {
         UserAccount admin = getAdmin(email);
         Customer customer = getCustomer(admin.getId(), customerId);
+        orderRepository.deleteByCustomerIdAndOwnerId(customer.getId(), admin.getId());
         customerRepository.delete(customer);
     }
 

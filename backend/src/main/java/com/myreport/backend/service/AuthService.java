@@ -25,6 +25,7 @@ import com.myreport.backend.repository.UserAccountRepository;
 import com.myreport.backend.security.JwtService;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -348,33 +349,57 @@ public class AuthService {
 
     private void sendRegistrationSuccessEmailSafely(UserAccount admin, Store store, Plan plan) {
         try {
-            String loginLink = frontendBaseUrl() + "/login";
+            String loginLink = publicFrontendLoginLink();
             String storeName = store != null && store.getName() != null ? store.getName() : admin.getStoreName();
             String storeCode = store != null && store.getStoreCode() != null ? store.getStoreCode() : "Will be shared soon";
             String planName = plan != null && plan.getName() != null ? plan.getName() : "Your selected plan";
             String statusMessage = admin.getStatus() == UserStatus.PENDING_APPROVAL
-                    ? "Your account is currently waiting for SuperAdmin approval."
-                    : "Your account is active and ready to use.";
-            String plainBody = "Hello " + admin.getFullName() + ",\n\n"
-                    + "Congratulations! Your registration was successful and your MyReport store has been created.\n\n"
-                    + "Store Details:\n"
-                    + "Store Name: " + storeName + "\n"
-                    + "Store ID: " + storeCode + "\n"
-                    + "Plan: " + planName + "\n"
-                    + "Status: " + statusMessage + "\n\n"
-                    + "Login options: Email ID (" + admin.getEmail() + ") or Store ID (" + storeCode + ")\n"
-                    + "Login here:\n" + loginLink + "\n\n"
-                    + "Thank you for choosing MyReport.\n\n"
-                    + "Regards,\n"
-                    + "MyReport Team";
+                    ? "Pending approval by the MyReport administrator"
+                    : "Active";
+            String plainBody = registrationPlainText(admin.getFullName(), admin.getEmail(), storeName, storeCode, planName, statusMessage, loginLink);
 
-            emailService.sendHtmlEmail(
-                    admin.getEmail(),
-                    "Registration Successful - Your MyReport Store Is Created",
-                    plainBody,
-                    registrationEmailHtml(admin.getFullName(), admin.getEmail(), storeName, storeCode, planName, statusMessage, loginLink));
+            String subject = "MyReport account details";
+            String htmlBody = registrationEmailHtml(admin.getFullName(), admin.getEmail(), storeName, storeCode, planName, statusMessage, loginLink);
+            for (String recipient : registrationEmailRecipients(admin, store)) {
+                sendRegistrationEmailToRecipient(recipient, subject, plainBody, htmlBody);
+            }
         } catch (Exception exception) {
-            log.warn("Registration success email could not be sent to {}: {}", admin.getEmail(), exception.getMessage());
+            log.warn("Registration success email could not be prepared for {}", admin.getEmail(), exception);
+        }
+    }
+
+    private List<String> registrationEmailRecipients(UserAccount admin, Store store) {
+        List<String> recipients = new ArrayList<>();
+        addEmailRecipient(recipients, admin.getEmail());
+        if (store != null) {
+            addEmailRecipient(recipients, store.getBusinessEmail());
+        }
+        return recipients;
+    }
+
+    private void addEmailRecipient(List<String> recipients, String email) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+
+        String normalizedEmail = email.trim().toLowerCase();
+        if (!recipients.contains(normalizedEmail)) {
+            recipients.add(normalizedEmail);
+        }
+    }
+
+    private void sendRegistrationEmailToRecipient(String recipient, String subject, String plainBody, String htmlBody) {
+        try {
+            emailService.sendHtmlEmail(recipient, subject, plainBody, htmlBody);
+            log.info("Registration success email sent to {}", recipient);
+        } catch (Exception htmlException) {
+            log.warn("HTML registration email could not be sent to {}. Trying plain text fallback.", recipient, htmlException);
+            try {
+                emailService.sendEmail(recipient, subject, plainBody);
+                log.info("Plain registration success email sent to {}", recipient);
+            } catch (Exception plainException) {
+                log.warn("Registration success email could not be sent to {}", recipient, plainException);
+            }
         }
     }
 
@@ -394,21 +419,51 @@ public class AuthService {
     }
 
     private String registrationEmailHtml(String fullName, String adminEmail, String storeName, String storeCode, String planName, String statusMessage, String loginLink) {
+        String loginHelp = hasText(loginLink)
+                ? "Use either the Email ID or Store ID below when signing in."
+                : "Use either the Email ID or Store ID below when the MyReport login page is available.";
+        String loginAction = hasText(loginLink)
+                ? ctaButton("Open MyReport", loginLink)
+                : "<p style=\"margin:0 0 22px;color:#4b5563;font-size:14px;line-height:1.6;\">The login page will be available from your MyReport workspace URL.</p>";
+
         return emailShell(
-                "Registration Successful",
-                "Your MyReport store is ready",
-                "Hi " + fullName + ", your workspace has been created. Keep this Store ID safe because you can now log in with Email ID or Store ID.",
+                "Account Information",
+                "Your MyReport account details",
+                "Hello " + fullName + ", your MyReport account has been created. Please keep these details for your records.",
                 detailPanel(
-                        "Store Access Details",
-                        "Use this Store ID for login, profile reference, and support.",
+                        "Account Details",
+                        loginHelp,
                         detailRow("Store ID", storeCode)
                                 + detailRow("Email ID", adminEmail)
                                 + detailRow("Store Name", storeName)
                                 + detailRow("Plan", planName)
-                                + detailRow("Status", statusMessage)
-                                + detailRow("Login Options", "Store ID or Email ID"))
-                        + "<p style=\"margin:0 0 24px;color:#6b5b8a;font-size:14px;line-height:1.7;\">MyReport is ready for billing, inventory, invoices, customers, and reports from one clean workspace.</p>"
-                        + ctaButton("Login to MyReport", loginLink));
+                                + detailRow("Status", statusMessage))
+                        + "<p style=\"margin:0 0 22px;color:#4b5563;font-size:14px;line-height:1.6;\">If any detail looks incorrect, contact MyReport support or reply to this email.</p>"
+                        + loginAction);
+    }
+
+    private String registrationPlainText(String fullName, String adminEmail, String storeName, String storeCode, String planName, String statusMessage, String loginLink) {
+        StringBuilder body = new StringBuilder();
+        body.append("Hello ").append(fullName).append(",\n\n")
+                .append("Your MyReport account has been created. Please keep these details for your records.\n\n")
+                .append("Account Details\n")
+                .append("Store Name: ").append(storeName).append("\n")
+                .append("Store ID: ").append(storeCode).append("\n")
+                .append("Email ID: ").append(adminEmail).append("\n")
+                .append("Plan: ").append(planName).append("\n")
+                .append("Status: ").append(statusMessage).append("\n\n")
+                .append("You can sign in using either your Email ID or Store ID.\n");
+
+        if (hasText(loginLink)) {
+            body.append("MyReport login page:\n").append(loginLink).append("\n\n");
+        } else {
+            body.append("The login page will be available from your MyReport workspace URL.\n\n");
+        }
+
+        body.append("If any detail looks incorrect, contact MyReport support or reply to this email.\n\n")
+                .append("Regards,\n")
+                .append("MyReport Team");
+        return body.toString();
     }
 
     private String resetPasswordEmailHtml(String resetLink) {
@@ -426,34 +481,31 @@ public class AuthService {
     }
 
     private String emailShell(String eyebrow, String title, String intro, String body) {
-        return "<!doctype html><html><body style=\"margin:0;padding:0;background:#f0edf6;font-family:Arial,Helvetica,sans-serif;color:#1a1035;\">"
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:linear-gradient(165deg,#ede9f8 0%,#e8e0f4 34%,#ddd6f3 66%,#e0daf5 100%);padding:34px 12px;\">"
+        return "<!doctype html><html><body style=\"margin:0;padding:0;background:#f6f7fb;font-family:Arial,Helvetica,sans-serif;color:#111827;\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f6f7fb;padding:28px 12px;\">"
                 + "<tr><td align=\"center\">"
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:620px;background:#ffffff;border:1px solid rgba(109,76,165,0.16);border-radius:28px;overflow:hidden;box-shadow:0 26px 80px rgba(109,76,165,0.22);\">"
-                + "<tr><td style=\"background:#7c3aed;padding:0;\">"
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:linear-gradient(135deg,#7c3aed 0%,#3b82f6 58%,#06b6d4 100%);border-bottom:1px solid rgba(255,255,255,0.28);\">"
-                + "<tr><td style=\"padding:36px 36px 32px;color:#ffffff;\">"
-                + "<div style=\"font-size:12px;font-weight:800;letter-spacing:2.6px;text-transform:uppercase;color:#fff7d6;\">" + escapeHtml(eyebrow) + "</div>"
-                + "<div style=\"margin-top:14px;font-size:30px;line-height:1.2;font-weight:800;color:#ffffff;\">" + escapeHtml(title) + "</div>"
-                + "<div style=\"margin-top:14px;max-width:520px;color:#eef6ff;font-size:15px;line-height:1.75;\">" + escapeHtml(intro) + "</div>"
-                + "</td></tr></table>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:620px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;\">"
+                + "<tr><td style=\"padding:28px 32px 18px;border-bottom:1px solid #e5e7eb;\">"
+                + "<div style=\"font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#4f46e5;\">" + escapeHtml(eyebrow) + "</div>"
+                + "<div style=\"margin-top:10px;font-size:24px;line-height:1.25;font-weight:700;color:#111827;\">" + escapeHtml(title) + "</div>"
+                + "<div style=\"margin-top:10px;max-width:520px;color:#4b5563;font-size:14px;line-height:1.6;\">" + escapeHtml(intro) + "</div>"
                 + "</td></tr>"
-                + "<tr><td style=\"padding:32px 34px;background:linear-gradient(180deg,#ffffff 0%,#fbf8ff 100%);\">"
+                + "<tr><td style=\"padding:26px 32px;background:#ffffff;\">"
                 + body
-                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:30px;border-top:1px solid rgba(109,76,165,0.14);\">"
-                + "<tr><td style=\"padding-top:18px;color:#6b5b8a;font-size:12px;line-height:1.6;\">Regards,<br><strong style=\"color:#2d1f4e;\">MyReport Team</strong></td></tr>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:28px;border-top:1px solid #e5e7eb;\">"
+                + "<tr><td style=\"padding-top:16px;color:#6b7280;font-size:12px;line-height:1.6;\">Regards,<br><strong style=\"color:#111827;\">MyReport Team</strong></td></tr>"
                 + "</table>"
                 + "</td></tr></table>"
                 + "</td></tr></table></body></html>";
     }
 
     private String detailPanel(String title, String subtitle, String rows) {
-        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin:0 0 24px;border-radius:22px;background:linear-gradient(180deg,#f8f5ff 0%,#eef6ff 100%);border:1px solid rgba(124,58,237,0.18);\">"
-                + "<tr><td style=\"padding:22px 22px 8px;\">"
-                + "<div style=\"font-size:13px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#7c3aed;\">" + escapeHtml(title) + "</div>"
-                + "<div style=\"margin-top:8px;color:#6b5b8a;font-size:13px;line-height:1.6;\">" + escapeHtml(subtitle) + "</div>"
+        return "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin:0 0 22px;border-radius:10px;background:#f9fafb;border:1px solid #e5e7eb;\">"
+                + "<tr><td style=\"padding:18px 18px 6px;\">"
+                + "<div style=\"font-size:13px;font-weight:700;color:#111827;\">" + escapeHtml(title) + "</div>"
+                + "<div style=\"margin-top:6px;color:#6b7280;font-size:13px;line-height:1.5;\">" + escapeHtml(subtitle) + "</div>"
                 + "</td></tr>"
-                + "<tr><td style=\"padding:2px 22px 18px;\">"
+                + "<tr><td style=\"padding:2px 18px 16px;\">"
                 + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">"
                 + rows
                 + "</table>"
@@ -462,15 +514,15 @@ public class AuthService {
 
     private String detailRow(String label, String value) {
         return "<tr>"
-                + "<td style=\"width:160px;padding:13px 0;border-bottom:1px solid rgba(109,76,165,0.12);color:#6b5b8a;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;\">" + escapeHtml(label) + "</td>"
-                + "<td align=\"right\" style=\"padding:13px 0;border-bottom:1px solid rgba(109,76,165,0.12);color:#1a1035;font-size:14px;font-weight:800;\">" + escapeHtml(value) + "</td>"
+                + "<td style=\"width:150px;padding:11px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:12px;font-weight:700;\">" + escapeHtml(label) + "</td>"
+                + "<td align=\"right\" style=\"padding:11px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-size:14px;font-weight:700;\">" + escapeHtml(value) + "</td>"
                 + "</tr>";
     }
 
     private String ctaButton(String label, String href) {
         String safeHref = escapeHtml(href);
-        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:6px;\"><tr><td style=\"border-radius:14px;background:#7c3aed;box-shadow:0 14px 34px rgba(124,58,237,0.28);\">"
-                + "<a href=\"" + safeHref + "\" style=\"display:inline-block;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#3b82f6,#06b6d4);color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:14px 22px;\">"
+        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:6px;\"><tr><td style=\"border-radius:8px;background:#4f46e5;\">"
+                + "<a href=\"" + safeHref + "\" style=\"display:inline-block;border-radius:8px;background:#4f46e5;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;\">"
                 + escapeHtml(label)
                 + "</a></td></tr></table>";
     }
@@ -509,6 +561,30 @@ public class AuthService {
             return firstOrigin.replace(":5173", ":3000");
         }
         return firstOrigin.isBlank() ? "http://localhost:3000" : firstOrigin;
+    }
+
+    private String publicFrontendLoginLink() {
+        String baseUrl = frontendBaseUrl();
+        if (!isPublicHttpsUrl(baseUrl)) {
+            return null;
+        }
+        return baseUrl + "/login";
+    }
+
+    private boolean isPublicHttpsUrl(String value) {
+        if (!hasText(value)) {
+            return false;
+        }
+
+        String normalized = value.trim().toLowerCase();
+        return normalized.startsWith("https://")
+                && !normalized.contains("localhost")
+                && !normalized.contains("127.0.0.1")
+                && !normalized.contains("0.0.0.0");
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
 }

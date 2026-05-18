@@ -30,6 +30,16 @@ const STORE_NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9 &'().-]*[A-Za-z0-9]$/;
 const PLACE_REGEX = /^[A-Za-z][A-Za-z .'-]*[A-Za-z]$/;
 const PHONE_REGEX = /^[0-9]{10}$/;
 const STORE_ID_REGEX = /^MR-[A-Z0-9]{8}$/i;
+const STORE_TYPE_OPTIONS = [
+  "Shoe Shop",
+  "Clothes Shop",
+  "Grocery Shop",
+  "Electronics Shop",
+  "Beauty Shop",
+  "Accessories Shop",
+  "Medical Shop",
+  "General Shop",
+];
 
 function isDummyText(value) {
   const compact = String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -1059,20 +1069,22 @@ export function AdminSignupScreen() {
               )}
               {renderField(
                 "Store Type",
-                <Building2 size={18} />,
-                <select
-                  value={form.organization.storeType}
-                  onChange={(event) => updateSection("organization", "storeType", event.target.value)}
-                  className="w-full bg-transparent text-sm outline-none"
-                >
-                  <option value="">Select store type</option>
-                  <option value="Shoe Shop">Shoe Shop</option>
-                  <option value="Clothes Shop">Clothes Shop</option>
-                  <option value="Grocery Shop">Grocery Shop</option>
-                  <option value="Electronics Shop">Electronics Shop</option>
-                  <option value="Beauty Shop">Beauty Shop</option>
-                  <option value="Accessories Shop">Accessories Shop</option>
-                </select>,
+                <Store size={18} />,
+                <>
+                  <input
+                    list="admin-signup-store-types"
+                    value={form.organization.storeType}
+                    onChange={(event) => updateSection("organization", "storeType", event.target.value.slice(0, 60))}
+                    placeholder="Select or type shop type"
+                    maxLength={60}
+                    className="w-full bg-transparent text-sm outline-none"
+                  />
+                  <datalist id="admin-signup-store-types">
+                    {STORE_TYPE_OPTIONS.map((option) => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </>,
                 visibleError("organization", "storeType", getStepErrors.storeType)
               )}
               {renderField(
