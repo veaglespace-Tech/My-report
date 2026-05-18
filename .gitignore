@@ -23,20 +23,20 @@
 hs_err_pid*
 replay_pid*
 
-# Frontend build artifacts
-frontend/node_modules/
-frontend/.next/
-frontend/.next-build/
+# Client build artifacts
+client/node_modules/
+client/.next/
+client/.next-build/
 
-# Backend build artifacts
-backend/.m2/
-backend/target/
+# Server build artifacts
+server/.m2/
+server/target/
 
 # Local dependency caches and generated runtime files
 .m2repo/
-backend/.m2repo/
-backend/uploads/
+server/.m2repo/
+server/uploads/
 
 # Local environment files
-backend/.env
-frontend/.env*
+server/.env
+client/.env*
