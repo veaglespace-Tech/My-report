@@ -5,6 +5,9 @@ const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
 const COMPANY_WEBSITE = process.env.NEXT_PUBLIC_COMPANY_WEBSITE;
 const BACKEND_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 const OPENAI_MODEL = process.env.OPENAI_MODEL;
+const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
+const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || "gpt-oss-120b";
+const CEREBRAS_BASE_URL = process.env.CEREBRAS_BASE_URL || "https://api.cerebras.ai/v1";
 
 const KNOWLEDGE_BASE = `ABOUT MYREPORT
 MyReport Store OS is a modern store management platform for retail businesses.
@@ -145,7 +148,7 @@ export async function POST(request) {
     const { messages } = await request.json();
     const coerced = coerceMessages(messages);
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!CEREBRAS_API_KEY && !process.env.OPENAI_API_KEY) {
       const userMessage = lastUserMessage(coerced);
       const answer = localAnswer(userMessage);
       if (answer.startsWith("I can help with")) {
@@ -154,8 +157,10 @@ export async function POST(request) {
       return Response.json({ message: answer, timestamp: new Date().toISOString(), provider: "local" });
     }
 
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const model = OPENAI_MODEL;
+    const client = CEREBRAS_API_KEY
+      ? new OpenAI({ apiKey: CEREBRAS_API_KEY, baseURL: CEREBRAS_BASE_URL })
+      : new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const model = CEREBRAS_API_KEY ? CEREBRAS_MODEL : OPENAI_MODEL;
 
     const completion = await client.chat.completions.create({
       model,
@@ -170,6 +175,7 @@ export async function POST(request) {
     return Response.json({
       message: content,
       timestamp: new Date().toISOString(),
+      provider: CEREBRAS_API_KEY ? "cerebras" : "openai",
     });
   } catch (error) {
     return Response.json(

@@ -40,24 +40,12 @@ function PricingCard({ plan, onSelect }) {
       whileHover={{ scale: 1.02, y: -8 }}
       className={[
         "group relative flex h-full min-h-[520px] flex-col rounded-3xl border bg-[linear-gradient(135deg,rgba(14,14,24,0.98),rgba(29,24,49,0.96))] p-6 text-white shadow-xl backdrop-blur-md transition-all duration-300",
-        plan.featured
-          ? "border-cyan-300/70 shadow-2xl shadow-cyan-500/16 ring-1 ring-cyan-200/20 hover:shadow-[0_24px_48px_rgba(34,211,238,0.18)]"
-          : "border-white/12 shadow-slate-900/30 hover:shadow-[0_24px_48px_rgba(59,130,246,0.12)]",
+        "border-cyan-300/70 shadow-2xl shadow-cyan-500/16 ring-1 ring-cyan-200/20 hover:shadow-[0_24px_48px_rgba(34,211,238,0.18)]",
       ].join(" ")}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
-        <div
-          className={[
-            "absolute -right-10 -top-10 h-40 w-40 rounded-full blur-3xl",
-            plan.featured ? "bg-cyan-400/20" : "bg-indigo-500/10",
-          ].join(" ")}
-        />
-        <div
-          className={[
-            "absolute -left-10 bottom-0 h-36 w-36 rounded-full blur-3xl",
-            plan.featured ? "bg-indigo-400/20" : "bg-fuchsia-500/10",
-          ].join(" ")}
-        />
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="absolute -left-10 bottom-0 h-36 w-36 rounded-full bg-indigo-400/20 blur-3xl" />
         <div className="absolute inset-0 rounded-3xl border border-transparent transition duration-300 group-hover:border-cyan-300/30 group-hover:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.14)]" />
       </div>
 
