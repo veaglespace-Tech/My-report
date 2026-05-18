@@ -10,17 +10,17 @@ import { publicPlanService } from "@/services/publicPlanService";
 
 const HERO_BACKGROUNDS = {
   grocery:
-    "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1800&q=80",
+    "/assets/grocery.jpg",
   clothing:
-    "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1800&q=80",
+    "/assets/clothing.jpg",
   shoes:
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1800&q=80",
+    "/assets/shoes.jpg",
   electronics:
-    "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1800&q=80",
+    "/assets/electronics.jpg",
   beauty:
-    "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1800&q=80",
+    "/assets/beauty.jpg",
   accessories:
-    "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=1800&q=80",
+    "/assets/accessories.jpg",
 };
 
 const CATEGORY_CARDS = [
@@ -48,7 +48,7 @@ const CATEGORY_CARDS = [
     text: "Pairs, sizes, restock alerts, and returns.",
     store: "shoes",
     image: HERO_BACKGROUNDS.shoes,
-    imagePosition: "center 52%",
+    imagePosition: "center 50%",
     accent: "from-rose-400 to-orange-500",
   },
   {
@@ -57,7 +57,7 @@ const CATEGORY_CARDS = [
     text: "Warranty, serial numbers, and invoicing.",
     store: "electronics",
     image: HERO_BACKGROUNDS.electronics,
-    imagePosition: "center 48%",
+    imagePosition: "center 38%",
     accent: "from-sky-400 to-blue-600",
   },
   {
@@ -82,8 +82,21 @@ const CATEGORY_CARDS = [
 
 export function HomeLanding() {
   const [activeStore, setActiveStore] = useState("clothing");
+  const [canHover, setCanHover] = useState(false);
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const updateCanHover = () => setCanHover(mediaQuery.matches);
+
+    updateCanHover();
+    mediaQuery.addEventListener("change", updateCanHover);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateCanHover);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -195,15 +208,26 @@ export function HomeLanding() {
           >
             {CATEGORY_CARDS.map((item, index) => {
               const Icon = item.icon;
+              const hoverCardClasses = canHover
+                ? "hover:border-white/75 hover:bg-white/70 hover:shadow-[0_22px_48px_rgba(79,70,229,0.22)]"
+                : "";
+              const hoverImageClasses = canHover
+                ? "group-hover:scale-110 group-hover:saturate-[1.22]"
+                : "";
+              const hoverIconClasses = canHover ? "group-hover:-translate-y-1 group-hover:scale-105" : "";
               return (
                 <motion.button
                   key={item.title}
                   type="button"
-                  onMouseEnter={() => setActiveStore(item.store)}
+                  onMouseEnter={() => {
+                    if (canHover) {
+                      setActiveStore(item.store);
+                    }
+                  }}
                   onFocus={() => setActiveStore(item.store)}
-                  whileHover={{ y: -6, scale: 1.02 }}
+                  whileHover={canHover ? { y: -6, scale: 1.02 } : undefined}
                   transition={{ type: "spring", stiffness: 240, damping: 18 }}
-                  className="group relative overflow-hidden rounded-2xl border border-white/55 bg-white/60 text-left shadow-[0_14px_34px_rgba(79,70,229,0.14)] ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 hover:border-white/75 hover:bg-white/70 hover:shadow-[0_22px_48px_rgba(79,70,229,0.22)]"
+                  className={`group relative overflow-hidden rounded-2xl border border-white/55 bg-white/60 text-left shadow-[0_14px_34px_rgba(79,70,229,0.14)] ring-1 ring-black/5 backdrop-blur-md transition-all duration-300 ${hoverCardClasses}`}
                   style={{ transformOrigin: "center" }}
                 >
                   <div className="relative h-40 w-full overflow-hidden bg-slate-100">
@@ -212,18 +236,20 @@ export function HomeLanding() {
                       alt={`${item.title} store background`}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover saturate-[1.12] contrast-[1.06] transition duration-700 ease-out group-hover:scale-110 group-hover:saturate-[1.22]"
+                      className={`object-cover saturate-[1.12] contrast-[1.06] transition duration-700 ease-out ${hoverImageClasses}`}
                       style={{ objectPosition: item.imagePosition }}
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04),rgba(15,23,42,0.02)_45%,rgba(238,242,255,0.20))]" />
-                    <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${item.accent}`} />
-                    <div className="absolute inset-0 opacity-0 transition duration-500 group-hover:opacity-100">
-                      <div className="absolute -left-1/3 top-0 h-full w-1/2 skew-x-[-18deg] bg-white/18 blur-sm transition-transform duration-700 group-hover:translate-x-[260%]" />
-                    </div>
+                    <div className={`absolute inset-x-0 top-0 z-20 h-1 bg-gradient-to-r ${item.accent}`} />
+                    {canHover ? (
+                      <div className="absolute inset-0 opacity-0 transition duration-500 group-hover:opacity-100">
+                        <div className="absolute -left-1/3 top-0 h-full w-1/2 skew-x-[-18deg] bg-white/18 blur-sm transition-transform duration-700 group-hover:translate-x-[260%]" />
+                      </div>
+                    ) : null}
                   </div>
-                  <div className="relative bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(245,241,255,0.74))] p-5">
-                    <div className="flex items-start gap-4">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${item.accent} text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/60 transition duration-300 group-hover:-translate-y-1 group-hover:scale-105`}>
+                  <div className="relative min-h-[96px] bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(245,241,255,0.74))] p-5">
+                    <div className="flex h-full items-start gap-4">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${item.accent} text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/60 transition duration-300 ${hoverIconClasses}`}>
                         <Icon size={18} />
                       </div>
                       <div className="min-w-0">
@@ -232,9 +258,11 @@ export function HomeLanding() {
                       </div>
                     </div>
                   </div>
-                  <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/8 via-indigo-500/6 to-purple-500/8" />
-                  </div>
+                  {canHover ? (
+                    <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/8 via-indigo-500/6 to-purple-500/8" />
+                    </div>
+                  ) : null}
                 </motion.button>
               );
             })}

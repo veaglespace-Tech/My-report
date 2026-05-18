@@ -36,7 +36,7 @@ export default function AboutPage() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="flex h-full flex-1 flex-col justify-between rounded-[22px] border border-cyan-200/50 bg-white/78 p-5 shadow-[0_16px_42px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/70 hover:bg-white/90 hover:shadow-[0_18px_46px_rgba(59,130,246,0.16)]"
+                  className="flex h-full flex-1 flex-col justify-between rounded-[22px] border border-cyan-200/50 bg-white/78 p-5 shadow-[0_16px_42px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5 [@media(hover:hover)_and_(pointer:fine)]:hover:border-cyan-300/70 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-white/90 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_18px_46px_rgba(59,130,246,0.16)]"
                 >
                   <p className="text-sm font-semibold text-slate-950">{item.title}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
@@ -45,7 +45,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="group flex h-full flex-col justify-between rounded-[24px] border border-indigo-200/60 bg-white/80 p-6 shadow-[0_18px_48px_rgba(99,102,241,0.14)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300/70 hover:bg-white/92">
+          <div className="group flex h-full flex-col justify-between rounded-[24px] border border-indigo-200/60 bg-white/80 p-6 shadow-[0_18px_48px_rgba(99,102,241,0.14)] backdrop-blur-xl transition-all duration-300 [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5 [@media(hover:hover)_and_(pointer:fine)]:hover:border-indigo-300/70 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-white/92">
             <p className="text-sm font-semibold text-slate-950">What you get</p>
             <ul className="mt-4 space-y-3 text-sm text-slate-600">
               {[
@@ -56,8 +56,8 @@ export default function AboutPage() {
                 "Subscriptions, plans, and renewals",
                 "Reports built for daily decisions",
               ].map((feature) => (
-                <li key={feature} className="group/item flex gap-3 transition-all duration-300 hover:translate-x-0.5 hover:text-slate-950">
-                  <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-teal-700 ring-1 ring-cyan-200 transition-all duration-300 group-hover/item:bg-teal-600 group-hover/item:text-white">
+                <li key={feature} className="group/item flex gap-3 transition-all duration-300 [@media(hover:hover)_and_(pointer:fine)]:hover:translate-x-0.5 [@media(hover:hover)_and_(pointer:fine)]:hover:text-slate-950">
+                  <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyan-100 text-teal-700 ring-1 ring-cyan-200 transition-all duration-300 [@media(hover:hover)_and_(pointer:fine)]:group-hover/item:bg-teal-600 [@media(hover:hover)_and_(pointer:fine)]:group-hover/item:text-white">
                     <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
                       <path
                         fillRule="evenodd"
@@ -66,7 +66,7 @@ export default function AboutPage() {
                       />
                     </svg>
                   </span>
-                  <span className="leading-6 transition-colors duration-300 group-hover/item:text-slate-950">{feature}</span>
+                  <span className="leading-6 transition-colors duration-300 [@media(hover:hover)_and_(pointer:fine)]:group-hover/item:text-slate-950">{feature}</span>
                 </li>
               ))}
             </ul>
@@ -113,7 +113,7 @@ export default function AboutPage() {
           ].map((item) => (
             <div
               key={item.title}
-            className="group relative flex min-h-[230px] flex-col justify-start overflow-hidden rounded-[26px] border border-slate-200/80 bg-white/82 p-8 shadow-[0_18px_52px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-200/90 hover:bg-white hover:shadow-[0_20px_52px_rgba(59,130,246,0.17)]"
+            className="group relative flex min-h-[230px] flex-col justify-start overflow-hidden rounded-[26px] border border-slate-200/80 bg-white/82 p-8 shadow-[0_18px_52px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5 [@media(hover:hover)_and_(pointer:fine)]:hover:border-cyan-200/90 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-white [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_20px_52px_rgba(59,130,246,0.17)]"
           >
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-400" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_45%)] opacity-80" />
@@ -177,7 +177,7 @@ export default function AboutPage() {
 
             <Link
               href="/contact"
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-[var(--theme-primary-button-text)] shadow-[0_20px_70px_rgba(79,209,197,0.28)] transition hover:-translate-y-0.5 hover:bg-white md:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-[var(--theme-primary-button-text)] shadow-[0_20px_70px_rgba(79,209,197,0.28)] transition [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-white md:w-auto"
             >
               Contact Support
             </Link>
@@ -193,31 +193,31 @@ function ResourceCard({ title, description, buttonLabel, href, accent }) {
     primary: {
       ring: "ring-[rgba(79,209,197,0.2)]",
       badge: "bg-[rgba(79,209,197,0.14)] text-[var(--primary)]",
-      button: "bg-[rgba(79,209,197,0.14)] text-[var(--foreground)] hover:bg-[rgba(79,209,197,0.22)]",
+      button: "bg-[rgba(79,209,197,0.14)] text-[var(--foreground)] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-[rgba(79,209,197,0.22)]",
     },
     secondary: {
       ring: "ring-[rgba(124,140,255,0.22)]",
       badge: "bg-[rgba(124,140,255,0.14)] text-[var(--secondary)]",
-      button: "bg-[rgba(124,140,255,0.14)] text-[var(--foreground)] hover:bg-[rgba(124,140,255,0.22)]",
+      button: "bg-[rgba(124,140,255,0.14)] text-[var(--foreground)] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-[rgba(124,140,255,0.22)]",
     },
     accent: {
       ring: "ring-[rgba(255,184,107,0.22)]",
       badge: "bg-[rgba(255,184,107,0.14)] text-[var(--accent)]",
-      button: "bg-[rgba(255,184,107,0.14)] text-[var(--foreground)] hover:bg-[rgba(255,184,107,0.22)]",
+      button: "bg-[rgba(255,184,107,0.14)] text-[var(--foreground)] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-[rgba(255,184,107,0.22)]",
     },
   }[accent];
 
   return (
     <div
       className={[
-        "group relative flex h-full flex-1 flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/82 p-7 shadow-[0_18px_48px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-200/90 hover:bg-white hover:shadow-[0_18px_48px_rgba(59,130,246,0.17)]",
+        "group relative flex h-full flex-1 flex-col justify-between overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/82 p-7 shadow-[0_18px_48px_rgba(59,130,246,0.12)] backdrop-blur-xl transition-all duration-300 [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-1 [@media(hover:hover)_and_(pointer:fine)]:hover:border-cyan-200/90 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-white [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_18px_48px_rgba(59,130,246,0.17)]",
         "ring-1",
         accentStyles.ring,
       ].join(" ")}
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100 [background:radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_55%)]"
+        className="pointer-events-none absolute inset-0 opacity-0 transition [@media(hover:hover)_and_(pointer:fine)]:group-hover:opacity-100 [background:radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_55%)]"
       />
       <div className="relative flex h-full flex-col justify-between">
         <div className="flex items-start justify-between gap-6">

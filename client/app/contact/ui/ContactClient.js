@@ -15,10 +15,12 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-const mapsUrl = process.env.NEXT_PUBLIC_CONTACT_MAPS_URL;
+const officeAddress = "Kudale Patil Tower, Office No. 207\n2nd Floor, Jadhav Nagar\nVadgaon Budruk, Pune 411041";
+const fallbackMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(officeAddress.replace(/\n/g, ", "))}`;
+const mapsUrl = process.env.NEXT_PUBLIC_CONTACT_MAPS_URL || fallbackMapsUrl;
 const mapEmbedUrl = process.env.NEXT_PUBLIC_CONTACT_MAP_EMBED_URL;
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
-const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
+const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@veaglespace.com";
+const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || "+91 8237999101";
 
 const FIELD_LIMITS = {
   fullName: 60,
@@ -36,9 +38,16 @@ const isDummyText = (value) => {
   return compact.length > 0 && new Set(compact).size === 1;
 };
 
-function ContactInfoItem({ icon: Icon, label, value }) {
+function ContactInfoItem({ icon: Icon, label, value, href, external = false }) {
+  const Wrapper = href ? "a" : "div";
+
   return (
-    <div className="group flex items-start gap-4 rounded-3xl p-3 transition-all duration-300 hover:-translate-y-1 hover:bg-white/45 dark:hover:bg-white/5">
+    <Wrapper
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      className="group flex items-start gap-4 rounded-3xl p-3 transition-all duration-300 hover:-translate-y-1 hover:bg-white/45 focus:outline-none focus:ring-2 focus:ring-cyan-300/70 dark:hover:bg-white/5"
+    >
       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-cyan-400/22 via-indigo-400/18 to-purple-400/18 ring-1 ring-white/45 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 group-hover:shadow-[0_12px_24px_rgba(99,102,241,0.18)] dark:ring-white/10">
         <Icon className="h-5 w-5 text-slate-900/90 dark:text-white" />
       </div>
@@ -46,7 +55,7 @@ function ContactInfoItem({ icon: Icon, label, value }) {
         <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-700/75 dark:text-cyan-200/80">{label}</div>
         <div className="mt-2 whitespace-pre-line break-words text-base font-semibold leading-6 text-slate-900 dark:text-white">{value}</div>
       </div>
-    </div>
+    </Wrapper>
   );
 }
 
@@ -255,12 +264,14 @@ export default function ContactClient() {
             </div>
 
             <div className="mt-7 grid flex-1 content-start gap-3">
-              <ContactInfoItem icon={Mail} label="Email" value={supportEmail} />
-              <ContactInfoItem icon={Phone} label="Phone" value={supportPhone} />
+              <ContactInfoItem icon={Mail} label="Email" value={supportEmail} href={`mailto:${supportEmail}`} />
+              <ContactInfoItem icon={Phone} label="Phone" value={supportPhone} href={`tel:${String(supportPhone || "").replace(/\D/g, "")}`} />
               <ContactInfoItem
                 icon={MapPin}
                 label="Office Location"
-                value={`Kudale Patil Tower, Office No. 207\n2nd Floor, Jadhav Nagar\nVadgaon Budruk, Pune 411041`}
+                value={officeAddress}
+                href={mapsUrl}
+                external
               />
               <div className="mt-3 border-t border-white/35 pt-6 dark:border-white/10">
                 <h3 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">Business Hours</h3>
