@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Menu, Store, X } from "lucide-react";
+import { LogIn, Menu, Store, X } from "lucide-react";
 import { LogoMark } from "@/components/common/LogoMark";
 import { withBasePath } from "@/lib/site-path";
 
@@ -77,9 +77,10 @@ export function MarketingNavbar() {
           <button
             type="button"
             onClick={() => router.push("/login")}
-            className="rounded-full px-3 py-2 text-sm font-semibold text-[var(--muted-strong)] transition hover:bg-white/10 hover:text-[var(--foreground)] dark:hover:bg-white/5"
+            className="btn btn-outline btn-sm rounded-full border-cyan-400/55 bg-white/10 px-4 text-sm font-semibold text-cyan-800 shadow-sm shadow-cyan-500/10 transition hover:-translate-y-0.5 hover:border-cyan-500 hover:bg-cyan-500 hover:text-white hover:shadow-lg hover:shadow-cyan-500/20"
             suppressHydrationWarning={true}
           >
+            <LogIn size={16} />
             Login
           </button>
           <button
@@ -134,8 +135,9 @@ export function MarketingNavbar() {
                   setMobileOpen(false);
                   router.push("/login");
                 }}
-                className="rounded-2xl px-4 py-3 text-left text-sm font-semibold text-[var(--muted-strong)] transition hover:bg-white/10 hover:text-[var(--foreground)] dark:hover:bg-white/5"
+                className="btn btn-outline justify-start rounded-2xl border-cyan-400/55 bg-white/10 px-4 text-sm font-semibold text-cyan-800 transition hover:border-cyan-500 hover:bg-cyan-500 hover:text-white"
               >
+                <LogIn size={16} />
                 Login
               </button>
               <button
