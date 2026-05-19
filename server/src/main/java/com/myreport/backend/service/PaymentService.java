@@ -62,7 +62,7 @@ public class PaymentService {
     @Value("${payu.base-url:https://secure.payu.in/_payment}")
     private String payuBaseUrl;
 
-    @Value("${app.backend-origin:http://localhost:8082}")
+    @Value("${app.backend-origin:http://localhost:8080}")
     private String backendOrigin;
 
     @Value("${app.frontend-origin:http://localhost:3004}")
@@ -593,7 +593,7 @@ public class PaymentService {
 
     private String backendBaseUrl() {
         String value = normalizeConfigValue(backendOrigin);
-        return hasText(value) ? value.replaceAll("/$", "") : "http://localhost:8082";
+        return hasText(value) ? value.replaceAll("/$", "") : "http://localhost:8080";
     }
 
     private String frontendBaseUrl() {
