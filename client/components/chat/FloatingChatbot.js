@@ -90,6 +90,8 @@ const QUICK_QUESTIONS = [
 const WELCOME_MESSAGE =
   "Hi! I'm the MyReport Assistant.\n\nI can help with billing, GST invoices, reports, customers, stock, pricing, and store setup for grocery, clothing, shoes, electronics, beauty, and accessories.\n\nPick a quick question below or ask anything about MyReport.";
 
+const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || "/api/chat";
+
 function formatTime(isoString) {
   try {
     const date = new Date(isoString);
@@ -217,7 +219,7 @@ export function FloatingChatbot() {
     setSending(true);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(CHAT_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: [...apiMessages, { role: "user", content: text }] }),
