@@ -13,9 +13,12 @@ export const metadata = {
   title: "MyReport",
   description: "Premium SaaS reporting platform with SuperAdmin and Admin dashboards",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    icon: [
+      { url: "/favicon.svg?v=2", type: "image/svg+xml" },
+      { url: "/icon.svg?v=2", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg?v=2",
+    apple: "/icon.svg?v=2",
   },
 };
 
