@@ -16,7 +16,7 @@ const HERO_BACKGROUNDS = {
   shoes:
     "/assets/shoes.jpg",
   electronics:
-    "/assets/electronics.jpg",
+    "/assets/Electronics.jpg",
   beauty:
     "/assets/beauty.jpg",
   accessories:
