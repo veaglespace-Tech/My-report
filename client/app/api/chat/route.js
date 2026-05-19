@@ -8,6 +8,7 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
 const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || "gpt-oss-120b";
 const CEREBRAS_BASE_URL = process.env.CEREBRAS_BASE_URL || "https://api.cerebras.ai/v1";
+const CHATBOT_MODE = process.env.CHATBOT_MODE || "auto";
 
 const KNOWLEDGE_BASE = `ABOUT MYREPORT
 MyReport Store OS is a modern store management platform for retail businesses.
@@ -143,18 +144,22 @@ async function createChatbotSupportTicket(message) {
   }
 }
 
+async function localChatResponse(coerced, provider = "local") {
+  const userMessage = lastUserMessage(coerced);
+  const answer = localAnswer(userMessage);
+  if (answer.startsWith("I can help with")) {
+    await createChatbotSupportTicket(userMessage);
+  }
+  return Response.json({ message: answer, timestamp: new Date().toISOString(), provider });
+}
+
 export async function POST(request) {
   try {
     const { messages } = await request.json();
     const coerced = coerceMessages(messages);
 
-    if (!CEREBRAS_API_KEY && !process.env.OPENAI_API_KEY) {
-      const userMessage = lastUserMessage(coerced);
-      const answer = localAnswer(userMessage);
-      if (answer.startsWith("I can help with")) {
-        await createChatbotSupportTicket(userMessage);
-      }
-      return Response.json({ message: answer, timestamp: new Date().toISOString(), provider: "local" });
+    if (CHATBOT_MODE === "local" || (!CEREBRAS_API_KEY && !process.env.OPENAI_API_KEY)) {
+      return localChatResponse(coerced);
     }
 
     const client = CEREBRAS_API_KEY
@@ -162,14 +167,19 @@ export async function POST(request) {
       : new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = CEREBRAS_API_KEY ? CEREBRAS_MODEL : OPENAI_MODEL;
 
-    const completion = await client.chat.completions.create({
-      model,
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...coerced,
-      ],
-    });
+    let completion;
+    try {
+      completion = await client.chat.completions.create({
+        model,
+        temperature: 0.4,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...coerced,
+        ],
+      });
+    } catch {
+      return localChatResponse(coerced, "local-fallback");
+    }
 
     const content = completion.choices?.[0]?.message?.content || "";
     return Response.json({
