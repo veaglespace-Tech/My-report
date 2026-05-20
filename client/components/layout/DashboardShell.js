@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, Menu, Store } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { adminNav, resolvePageMeta, superAdminNav } from "@/lib/navigation";
+import { ProfileAvatar } from "@/components/common/ProfileAvatar";
 import { clearSession } from "@/lib/session";
 import { clearAuth } from "@/redux/slices/authSlice";
 import { setSidebarOpen } from "@/redux/slices/uiSlice";
@@ -16,42 +16,19 @@ const subscribeToClientSnapshot = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-function getProfileInitials(profile) {
-  const name = String(profile?.fullName || "").trim();
-  if (!name) return "MR";
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0] || "")
-    .join("")
-    .toUpperCase();
-}
-
-function getProfileAvatarUrl(profile) {
-  if (!profile?.avatarUrl) return null;
-  if (String(profile.avatarUrl).startsWith("http")) return profile.avatarUrl;
-  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "");
-  return `${apiBase}${profile.avatarUrl}`;
-}
-
 function ProfileChip({ profile, mounted, size = "sm" }) {
-  const avatarUrl = getProfileAvatarUrl(profile);
-  const avatarSize = size === "md" ? "40px" : "32px";
+  const avatarSize = size === "md" ? 40 : 32;
 
   return (
     <div className="card card-compact min-w-0 border border-base-300/70 bg-base-100/75 shadow-sm">
       <div className="flex min-w-0 items-center gap-3">
         <div className="avatar placeholder p-2">
-          <div className="relative h-9 w-9 overflow-hidden rounded-full bg-primary text-primary-content ring ring-primary/15">
-            {mounted && avatarUrl ? (
-              <Image src={avatarUrl} alt="Profile avatar" fill sizes={avatarSize} className="object-cover" unoptimized />
-            ) : (
-              <span suppressHydrationWarning className="text-xs font-bold">
-                {getProfileInitials(profile)}
-              </span>
-            )}
-          </div>
+          <ProfileAvatar
+            profile={mounted ? profile : null}
+            size={avatarSize}
+            className="border-0 bg-primary text-primary-content ring ring-primary/15 shadow-none"
+            textClassName="text-xs text-primary-content"
+          />
         </div>
         <div className="min-w-0 flex-1 py-2 pr-3 text-left leading-tight">
           <div suppressHydrationWarning className="truncate text-sm font-bold text-base-content">

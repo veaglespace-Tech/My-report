@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -25,6 +24,7 @@ import { GlassPanel } from "@/components/common/GlassPanel";
 import { LoadingSkeleton } from "@/components/common/LoadingSkeleton";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Modal } from "@/components/common/Modal";
+import { ProfileAvatar } from "@/components/common/ProfileAvatar";
 import { SectionHeading } from "@/components/common/SectionHeading";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -1940,10 +1940,6 @@ export function SuperAdminSettingsScreen() {
     passwordForm.newPassword === passwordForm.confirmPassword;
 
   const profileView = isEditing ? draftProfile : data.profile;
-  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api").replace(/\/api\/?$/, "");
-  const avatarUrl = profileView?.avatarUrl
-    ? (String(profileView.avatarUrl).startsWith("http") ? profileView.avatarUrl : `${apiBase}${profileView.avatarUrl}`)
-    : null;
 
   if (loading) {
     return <LoadingSkeleton rows={3} />;
@@ -1956,22 +1952,9 @@ export function SuperAdminSettingsScreen() {
         <form className="mt-6 grid gap-4" onSubmit={handleProfileSave}>
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/90 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/70 bg-gradient-to-br from-cyan-100 via-white to-violet-100 shadow-[0_0_0_4px_rgba(34,211,238,0.08)]">
-                {avatarUrl ? (
-                  <Image src={avatarUrl} alt="Profile avatar" fill sizes="80px" className="object-cover" unoptimized />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xl font-bold text-teal-800">
-                    {String(profileView?.fullName || data.profile?.fullName || "MR")
-                      .split(" ")
-                      .slice(0, 2)
-                      .map((part) => part[0] || "")
-                      .join("")
-                      .toUpperCase()}
-                  </div>
-                )}
-              </div>
+              <ProfileAvatar profile={profileView || data.profile} size={80} />
               <div className="min-w-0">
-                {avatarUrl ? (
+                {profileView?.avatarUrl ? (
                   <>
                     <div className="truncate text-lg font-semibold text-gray-900">{profileView?.fullName || "Super Admin"}</div>
                     <div className="mt-1 truncate text-sm text-gray-500">{data.profile?.email || ""}</div>

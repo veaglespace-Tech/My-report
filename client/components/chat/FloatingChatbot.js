@@ -91,6 +91,54 @@ const WELCOME_MESSAGE =
   "Hi! I'm the MyReport Assistant.\n\nI can help with billing, GST invoices, reports, customers, stock, pricing, and store setup for grocery, clothing, shoes, electronics, beauty, and accessories.\n\nPick a quick question below or ask anything about MyReport.";
 
 const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || "/api/chat";
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@veaglespace.com";
+const SUPPORT_PHONE = process.env.NEXT_PUBLIC_SUPPORT_PHONE || "+91 8237999101";
+const COMPANY_WEBSITE = process.env.NEXT_PUBLIC_COMPANY_WEBSITE || "https://mr.veaglespace.com";
+
+function localChatAnswer(question) {
+  const q = String(question || "").toLowerCase();
+
+  if (q.includes("feature") || q.includes("what can") || q.includes("offer")) {
+    return (
+      "MyReport Store OS helps you run your store with Billing (GST invoices), Inventory, Customers, Products, and Reports. " +
+      "You can export reports and invoices to PDF or Excel, track revenue, and manage day-to-day operations from one dashboard."
+    );
+  }
+
+  if (q.includes("generate bill") || q.includes("create bill") || q.includes("billing") || q.includes("invoice")) {
+    return "To generate a bill: Billing Workspace -> select/add customer -> add products -> enter quantity -> apply discount/notes if needed -> Generate Bill -> print or download the PDF invoice.";
+  }
+
+  if (q.includes("export") || q.includes("pdf") || q.includes("excel")) {
+    return "Yes, you can export Reports in both PDF and Excel formats. Invoices and bills can also be downloaded as PDF.";
+  }
+
+  if (q.includes("customer")) {
+    return "Customers: add customers, search them, and view purchase/order history. You can also track total billing per customer.";
+  }
+
+  if (q.includes("inventory") || q.includes("stock") || q.includes("product") || q.includes("expiry")) {
+    return "Inventory: add products, update prices, manage stock levels, and track product performance. For grocery stock, use product details and reports to monitor quantity and expiry-related items.";
+  }
+
+  if (q.includes("pricing") || q.includes("plan") || q.includes("free trial")) {
+    return "Plans: Free Trial for 7 days at Rs. 0, and Launch Plan for 3 months at Rs. 3000 with priority setup.";
+  }
+
+  if (q.includes("gst")) {
+    return "Yes, MyReport supports GST billing. You can create GST bills/invoices from the Billing workspace and download the PDF.";
+  }
+
+  if (q.includes("support") || q.includes("contact") || q.includes("help")) {
+    return `Contact support: ${SUPPORT_EMAIL} or ${SUPPORT_PHONE}. You can also visit ${COMPANY_WEBSITE}.`;
+  }
+
+  if (q.includes("register") || q.includes("signup") || q.includes("sign up") || q.includes("login") || q.includes("password")) {
+    return "For registration/login: use the Register flow to set up your store details and admin account. If you're stuck, tell support which step and error message you see.";
+  }
+
+  return "I can help with Billing, Reports/exports, Customers, Inventory, Products, GST billing, Plans & Pricing, and onboarding. What are you trying to do in MyReport Store OS?";
+}
 
 function formatTime(isoString) {
   try {
@@ -243,7 +291,7 @@ export function FloatingChatbot() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "I'm having trouble reaching the AI service right now. Please try again in a moment.",
+          content: localChatAnswer(text),
           timestamp: new Date().toISOString(),
         },
       ]);

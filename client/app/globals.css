@@ -8,7 +8,7 @@
   /* ── NEW PREMIUM COLOR SCHEME ── */
   --background: #f6f8fb;
   --foreground: #111827;
-  --font-geist-sans: var(--font-outfit), "Inter", system-ui, sans-serif;
+  --font-geist-sans: "Inter", "Segoe UI", system-ui, sans-serif;
   --font-geist-mono: "JetBrains Mono", "Cascadia Code", monospace;
 
   /* Soft lavender-to-lilac gradient background */
