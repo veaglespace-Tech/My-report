@@ -158,9 +158,6 @@ export async function POST(request) {
     const { messages } = await request.json();
     const coerced = coerceMessages(messages);
 
-    if (CHATBOT_MODE === "local" || (!CEREBRAS_API_KEY && !process.env.OPENAI_API_KEY)) {
-      return localChatResponse(coerced);
-    }
 
     const client = CEREBRAS_API_KEY
       ? new OpenAI({ apiKey: CEREBRAS_API_KEY, baseURL: CEREBRAS_BASE_URL })
