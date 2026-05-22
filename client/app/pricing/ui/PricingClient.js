@@ -17,12 +17,12 @@ const item = {
 };
 
 const features = [
-  "Up to 500 users",
-  "Manual Attendance",
-  "Face Recognition",
-  "Advanced PDF Reports",
-  "Excel Export",
-  "Chat Support",
+  "GST Invoices & POS Billing",
+  "Product & Stock Inventory",
+  "PDF & Excel Sales Reports",
+  "Customer Purchase History",
+  "Priority Onboarding & Setup",
+  "Multi-Category Support (Grocery, Clothing, etc.)",
 ];
 
 const fallbackPlans = fallbackPublicPlans;
@@ -76,7 +76,7 @@ function PricingCard({ plan, onSelect }) {
         </div>
 
         <div className="mt-6 flex-1 space-y-3">
-          {features.map((feature) => (
+          {(plan.features && plan.features.length ? plan.features : features).map((feature) => (
             <div key={feature} className="flex items-start gap-3 text-sm text-white/88">
               <div className="mt-0.5 rounded-full bg-cyan-400/15 p-1 ring-1 ring-cyan-200/15">
                 <Check className="h-4 w-4 text-cyan-200" />
