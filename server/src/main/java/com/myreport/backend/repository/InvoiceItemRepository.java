@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface InvoiceItemRepository extends JpaRepository<InvoiceItem, Long> {
 
+    boolean existsByProductId(Long productId);
+
     interface TopSaleProjection {
         String getName();
 

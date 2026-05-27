@@ -1,0 +1,3 @@
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS plan_started_at DATE;
+ALTER TABLE products DROP COLUMN IF EXISTS sku;
+ALTER TABLE products DROP COLUMN IF EXISTS reorder_threshold;

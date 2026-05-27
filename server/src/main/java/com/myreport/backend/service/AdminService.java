@@ -216,6 +216,9 @@ public class AdminService {
     public void deleteProduct(String email, Long productId) {
         UserAccount admin = getAdmin(email);
         Product product = getProduct(admin.getId(), productId);
+        if (invoiceItemRepository.existsByProductId(productId) || orderRepository.existsByProductId(productId)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot delete a product that is already used in invoices or orders");
+        }
         productRepository.delete(product);
     }
 

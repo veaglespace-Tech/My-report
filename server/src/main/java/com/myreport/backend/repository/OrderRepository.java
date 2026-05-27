@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
+    boolean existsByProductId(Long productId);
+
     interface TopSaleProjection {
         String getName();
 
