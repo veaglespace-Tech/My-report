@@ -622,11 +622,28 @@ export function SuperAdminAdminsScreen() {
 
       <DataTable
         columns={[
-          { key: "fullName", label: "Admin" },
+          {
+            key: "fullName",
+            label: "Admin",
+            headerClassName: "min-w-[180px]",
+            cellClassName: "min-w-[180px]",
+          },
           { key: "email", label: "Email" },
-          { key: "storeCode", label: "Store ID" },
+          {
+            key: "storeCode",
+            label: "Store ID",
+            headerClassName: "min-w-[140px]",
+            cellClassName: "min-w-[140px]",
+            render: (value) => <span className="inline-block whitespace-nowrap">{value || "-"}</span>,
+          },
           { key: "storeName", label: "Store" },
-          { key: "plan", label: "Plan" },
+          {
+            key: "plan",
+            label: "Plan",
+            headerClassName: "min-w-[150px]",
+            cellClassName: "min-w-[150px]",
+            render: (value) => <span className="inline-block whitespace-nowrap">{value || "-"}</span>,
+          },
           { key: "status", label: "Status", render: (value) => <StatusBadge value={value} /> },
           { key: "planExpiresAt", label: "Plan Expiry", render: (value) => formatDate(value) },
           {

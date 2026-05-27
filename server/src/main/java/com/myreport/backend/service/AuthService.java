@@ -212,6 +212,12 @@ public class AuthService {
         UserAccount user = userAccountRepository.findByEmailIgnoreCase(request.email().trim())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Email not registered"));
 
+        if (!emailService.isSmtpConfigured()) {
+            throw new ApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Password reset email is not configured yet. Add Gmail SMTP settings in server/.env and try again.");
+        }
+
         passwordResetTokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
         passwordResetTokenRepository.deleteAll(passwordResetTokenRepository.findAll().stream()
                 .filter(token -> token.getUser().getId().equals(user.getId()) && !token.isUsed())
@@ -227,7 +233,7 @@ public class AuthService {
         passwordResetTokenRepository.save(resetToken);
 
         String resetLink = frontendBaseUrl() + "/reset-password?token=" + tokenValue;
-        sendResetPasswordEmailSafely(user.getEmail(), resetLink);
+        sendResetPasswordEmailOrThrow(user.getEmail(), resetLink);
 
         return Map.of("message", "Reset link sent to your email.");
     }
@@ -403,18 +409,28 @@ public class AuthService {
         }
     }
 
-    private void sendResetPasswordEmailSafely(String email, String resetLink) {
+    private void sendResetPasswordEmailOrThrow(String email, String resetLink) {
+        String subject = "Reset Your MyReport Password";
+        String plainBody = "Click below link to reset password:\n"
+                + resetLink
+                + "\n\nThis link expires in 15 minutes.";
+
         try {
-            String plainBody = "Click below link to reset password:\n"
-                    + resetLink
-                    + "\n\nThis link expires in 15 minutes.";
-            emailService.sendHtmlEmail(
-                    email,
-                    "Reset Your MyReport Password",
-                    plainBody,
-                    resetPasswordEmailHtml(resetLink));
-        } catch (Exception exception) {
-            log.warn("Reset password email could not be sent to {}: {}", email, exception.getMessage());
+            emailService.sendHtmlEmail(email, subject, plainBody, resetPasswordEmailHtml(resetLink));
+            log.info("Reset password email sent to {}", email);
+            return;
+        } catch (Exception htmlException) {
+            log.warn("HTML reset password email could not be sent to {}. Trying plain text fallback.", email, htmlException);
+        }
+
+        try {
+            emailService.sendEmail(email, subject, plainBody);
+            log.info("Plain reset password email sent to {}", email);
+        } catch (Exception plainException) {
+            log.error("Reset password email could not be sent to {}", email, plainException);
+            throw new ApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Password reset email could not be delivered. Check SMTP settings and try again.");
         }
     }
 

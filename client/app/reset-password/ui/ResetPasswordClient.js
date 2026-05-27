@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { resetPassword } from "@/services/authService";
 
@@ -11,6 +12,7 @@ export default function ResetPasswordClient() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token") || "";
   const [form, setForm] = useState({ password: "", confirmPassword: "" });
+  const [visibility, setVisibility] = useState({ password: false, confirmPassword: false });
   const [loading, setLoading] = useState(false);
 
   const errors = useMemo(() => {
@@ -40,6 +42,18 @@ export default function ResetPasswordClient() {
     }
   };
 
+  const toggleVisibility = (field) => {
+    setVisibility((previous) => ({
+      ...previous,
+      [field]: !previous[field],
+    }));
+  };
+
+  const blockConfirmPasswordPaste = (event) => {
+    event.preventDefault();
+    toast.error("Please type the confirm password manually.");
+  };
+
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-lg items-center px-6 py-12">
       <div className="glass-panel frost-line w-full rounded-[32px] p-8 shadow-[var(--shadow-xl)]">
@@ -50,25 +64,48 @@ export default function ResetPasswordClient() {
         <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
           <label className="grid gap-2 text-sm font-medium text-[var(--muted-strong)]">
             New Password
-            <input
-              suppressHydrationWarning
-              type="password"
-              value={form.password}
-              onChange={(event) => setForm((previous) => ({ ...previous, password: event.target.value }))}
-              className="theme-input rounded-xl border border-[var(--stroke)] bg-white/80 px-4 py-3 text-[var(--foreground)] outline-none transition focus:ring-2 focus:ring-cyan-300"
-              placeholder="Enter new password"
-            />
+            <div className="relative">
+              <input
+                suppressHydrationWarning
+                type={visibility.password ? "text" : "password"}
+                value={form.password}
+                onChange={(event) => setForm((previous) => ({ ...previous, password: event.target.value }))}
+                className="theme-input rounded-xl border border-[var(--stroke)] bg-white/80 px-4 py-3 pr-12 text-[var(--foreground)] outline-none transition focus:ring-2 focus:ring-cyan-300"
+                placeholder="Enter new password"
+              />
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => toggleVisibility("password")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--muted)] transition hover:text-[var(--foreground)]"
+                aria-label={visibility.password ? "Hide password" : "Show password"}
+              >
+                {visibility.password ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </label>
           <label className="grid gap-2 text-sm font-medium text-[var(--muted-strong)]">
             Confirm Password
-            <input
-              suppressHydrationWarning
-              type="password"
-              value={form.confirmPassword}
-              onChange={(event) => setForm((previous) => ({ ...previous, confirmPassword: event.target.value }))}
-              className="theme-input rounded-xl border border-[var(--stroke)] bg-white/80 px-4 py-3 text-[var(--foreground)] outline-none transition focus:ring-2 focus:ring-cyan-300"
-              placeholder="Confirm new password"
-            />
+            <div className="relative">
+              <input
+                suppressHydrationWarning
+                type={visibility.confirmPassword ? "text" : "password"}
+                value={form.confirmPassword}
+                onChange={(event) => setForm((previous) => ({ ...previous, confirmPassword: event.target.value }))}
+                onPaste={blockConfirmPasswordPaste}
+                className="theme-input rounded-xl border border-[var(--stroke)] bg-white/80 px-4 py-3 pr-12 text-[var(--foreground)] outline-none transition focus:ring-2 focus:ring-cyan-300"
+                placeholder="Confirm new password"
+              />
+              <button
+                suppressHydrationWarning
+                type="button"
+                onClick={() => toggleVisibility("confirmPassword")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--muted)] transition hover:text-[var(--foreground)]"
+                aria-label={visibility.confirmPassword ? "Hide password" : "Show password"}
+              >
+                {visibility.confirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </label>
 
           <button

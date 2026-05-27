@@ -26,6 +26,9 @@ public class EmailService {
     @Value("${spring.mail.username:}")
     private String smtpUsername;
 
+    @Value("${spring.mail.host:}")
+    private String smtpHost;
+
     public void sendEmail(String to, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(effectiveFromEmail());
@@ -46,6 +49,10 @@ public class EmailService {
         helper.setSentDate(new Date());
         addTransactionalHeaders(message);
         mailSender.send(message);
+    }
+
+    public boolean isSmtpConfigured() {
+        return hasText(smtpHost) && hasText(smtpUsername);
     }
 
     private void setFrom(MimeMessageHelper helper) throws MessagingException {

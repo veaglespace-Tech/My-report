@@ -27,10 +27,13 @@ public class StartupDiagnostics implements ApplicationRunner {
         boolean payuConfigured = hasText(environment.getProperty("payu.merchant-key"))
                 && hasText(environment.getProperty("payu.merchant-salt"))
                 && hasText(environment.getProperty("payu.base-url"));
+        boolean smtpConfigured = hasText(environment.getProperty("spring.mail.host"))
+                && hasText(environment.getProperty("spring.mail.username"));
         logger.info("Active profiles: {}", profiles);
         logger.info("Datasource URL: {}", datasourceUrl);
         logger.info("Razorpay configured: {}", razorpayConfigured);
         logger.info("PayU configured: {}", payuConfigured);
+        logger.info("SMTP configured: {}", smtpConfigured);
     }
 
     private static boolean hasText(String value) {

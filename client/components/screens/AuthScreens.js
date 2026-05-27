@@ -323,6 +323,7 @@ function AuthFormField({
   type = "text",
   value,
   onChange,
+  onBlur,
   placeholder,
   helper,
   autoComplete,
@@ -346,6 +347,7 @@ function AuthFormField({
         name={name}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         placeholder={placeholder}
         autoComplete={autoComplete}
         className={`theme-input w-full rounded-xl bg-white/70 px-5 py-4 text-sm text-slate-900 outline-none transition-all duration-300 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 ${statusClassName}`}
@@ -359,7 +361,11 @@ export function LoginScreen({ role }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  const [touched, setTouched] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({
+    email: false,
+    password: false,
+  });
   const [loginMode, setLoginMode] = useState("email");
   const [form, setForm] = useState({
     email: "",
@@ -387,16 +393,31 @@ export function LoginScreen({ role }) {
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-    setTouched(true);
     setForm((previous) => ({
       ...previous,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+  const handleBlur = (event) => {
+    const { name } = event.target;
+    if (!name || !(name in touchedFields)) {
+      return;
+    }
+
+    setTouchedFields((previous) => ({
+      ...previous,
+      [name]: true,
+    }));
+  };
+
   const handleLoginModeChange = (nextMode) => {
     setLoginMode(nextMode);
-    setTouched(false);
+    setSubmitAttempted(false);
+    setTouchedFields({
+      email: false,
+      password: false,
+    });
     setForm((previous) => ({
       ...previous,
       email: "",
@@ -426,10 +447,16 @@ export function LoginScreen({ role }) {
   }, [form.email, form.password, isStoreIdLogin, role]);
 
   const isValid = Object.keys(errors).length === 0;
+  const showEmailValidation = submitAttempted || touchedFields.email;
+  const showPasswordValidation = submitAttempted || touchedFields.password;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setTouched(true);
+    setSubmitAttempted(true);
+    setTouchedFields({
+      email: true,
+      password: true,
+    });
     if (!isValid) {
       return;
     }
@@ -510,12 +537,13 @@ export function LoginScreen({ role }) {
           type={isStoreIdLogin ? "text" : "email"}
           value={form.email}
           onChange={handleChange}
+          onBlur={handleBlur}
           required
           placeholder={isStoreIdLogin ? "Enter your Store ID" : "Enter your email"}
           autoComplete="off"
-          helper={touched && errors.email ? errors.email : isStoreIdLogin ? "Use the Store ID from your registration email." : undefined}
+          helper={showEmailValidation && errors.email ? errors.email : isStoreIdLogin ? "Use the Store ID from your registration email." : undefined}
           status={
-            touched
+            showEmailValidation
               ? errors.email
                 ? "error"
                 : form.email.trim()
@@ -532,8 +560,11 @@ export function LoginScreen({ role }) {
           required
           placeholder="Enter your password"
           autoComplete="new-password"
+          inputProps={{
+            onBlur: handleBlur,
+          }}
           status={
-            touched
+            showPasswordValidation
               ? errors.password
                 ? "error"
                 : form.password
@@ -542,7 +573,7 @@ export function LoginScreen({ role }) {
               : "idle"
           }
           helper={
-            touched && errors.password
+            showPasswordValidation && errors.password
               ? errors.password
               : role === "SUPER_ADMIN"
                 ? "Fixed credentials seeded in the server configuration."
